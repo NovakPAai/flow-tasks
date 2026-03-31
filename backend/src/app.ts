@@ -1,0 +1,32 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+
+import { errorHandler } from './shared/middleware/error-handler.js';
+import authRouter from './modules/auth/auth.router.js';
+
+export function createApp() {
+  const app = express();
+
+  app.use(helmet());
+  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5174';
+  app.use(cors({ origin: corsOrigin.split(',').map((o) => o.trim()), credentials: true }));
+  app.use(express.json());
+
+  // Health check
+  app.get('/api/health', (_req, res) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: process.env.GIT_SHA || 'dev',
+    });
+  });
+
+  // Routes
+  app.use('/api/auth', authRouter);
+
+  // Error handler (must be last)
+  app.use(errorHandler);
+
+  return app;
+}
