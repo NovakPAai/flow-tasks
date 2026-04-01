@@ -6,6 +6,7 @@ import {
   updateWorkspaceDto,
   addMemberDto,
   updateMemberRoleDto,
+  inviteByEmailDto,
 } from './workspaces.dto.js';
 import * as ws from './workspaces.service.js';
 import type { AuthRequest } from '../../shared/types/index.js';
@@ -59,6 +60,12 @@ router.post('/:id/members', validate(addMemberDto), async (req: AuthRequest, res
 router.patch('/:id/members/:userId', validate(updateMemberRoleDto), async (req: AuthRequest, res, next) => {
   try {
     res.json(await ws.updateMemberRole(String(req.params.id), req.user!.userId, String(req.params.userId), req.body));
+  } catch (e) { next(e); }
+});
+
+router.post('/:id/invite', validate(inviteByEmailDto), async (req: AuthRequest, res, next) => {
+  try {
+    res.status(201).json(await ws.inviteByEmail(String(req.params.id), req.user!.userId, req.body));
   } catch (e) { next(e); }
 });
 

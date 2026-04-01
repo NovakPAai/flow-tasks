@@ -2,12 +2,14 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
+import AppLayout from './components/AppLayout';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import WorkspacesPage from './pages/WorkspacesPage';
 import WorkspaceDashboardPage from './pages/WorkspaceDashboardPage';
 import BoardPage from './pages/BoardPage';
 import MyTasksPage from './pages/MyTasksPage';
+import WorkspaceSettingsPage from './pages/WorkspaceSettingsPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -21,7 +23,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  return <AppLayout>{children}</AppLayout>;
 }
 
 export default function App() {
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="/workspaces" element={<PrivateRoute><WorkspacesPage /></PrivateRoute>} />
           <Route path="/w/:slug" element={<PrivateRoute><WorkspaceDashboardPage /></PrivateRoute>} />
           <Route path="/w/:slug/boards/:boardId" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
+          <Route path="/w/:slug/settings" element={<PrivateRoute><WorkspaceSettingsPage /></PrivateRoute>} />
           <Route path="/my-tasks" element={<PrivateRoute><MyTasksPage /></PrivateRoute>} />
           {/* Legacy — kept for now */}
           <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />

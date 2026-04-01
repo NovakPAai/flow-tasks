@@ -1,7 +1,7 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { createDefaultWorkflow } from '../workflows/workflows.service.js';
-import type { CreateWorkspaceDto, UpdateWorkspaceDto, AddMemberDto, UpdateMemberRoleDto } from './workspaces.dto.js';
+import type { CreateWorkspaceDto, UpdateWorkspaceDto, AddMemberDto, UpdateMemberRoleDto, InviteByEmailDto } from './workspaces.dto.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -148,6 +148,23 @@ export async function updateMemberRole(
   return prisma.workspaceMember.update({
     where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
     data: { role: dto.role },
+    include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+  });
+}
+
+export async function inviteByEmail(workspaceId: string, requesterId: string, dto: InviteByEmailDto) {
+  await assertOwner(workspaceId, requesterId);
+
+  const targetUser = await prisma.user.findUnique({ where: { email: dto.email } });
+  if (!targetUser) throw new AppError(404, 'User not found');
+
+  const existing = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId: targetUser.id } },
+  });
+  if (existing) throw new AppError(409, 'User is already a member');
+
+  return prisma.workspaceMember.create({
+    data: { workspaceId, userId: targetUser.id, role: dto.role },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
 }

@@ -1,5 +1,5 @@
 import api from './client';
-import type { Task } from '../types';
+import type { Task, TaskHistory } from '../types';
 
 export interface CreateTaskPayload {
   title: string;
@@ -60,6 +60,11 @@ export interface MyTask extends Task {
     prefix: string;
     workspace: { id: string; name: string; slug: string };
   };
+}
+
+export async function getTaskHistory(taskId: string): Promise<TaskHistory[]> {
+  const { data } = await api.get<TaskHistory[]>(`/tasks/${taskId}/history`);
+  return data;
 }
 
 export async function listMyTasks(params?: {

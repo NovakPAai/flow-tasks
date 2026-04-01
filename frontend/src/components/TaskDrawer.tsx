@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
-  Drawer, Typography, Tag, Spin, Button, Select, Avatar,
+  Collapse, Drawer, Typography, Tag, Spin, Button, Select, Avatar,
   Divider, Input, message, Popconfirm,
 } from 'antd';
-import { DeleteOutlined, BranchesOutlined } from '@ant-design/icons';
+import { DeleteOutlined, BranchesOutlined, HistoryOutlined } from '@ant-design/icons';
 import type { Task, WorkflowStatus, Label, TaskLabel, Comment, Checklist } from '../types';
 import * as tasksApi from '../api/tasks';
 import CommentThread from './CommentThread';
 import ChecklistBlock from './ChecklistBlock';
 import LabelPicker from './LabelPicker';
+import TaskHistoryTimeline from './TaskHistoryTimeline';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -274,6 +275,22 @@ export default function TaskDrawer({
               onCommentsChanged={handleCommentsChanged}
             />
           </div>
+
+          {/* History */}
+          <Collapse
+            ghost
+            items={[{
+              key: 'history',
+              label: (
+                <span style={{ color: '#4A5578', fontSize: 12 }}>
+                  <HistoryOutlined style={{ marginRight: 6 }} />
+                  История изменений
+                </span>
+              ),
+              children: <TaskHistoryTimeline taskId={task.id} statuses={statuses} />,
+            }]}
+            style={{ marginBottom: 16 }}
+          />
 
           {/* Meta */}
           <Divider style={{ borderColor: '#1E2640' }} />

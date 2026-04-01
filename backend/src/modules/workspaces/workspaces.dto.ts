@@ -24,7 +24,13 @@ export const updateMemberRoleDto = z.object({
   role: z.enum(['OWNER', 'MEMBER', 'VIEWER']),
 });
 
+export const inviteByEmailDto = z.object({
+  email: z.string().email(),
+  role: z.enum(['OWNER', 'MEMBER', 'VIEWER']).default('MEMBER'),
+});
+
 export type CreateWorkspaceDto = z.infer<typeof createWorkspaceDto>;
 export type UpdateWorkspaceDto = z.infer<typeof updateWorkspaceDto>;
 export type AddMemberDto = z.infer<typeof addMemberDto>;
 export type UpdateMemberRoleDto = z.infer<typeof updateMemberRoleDto>;
+export type InviteByEmailDto = z.infer<typeof inviteByEmailDto>;

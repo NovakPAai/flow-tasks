@@ -143,6 +143,17 @@ export interface Checklist {
   items: ChecklistItem[];
 }
 
+export interface TaskHistory {
+  id: string;
+  taskId: string;
+  userId: string;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  createdAt: string;
+  user: Pick<User, 'id' | 'name' | 'avatar'>;
+}
+
 export interface Task {
   id: string;
   boardId: string;

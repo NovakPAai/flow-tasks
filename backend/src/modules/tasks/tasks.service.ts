@@ -227,27 +227,61 @@ export async function getSubtree(taskId: string, userId: string) {
   });
 }
 
+// ─── History helper ───────────────────────────────────────────────────────────
+
+type HistoryRecord = { taskId: string; userId: string; field: string; oldValue: string | null; newValue: string | null };
+
+function makeHistoryEntries(
+  taskId: string,
+  userId: string,
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+): HistoryRecord[] {
+  const entries: HistoryRecord[] = [];
+  for (const field of Object.keys(after)) {
+    const oldVal = before[field] !== undefined && before[field] !== null ? String(before[field]) : null;
+    const newVal = after[field] !== undefined && after[field] !== null ? String(after[field]) : null;
+    if (oldVal !== newVal) {
+      entries.push({ taskId, userId, field, oldValue: oldVal, newValue: newVal });
+    }
+  }
+  return entries;
+}
+
 // ─── Update task ──────────────────────────────────────────────────────────────
 
 export async function updateTask(taskId: string, userId: string, dto: UpdateTaskDto) {
-  await getTaskWithAccess(taskId, userId);
+  const { task: current } = await getTaskWithAccess(taskId, userId);
 
-  return prisma.task.update({
-    where: { id: taskId },
-    data: {
-      ...(dto.title !== undefined && { title: dto.title }),
-      ...(dto.description !== undefined && { description: dto.description }),
-      ...(dto.priority !== undefined && { priority: dto.priority }),
-      ...(dto.dueDate !== undefined && { dueDate: dto.dueDate ? new Date(dto.dueDate) : null }),
-      ...(dto.startDate !== undefined && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
-      ...(dto.assigneeId !== undefined && { assigneeId: dto.assigneeId }),
-    },
-    include: {
-      status: true,
-      assignee: { select: { id: true, name: true, avatar: true } },
-      _count: { select: { children: true } },
-    },
-  });
+  const data: Record<string, unknown> = {
+    ...(dto.title !== undefined && { title: dto.title }),
+    ...(dto.description !== undefined && { description: dto.description }),
+    ...(dto.priority !== undefined && { priority: dto.priority }),
+    ...(dto.dueDate !== undefined && { dueDate: dto.dueDate ? new Date(dto.dueDate) : null }),
+    ...(dto.startDate !== undefined && { startDate: dto.startDate ? new Date(dto.startDate) : null }),
+    ...(dto.assigneeId !== undefined && { assigneeId: dto.assigneeId }),
+  };
+
+  const before: Record<string, unknown> = {};
+  for (const key of Object.keys(data)) {
+    before[key] = (current as Record<string, unknown>)[key] ?? null;
+  }
+  const historyEntries = makeHistoryEntries(taskId, userId, before, data);
+
+  const [updated] = await prisma.$transaction([
+    prisma.task.update({
+      where: { id: taskId },
+      data,
+      include: {
+        status: true,
+        assignee: { select: { id: true, name: true, avatar: true } },
+        _count: { select: { children: true } },
+      },
+    }),
+    ...historyEntries.map((e) => prisma.taskHistory.create({ data: e })),
+  ]);
+
+  return updated;
 }
 
 // ─── Move task (status transition) ────────────────────────────────────────────
@@ -279,14 +313,33 @@ export async function moveTask(taskId: string, userId: string, toStatusId: strin
   });
   const orderIndex = (maxOrder._max.orderIndex ?? -1) + 1;
 
-  return prisma.task.update({
-    where: { id: taskId },
-    data: { statusId: toStatusId, orderIndex },
-    include: {
-      status: true,
-      assignee: { select: { id: true, name: true, avatar: true } },
-      _count: { select: { children: true } },
-    },
+  const [updated] = await prisma.$transaction([
+    prisma.task.update({
+      where: { id: taskId },
+      data: { statusId: toStatusId, orderIndex },
+      include: {
+        status: true,
+        assignee: { select: { id: true, name: true, avatar: true } },
+        _count: { select: { children: true } },
+      },
+    }),
+    prisma.taskHistory.create({
+      data: { taskId, userId, field: 'statusId', oldValue: fromStatusId, newValue: toStatusId },
+    }),
+  ]);
+
+  return updated;
+}
+
+// ─── Task history ─────────────────────────────────────────────────────────────
+
+export async function getTaskHistory(taskId: string, userId: string) {
+  await getTaskWithAccess(taskId, userId);
+
+  return prisma.taskHistory.findMany({
+    where: { taskId },
+    orderBy: { createdAt: 'asc' },
+    include: { user: { select: { id: true, name: true, avatar: true } } },
   });
 }
 

@@ -27,6 +27,7 @@ model User {
   createdTasks         Task[]            @relation("taskCreator")
   assignedTasks        Task[]            @relation("taskAssignee")
   comments             Comment[]
+  taskHistories        TaskHistory[]
 
   @@map("users")
 }
@@ -205,6 +206,7 @@ model Task {
   labels     TaskLabel[]
   comments   Comment[]
   checklists Checklist[]
+  history    TaskHistory[]
 
   @@index([boardId, statusId, orderIndex])
   @@index([parentId])
@@ -289,4 +291,22 @@ model ChecklistItem {
   checklist Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
 
   @@map("checklist_items")
+}
+
+// ─── Task History ─────────────────────────────────────────────────────────────
+
+model TaskHistory {
+  id        String   @id @default(uuid())
+  taskId    String
+  userId    String
+  field     String   // e.g. "title", "statusId", "priority", "assigneeId", "dueDate", "description"
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@map("task_history")
 }

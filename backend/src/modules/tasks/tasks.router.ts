@@ -63,6 +63,12 @@ router.patch('/:id/move', validate(moveTaskDto), async (req: AuthRequest, res, n
   } catch (e) { next(e); }
 });
 
+router.get('/:id/history', async (req: AuthRequest, res, next) => {
+  try {
+    res.json(await tasks.getTaskHistory(String(req.params.id), req.user!.userId));
+  } catch (e) { next(e); }
+});
+
 router.delete('/:id', async (req: AuthRequest, res, next) => {
   try {
     await tasks.deleteTask(String(req.params.id), req.user!.userId);

@@ -46,6 +46,24 @@ export async function addMember(
   return data;
 }
 
+export async function updateMemberRole(
+  workspaceId: string,
+  userId: string,
+  role: 'OWNER' | 'MEMBER' | 'VIEWER',
+): Promise<WorkspaceMember> {
+  const { data } = await api.patch<WorkspaceMember>(`/workspaces/${workspaceId}/members/${userId}`, { role });
+  return data;
+}
+
 export async function removeMember(workspaceId: string, userId: string): Promise<void> {
   await api.delete(`/workspaces/${workspaceId}/members/${userId}`);
+}
+
+export async function inviteByEmail(
+  workspaceId: string,
+  email: string,
+  role: 'OWNER' | 'MEMBER' | 'VIEWER' = 'MEMBER',
+): Promise<WorkspaceMember> {
+  const { data } = await api.post<WorkspaceMember>(`/workspaces/${workspaceId}/invite`, { email, role });
+  return data;
 }
