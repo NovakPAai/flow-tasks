@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  Collapse, Drawer, Typography, Tag, Spin, Button, Select, Avatar,
+  Collapse, DatePicker, Drawer, Typography, Tag, Spin, Button, Select, Avatar,
   Divider, Input, message, Popconfirm,
 } from 'antd';
+import dayjs from 'dayjs';
 import { DeleteOutlined, BranchesOutlined, HistoryOutlined } from '@ant-design/icons';
-import type { Task, WorkflowStatus, Label, TaskLabel, Comment, Checklist } from '../types';
+import type { Task, WorkflowStatus, WorkspaceMember, Label, TaskLabel, Comment, Checklist } from '../types';
 import * as tasksApi from '../api/tasks';
 import CommentThread from './CommentThread';
 import ChecklistBlock from './ChecklistBlock';
@@ -27,6 +28,7 @@ const PRIORITY_COLOR: Record<string, string> = {
 interface Props {
   taskId: string | null;
   statuses: WorkflowStatus[];
+  members?: WorkspaceMember[];
   workspaceId?: string;
   workspaceLabels?: Label[];
   onWorkspaceLabelCreated?: (label: Label) => void;
@@ -36,7 +38,7 @@ interface Props {
 }
 
 export default function TaskDrawer({
-  taskId, statuses, workspaceId, workspaceLabels = [],
+  taskId, statuses, members = [], workspaceId, workspaceLabels = [],
   onWorkspaceLabelCreated, onClose, onUpdated, onDeleted,
 }: Props) {
   const [task, setTask] = useState<Task | null>(null);
@@ -196,19 +198,52 @@ export default function TaskDrawer({
             </div>
           </div>
 
-          {/* Assignee */}
-          <div style={{ marginBottom: 20 }}>
-            <Text style={{ color: '#4A5578', fontSize: 11, display: 'block', marginBottom: 4 }}>ИСПОЛНИТЕЛЬ</Text>
-            {task.assignee ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Avatar size={24} style={{ background: '#4F6EF7', fontSize: 11 }}>
-                  {task.assignee.name?.[0]?.toUpperCase()}
-                </Avatar>
-                <Text style={{ color: '#E2E8F8' }}>{task.assignee.name}</Text>
-              </div>
-            ) : (
-              <Text style={{ color: '#4A5578' }}>Не назначен</Text>
-            )}
+          {/* Assignee + Due date */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1 }}>
+              <Text style={{ color: '#4A5578', fontSize: 11, display: 'block', marginBottom: 4 }}>ИСПОЛНИТЕЛЬ</Text>
+              {members.length > 0 ? (
+                <Select
+                  value={task.assigneeId ?? null}
+                  style={{ width: '100%' }}
+                  disabled={saving}
+                  allowClear
+                  placeholder="Не назначен"
+                  onChange={(v) => save({ assigneeId: v ?? null })}
+                  options={members.map((m) => ({
+                    value: m.userId,
+                    label: (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Avatar size={16} style={{ background: '#4F6EF7', fontSize: 9, flexShrink: 0 }}>
+                          {m.user.name?.[0]?.toUpperCase()}
+                        </Avatar>
+                        {m.user.name}
+                      </span>
+                    ),
+                  }))}
+                />
+              ) : task.assignee ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Avatar size={24} style={{ background: '#4F6EF7', fontSize: 11 }}>
+                    {task.assignee.name?.[0]?.toUpperCase()}
+                  </Avatar>
+                  <Text style={{ color: '#E2E8F8' }}>{task.assignee.name}</Text>
+                </div>
+              ) : (
+                <Text style={{ color: '#4A5578' }}>Не назначен</Text>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <Text style={{ color: '#4A5578', fontSize: 11, display: 'block', marginBottom: 4 }}>СРОК</Text>
+              <DatePicker
+                value={task.dueDate ? dayjs(task.dueDate) : null}
+                style={{ width: '100%', background: '#0F1320', borderColor: '#1E2640' }}
+                disabled={saving}
+                allowClear
+                placeholder="Без срока"
+                onChange={(date) => save({ dueDate: date ? date.format('YYYY-MM-DD') : undefined })}
+              />
+            </div>
           </div>
 
           <Divider style={{ borderColor: '#1E2640' }} />

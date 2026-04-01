@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  DragDropContext, Droppable, Draggable, type DropResult,
+  DragDropContext, Droppable, Draggable, type DropResult, type DragStart,
 } from '@hello-pangea/dnd';
 import { Button, Input, Segmented, Spin, Typography, message, type InputRef } from 'antd';
 import {
@@ -81,6 +81,7 @@ export default function BoardPage() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
   const addInputRef = useRef<InputRef | null>(null);
 
   const statuses = board?.workflow.statuses ?? [];
@@ -113,7 +114,12 @@ export default function BoardPage() {
 
   // ─── DnD ──────────────────────────────────────────────────────────────────
 
+  const onDragStart = (start: DragStart) => {
+    setDraggingFromStatusId(start.source.droppableId);
+  };
+
   const onDragEnd = async (result: DropResult) => {
+    setDraggingFromStatusId(null);
     const { source, destination } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -272,18 +278,34 @@ export default function BoardPage() {
         {/* ── Board (Kanban) ── */}
         {viewMode === 'board' && (
           <div style={{ overflowX: 'auto', padding: '24px', height: '100%' }}>
-            <DragDropContext onDragEnd={onDragEnd}>
+            <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
               <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 0 }}>
                 {statuses.map((status) => {
                   const tasks = filteredColumns[status.id] ?? [];
+
+                  // Compute if this column is a valid drop target during drag
+                  const isDropAllowed = !draggingFromStatusId
+                    || draggingFromStatusId === status.id
+                    || !board?.workflow.transitions
+                    || board.workflow.transitions.some(
+                      (t) => t.fromStatusId === draggingFromStatusId && t.toStatusId === status.id,
+                    );
+
                   return (
-                    <div key={status.id} style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div
+                      key={status.id}
+                      style={{
+                        width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8,
+                        opacity: draggingFromStatusId && !isDropAllowed ? 0.4 : 1,
+                        transition: 'opacity 0.15s',
+                      }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', marginBottom: 4 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: status.color, flexShrink: 0 }} />
                         <Text style={{ color: '#8B95B0', fontWeight: 600, fontSize: 13, flex: 1 }}>{status.name}</Text>
                         <Text style={{ color: '#4A5578', fontSize: 12 }}>{tasks.length}</Text>
                       </div>
-                      <Droppable droppableId={status.id}>
+                      <Droppable droppableId={status.id} isDropDisabled={!!draggingFromStatusId && !isDropAllowed}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
@@ -368,6 +390,7 @@ export default function BoardPage() {
       <TaskDrawer
         taskId={selectedTaskId}
         statuses={statuses}
+        members={members}
         workspaceId={board.workspaceId}
         workspaceLabels={labels}
         onWorkspaceLabelCreated={(label) => setLabels((prev) => [...prev, label])}
