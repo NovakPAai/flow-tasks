@@ -1,0 +1,170 @@
+import { prisma } from '../../prisma/client.js';
+import { AppError } from '../../shared/middleware/error-handler.js';
+import { createDefaultWorkflow } from '../workflows/workflows.service.js';
+import type { CreateWorkspaceDto, UpdateWorkspaceDto, AddMemberDto, UpdateMemberRoleDto } from './workspaces.dto.js';
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+async function assertMember(workspaceId: string, userId: string) {
+  const member = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
+  });
+  if (!member) throw new AppError(403, 'Access denied');
+  return member;
+}
+
+async function assertOwner(workspaceId: string, userId: string) {
+  const member = await assertMember(workspaceId, userId);
+  if (member.role !== 'OWNER') throw new AppError(403, 'Only workspace owners can perform this action');
+  return member;
+}
+
+// ─── Workspace CRUD ──────────────────────────────────────────────────────────
+
+export async function listMyWorkspaces(userId: string) {
+  const memberships = await prisma.workspaceMember.findMany({
+    where: { userId },
+    include: {
+      workspace: {
+        include: {
+          _count: { select: { members: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return memberships.map((m) => ({
+    ...m.workspace,
+    role: m.role,
+    memberCount: m.workspace._count.members,
+  }));
+}
+
+export async function createWorkspace(userId: string, dto: CreateWorkspaceDto) {
+  const slugExists = await prisma.workspace.findUnique({ where: { slug: dto.slug } });
+  if (slugExists) throw new AppError(409, 'Slug already taken');
+
+  const workspace = await prisma.workspace.create({
+    data: {
+      name: dto.name,
+      slug: dto.slug,
+      description: dto.description,
+      creatorId: userId,
+      members: {
+        create: { userId, role: 'OWNER' },
+      },
+    },
+    include: {
+      members: { include: { user: { select: { id: true, name: true, email: true, avatar: true } } } },
+    },
+  });
+
+  // Auto-create default workflow
+  await createDefaultWorkflow(workspace.id);
+
+  return workspace;
+}
+
+export async function getWorkspace(workspaceId: string, userId: string) {
+  await assertMember(workspaceId, userId);
+
+  return prisma.workspace.findUniqueOrThrow({
+    where: { id: workspaceId },
+    include: {
+      members: {
+        include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+        orderBy: { createdAt: 'asc' },
+      },
+      workflows: {
+        orderBy: { createdAt: 'asc' },
+        include: { statuses: { orderBy: { position: 'asc' } } },
+      },
+      _count: { select: { members: true } },
+    },
+  });
+}
+
+export async function updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
+  await assertOwner(workspaceId, userId);
+
+  return prisma.workspace.update({
+    where: { id: workspaceId },
+    data: dto,
+  });
+}
+
+export async function deleteWorkspace(workspaceId: string, userId: string) {
+  await assertOwner(workspaceId, userId);
+  await prisma.workspace.delete({ where: { id: workspaceId } });
+}
+
+// ─── Members ─────────────────────────────────────────────────────────────────
+
+export async function listMembers(workspaceId: string, userId: string) {
+  await assertMember(workspaceId, userId);
+
+  return prisma.workspaceMember.findMany({
+    where: { workspaceId },
+    include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+}
+
+export async function addMember(workspaceId: string, requesterId: string, dto: AddMemberDto) {
+  await assertOwner(workspaceId, requesterId);
+
+  const targetUser = await prisma.user.findUnique({ where: { id: dto.userId } });
+  if (!targetUser) throw new AppError(404, 'User not found');
+
+  const existing = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId: dto.userId } },
+  });
+  if (existing) throw new AppError(409, 'User is already a member');
+
+  return prisma.workspaceMember.create({
+    data: { workspaceId, userId: dto.userId, role: dto.role },
+    include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+  });
+}
+
+export async function updateMemberRole(
+  workspaceId: string,
+  requesterId: string,
+  targetUserId: string,
+  dto: UpdateMemberRoleDto,
+) {
+  await assertOwner(workspaceId, requesterId);
+
+  if (targetUserId === requesterId && dto.role !== 'OWNER') {
+    throw new AppError(400, 'Cannot demote yourself. Transfer ownership first.');
+  }
+
+  const member = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+  });
+  if (!member) throw new AppError(404, 'Member not found');
+
+  return prisma.workspaceMember.update({
+    where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+    data: { role: dto.role },
+    include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+  });
+}
+
+export async function removeMember(workspaceId: string, requesterId: string, targetUserId: string) {
+  await assertOwner(workspaceId, requesterId);
+
+  if (targetUserId === requesterId) {
+    throw new AppError(400, 'Cannot remove yourself from workspace');
+  }
+
+  const member = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+  });
+  if (!member) throw new AppError(404, 'Member not found');
+
+  await prisma.workspaceMember.delete({
+    where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
+  });
+}

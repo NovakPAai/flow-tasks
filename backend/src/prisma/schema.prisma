@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -19,7 +21,9 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  refreshTokens RefreshToken[]
+  refreshTokens    RefreshToken[]
+  workspaceMemberships WorkspaceMember[]
+  createdWorkspaces    Workspace[]       @relation("WorkspaceCreator")
 
   @@map("users")
 }
@@ -34,4 +38,105 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+}
+
+// ─── Workspaces ──────────────────────────────────────────────────────────────
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator   User              @relation("WorkspaceCreator", fields: [creatorId], references: [id])
+  members   WorkspaceMember[]
+  workflows Workflow[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  OWNER
+  MEMBER
+  VIEWER
+}
+
+// ─── Workflows ───────────────────────────────────────────────────────────────
+
+model Workflow {
+  id          String       @id @default(uuid())
+  workspaceId String
+  name        String
+  mode        WorkflowMode @default(BIDIRECTIONAL)
+  isDefault   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  statuses    WorkflowStatus[]
+  transitions WorkflowTransition[]
+
+  @@map("workflows")
+}
+
+enum WorkflowMode {
+  FORWARD_ONLY
+  BIDIRECTIONAL
+  CUSTOM
+}
+
+model WorkflowStatus {
+  id         String         @id @default(uuid())
+  workflowId String
+  name       String
+  color      String
+  position   Int
+  category   StatusCategory @default(OPEN)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  workflow        Workflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  transitionsFrom WorkflowTransition[] @relation("FromStatus")
+  transitionsTo   WorkflowTransition[] @relation("ToStatus")
+
+  @@index([workflowId, position])
+  @@map("workflow_statuses")
+}
+
+enum StatusCategory {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+model WorkflowTransition {
+  id           String @id @default(uuid())
+  workflowId   String
+  fromStatusId String
+  toStatusId   String
+
+  workflow   Workflow       @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  fromStatus WorkflowStatus @relation("FromStatus", fields: [fromStatusId], references: [id], onDelete: Cascade)
+  toStatus   WorkflowStatus @relation("ToStatus", fields: [toStatusId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, fromStatusId, toStatusId])
+  @@map("workflow_transitions")
 }

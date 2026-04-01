@@ -4,13 +4,19 @@ import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
+import WorkspacesPage from './pages/WorkspacesPage';
+import WorkspaceDashboardPage from './pages/WorkspaceDashboardPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><Spin size="large" /></div>;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#03050F' }}>
+        <Spin size="large" />
+      </div>
+    );
   }
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
@@ -29,15 +35,24 @@ export default function App() {
         token: {
           colorPrimary: '#4F6EF7',
           colorBgContainer: '#0F1320',
-          colorBgElevated: '#0F1320',
+          colorBgElevated: '#161C30',
+          colorBgBase: '#03050F',
+          colorText: '#E2E8F8',
+          colorTextSecondary: '#8B95B0',
+          colorBorder: '#1E2640',
           fontFamily: 'Inter, sans-serif',
+          borderRadius: 8,
         },
       }}
     >
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-          <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+          <Route path="/login" element={user ? <Navigate to="/workspaces" replace /> : <LoginPage />} />
+          <Route path="/" element={<Navigate to="/workspaces" replace />} />
+          <Route path="/workspaces" element={<PrivateRoute><WorkspacesPage /></PrivateRoute>} />
+          <Route path="/w/:slug" element={<PrivateRoute><WorkspaceDashboardPage /></PrivateRoute>} />
+          {/* Legacy — kept for now */}
+          <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>

@@ -4,6 +4,12 @@ import helmet from 'helmet';
 
 import { errorHandler } from './shared/middleware/error-handler.js';
 import authRouter from './modules/auth/auth.router.js';
+import workspacesRouter from './modules/workspaces/workspaces.router.js';
+import workflowsRouter, {
+  workspaceWorkflowsRouter,
+  workflowStatusesRouter,
+  workflowTransitionsRouter,
+} from './modules/workflows/workflows.router.js';
 
 export function createApp() {
   const app = express();
@@ -24,6 +30,11 @@ export function createApp() {
 
   // Routes
   app.use('/api/auth', authRouter);
+  app.use('/api/workspaces', workspacesRouter);
+  app.use('/api/workspaces/:wid/workflows', workspaceWorkflowsRouter);
+  app.use('/api/workflows', workflowsRouter);
+  app.use('/api/workflow-statuses', workflowStatusesRouter);
+  app.use('/api/workflow-transitions', workflowTransitionsRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);
