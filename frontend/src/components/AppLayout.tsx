@@ -1,187 +1,288 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Avatar, Button, Dropdown, Select, Typography, Tooltip } from 'antd';
-import {
-  LogoutOutlined, SettingOutlined, CheckCircleOutlined,
-  AppstoreOutlined, PlusOutlined,
-} from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { message } from 'antd';
 import { useAuthStore } from '../store/auth.store';
 import { useWorkspaceStore } from '../store/workspace.store';
+import { useThemeStore } from '../store/theme.store';
 
-const { Text } = Typography;
+interface Props { children: React.ReactNode }
 
-interface Props {
-  children: React.ReactNode;
+function initials(name: string): string {
+  return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
 }
 
+// ─── Logo icon (4 squares) ────────────────────────────────────────────────────
+function GridIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <rect x="1" y="1" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
+      <rect x="9" y="1" width="6" height="6" rx="1.5" fill="#FFFFFF" opacity="0.55"/>
+      <rect x="1" y="9" width="6" height="6" rx="1.5" fill="#FFFFFF" opacity="0.55"/>
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
+    </svg>
+  );
+}
+
+// ─── User dropdown menu ───────────────────────────────────────────────────────
+function UserMenu({ user, onLogout, onSettings, hasSettings, navBg, border, textPrimary, textMuted, onClose }: {
+  user: { name: string; email?: string };
+  onLogout: () => void;
+  onSettings: () => void;
+  hasSettings: boolean;
+  navBg: string; border: string; textPrimary: string; textMuted: string;
+  onClose: () => void;
+}) {
+  const menuBg = navBg === '#0A0D1A' ? '#0F1320' : '#FFFFFF';
+  return (
+    <div
+      style={{
+        backgroundColor: menuBg, border: `1px solid ${border}`, borderRadius: 10,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 200,
+        padding: '6px 0', position: 'absolute', right: 0, top: 'calc(100% + 8px)', zIndex: 200,
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      {/* User info */}
+      <div style={{ padding: '10px 16px 8px' }}>
+        <div style={{ color: textPrimary, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, fontWeight: 600, lineHeight: '18px' }}>
+          {user.name}
+        </div>
+        {user.email && (
+          <div style={{ color: textMuted, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, lineHeight: '16px', marginTop: 2 }}>
+            {user.email}
+          </div>
+        )}
+      </div>
+      <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
+      {hasSettings && (
+        <button onClick={() => { onSettings(); onClose(); }} style={{
+          background: 'none', border: 'none', borderRadius: 6, color: textMuted,
+          cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
+          fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
+        }}>
+          Настройки workspace
+        </button>
+      )}
+      <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
+      <button onClick={() => { onLogout(); onClose(); }} style={{
+        background: 'none', border: 'none', borderRadius: 6, color: '#F87171',
+        cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
+        fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
+      }}>
+        Выйти
+      </button>
+    </div>
+  );
+}
+
+// ─── Workspace selector dropdown ──────────────────────────────────────────────
+function WorkspaceSelector({ workspaces, current, onSelect, navBg, border, textPrimary, onClose }: {
+  workspaces: Array<{ id: string; name: string; slug: string }>;
+  current: { id: string; name: string; slug: string } | null;
+  onSelect: (slug: string) => void;
+  navBg: string; border: string; textPrimary: string;
+  onClose: () => void;
+}) {
+  const menuBg = navBg === '#0A0D1A' ? '#0F1320' : '#FFFFFF';
+  return (
+    <div
+      style={{
+        backgroundColor: menuBg, border: `1px solid ${border}`, borderRadius: 10,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 200,
+        padding: '6px 0', position: 'absolute', left: 0, top: 'calc(100% + 8px)', zIndex: 200,
+      }}
+      onClick={e => e.stopPropagation()}
+    >
+      {workspaces.map(ws => (
+        <button key={ws.id} onClick={() => { onSelect(ws.slug); onClose(); }} style={{
+          alignItems: 'center', background: ws.id === current?.id ? (navBg === '#0A0D1A' ? '#1C2236' : '#EDE9FE') : 'none',
+          border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex',
+          gap: 8, padding: '8px 12px', textAlign: 'left', width: '100%',
+        }}>
+          <div style={{
+            alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 4,
+            display: 'flex', flexShrink: 0, height: 18, justifyContent: 'center', width: 18,
+          }}>
+            <span style={{ color: '#FFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 9, fontWeight: 700 }}>
+              {ws.name[0]?.toUpperCase()}
+            </span>
+          </div>
+          <span style={{ color: textPrimary, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px' }}>
+            {ws.name}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── AppLayout ────────────────────────────────────────────────────────────────
 export default function AppLayout({ children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { workspaces, current, load, setCurrent } = useWorkspaceStore();
+  const { mode } = useThemeStore();
 
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [wsMenuOpen, setWsMenuOpen] = useState(false);
+
+  // ── Design tokens ──────────────────────────────────────────────────────────
+  const isDark = mode !== 'light';
+  const navBg      = isDark ? '#0A0D1A' : '#FDFCFF';
+  const navBorder  = isDark ? '#1C2236' : '#E8E5F0';
+  const sepColor   = isDark ? '#1C2236' : '#E8E5F0';
+  const logoText   = isDark ? '#E2E8F8' : '#1A1A2E';
+  const wsSelectorBg     = isDark ? '#0F1320' : '#F5F3FF';
+  const wsSelectorBorder = isDark ? '#1C2236' : '#E8E5F0';
+  const wsSelectorText   = isDark ? '#E2E8F8' : '#1A1A2E';
+  const tabActiveBg   = isDark ? '#1C2236' : '#EDE9FE';
+  const tabActiveText = '#4F6EF7';
+  const tabIdleText   = isDark ? '#8B95B0' : '#6B7194';
+  const rootBg        = isDark ? '#03050F' : '#F5F3FF';
+
+  // ── Logic ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (workspaces.length === 0) load();
   }, [workspaces.length, load]);
 
-  // Sync current workspace from URL slug
   const slugMatch = location.pathname.match(/^\/w\/([^/]+)/);
   const urlSlug = slugMatch?.[1];
   useEffect(() => {
     if (urlSlug && workspaces.length > 0) {
-      const found = workspaces.find((w) => w.slug === urlSlug);
+      const found = workspaces.find(w => w.slug === urlSlug);
       if (found && found.id !== current?.id) setCurrent(found);
     }
   }, [urlSlug, workspaces, current?.id, setCurrent]);
 
+  useEffect(() => {
+    const close = () => { setUserMenuOpen(false); setWsMenuOpen(false); };
+    if (userMenuOpen || wsMenuOpen) document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [userMenuOpen, wsMenuOpen]);
+
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    try { await logout(); navigate('/login'); }
+    catch { message.error('Ошибка выхода'); }
   };
 
+  const isWorkspace = !!urlSlug;
+  const isBoards = isWorkspace && !location.pathname.includes('/settings');
   const isMyTasks = location.pathname === '/my-tasks';
-  const isWorkspaces = location.pathname === '/workspaces';
 
-  const avatarMenu = {
-    items: [
-      {
-        key: 'profile',
-        label: (
-          <div style={{ padding: '4px 0' }}>
-            <Text style={{ color: '#E2E8F8', display: 'block', fontWeight: 600 }}>{user?.name}</Text>
-            <Text style={{ color: '#4A5578', fontSize: 11 }}>{user?.email}</Text>
-          </div>
-        ),
-        disabled: true,
-      },
-      { type: 'divider' as const },
-      {
-        key: 'settings',
-        icon: <SettingOutlined />,
-        label: 'Настройки workspace',
-        disabled: !current,
-        onClick: () => current && navigate(`/w/${current.slug}/settings`),
-      },
-      { type: 'divider' as const },
-      {
-        key: 'logout',
-        icon: <LogoutOutlined />,
-        label: 'Выйти',
-        danger: true,
-        onClick: handleLogout,
-      },
-    ],
-  };
+  const userInitials = user ? initials(user.name) : '?';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#03050F' }}>
-      {/* Topbar */}
+    <div style={{ backgroundColor: rootBg, display: 'flex', flexDirection: 'column', position: 'fixed', inset: 0 }}>
+      {/* ── Topbar ── */}
       <div style={{
-        height: 52,
-        background: '#060914',
-        borderBottom: '1px solid #1A2035',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 20px',
-        gap: 12,
-        flexShrink: 0,
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
+        alignItems: 'center', backgroundColor: navBg, borderBottom: `1px solid ${navBorder}`,
+        display: 'flex', flexShrink: 0, gap: 16, height: 56,
+        paddingInline: 24, position: 'relative', zIndex: 100,
       }}>
         {/* Logo */}
-        <Link to="/workspaces" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
-          <div style={{
-            width: 26, height: 26, borderRadius: 7,
-            background: 'linear-gradient(135deg, #4F6EF7 0%, #7B5FE8 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <span style={{ color: '#fff', fontSize: 13, fontWeight: 800, fontFamily: 'Space Grotesk' }}>F</span>
+        <div
+          onClick={() => navigate('/workspaces')}
+          style={{ alignItems: 'center', cursor: 'pointer', display: 'flex', gap: 8 }}
+        >
+          <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 8, display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}>
+            <GridIcon/>
           </div>
-          <Text style={{ color: '#E2E8F8', fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 15 }}>
+          <span style={{ color: logoText, fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: '20px' }}>
             FlowTask
-          </Text>
-        </Link>
+          </span>
+        </div>
 
-        <div style={{ width: 1, height: 20, background: '#1E2640', flexShrink: 0 }} />
+        {/* Separator + workspace selector (only on workspace pages) */}
+        {isWorkspace && current && (
+          <>
+            <div style={{ backgroundColor: sepColor, flexShrink: 0, height: 20, width: 1 }}/>
 
-        {/* Workspace selector */}
-        {workspaces.length > 0 && (
-          <Select
-            value={current?.id ?? undefined}
-            placeholder="Выбрать пространство"
-            onChange={(id) => {
-              const ws = workspaces.find((w) => w.id === id);
-              if (ws) { setCurrent(ws); navigate(`/w/${ws.slug}`); }
-            }}
-            options={workspaces.map((w) => ({ value: w.id, label: w.name }))}
-            style={{ minWidth: 160, color: '#E2E8F8' }}
-            size="small"
-            variant="borderless"
-          />
+            {/* Workspace dropdown */}
+            <div style={{ position: 'relative' }}>
+              <div
+                onClick={e => { e.stopPropagation(); setWsMenuOpen(v => !v); setUserMenuOpen(false); }}
+                style={{
+                  alignItems: 'center', backgroundColor: wsSelectorBg,
+                  border: `1px solid ${wsSelectorBorder}`, borderRadius: 8,
+                  cursor: 'pointer', display: 'flex', gap: 6, paddingBlock: 5, paddingInline: 12,
+                }}
+              >
+                <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 4, display: 'flex', flexShrink: 0, height: 18, justifyContent: 'center', width: 18 }}>
+                  <span style={{ color: '#FFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 9, fontWeight: 700 }}>
+                    {current.name[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <span style={{ color: wsSelectorText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px' }}>
+                  {current.name}
+                </span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke={tabIdleText} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              {wsMenuOpen && (
+                <WorkspaceSelector
+                  workspaces={workspaces} current={current}
+                  onSelect={slug => { const ws = workspaces.find(w => w.slug === slug); if (ws) { setCurrent(ws); navigate(`/w/${ws.slug}`); } }}
+                  navBg={navBg} border={navBorder} textPrimary={wsSelectorText}
+                  onClose={() => setWsMenuOpen(false)}
+                />
+              )}
+            </div>
+
+            {/* Boards tab */}
+            <div
+              onClick={() => navigate(`/w/${current.slug}`)}
+              style={{
+                alignItems: 'center', backgroundColor: isBoards ? tabActiveBg : 'transparent',
+                borderRadius: 8, cursor: 'pointer', display: 'flex', gap: 4,
+                paddingBlock: 5, paddingInline: 12,
+              }}
+            >
+              <span style={{ color: isBoards ? tabActiveText : tabIdleText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, fontWeight: isBoards ? 500 : 400, lineHeight: '16px' }}>
+                Boards
+              </span>
+            </div>
+
+            {/* My Tasks tab */}
+            <div
+              onClick={() => navigate('/my-tasks')}
+              style={{ borderRadius: 8, cursor: 'pointer', paddingBlock: 5, paddingInline: 12 }}
+            >
+              <span style={{ color: isMyTasks ? tabActiveText : tabIdleText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px' }}>
+                My Tasks
+              </span>
+            </div>
+          </>
         )}
 
-        {/* Current workspace boards link */}
-        {current && (
-          <Button
-            type="text"
-            size="small"
-            icon={<AppstoreOutlined />}
-            onClick={() => navigate(`/w/${current.slug}`)}
-            style={{ color: isWorkspaces ? '#E2E8F8' : '#8B95B0' }}
+        <div style={{ flex: 1 }}/>
+
+        {/* Avatar */}
+        <div style={{ position: 'relative' }}>
+          <div
+            onClick={e => { e.stopPropagation(); setUserMenuOpen(v => !v); setWsMenuOpen(false); }}
+            style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: '50%', cursor: 'pointer', display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}
           >
-            Доски
-          </Button>
-        )}
-
-        {/* New workspace */}
-        {workspaces.length === 0 && (
-          <Button
-            type="text"
-            size="small"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/workspaces')}
-            style={{ color: '#4A5578' }}
-          >
-            Создать пространство
-          </Button>
-        )}
-
-        <div style={{ flex: 1 }} />
-
-        {/* My Tasks */}
-        <Tooltip title="Мои задачи">
-          <Button
-            type="text"
-            size="small"
-            icon={<CheckCircleOutlined />}
-            onClick={() => navigate('/my-tasks')}
-            style={{
-              color: isMyTasks ? '#4F6EF7' : '#8B95B0',
-              background: isMyTasks ? '#4F6EF722' : 'transparent',
-              borderRadius: 6,
-            }}
-          >
-            Мои задачи
-          </Button>
-        </Tooltip>
-
-        <div style={{ width: 1, height: 20, background: '#1E2640', flexShrink: 0 }} />
-
-        {/* Avatar / user menu */}
-        <Dropdown menu={avatarMenu} trigger={['click']} placement="bottomRight">
-          <Avatar
-            size={28}
-            src={user?.avatar}
-            style={{ background: '#4F6EF7', fontSize: 11, cursor: 'pointer', flexShrink: 0 }}
-          >
-            {user?.name?.[0]?.toUpperCase()}
-          </Avatar>
-        </Dropdown>
+            <span style={{ color: '#FFFFFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 700, lineHeight: '16px' }}>
+              {userInitials}
+            </span>
+          </div>
+          {userMenuOpen && user && (
+            <UserMenu
+              user={user}
+              onLogout={handleLogout}
+              onSettings={() => current && navigate(`/w/${current.slug}/settings`)}
+              hasSettings={!!current}
+              navBg={navBg} border={navBorder} textPrimary={wsSelectorText} textMuted={tabIdleText}
+              onClose={() => setUserMenuOpen(false)}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Page content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* ── Page content ── */}
+      <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'auto' }}>
         {children}
       </div>
     </div>

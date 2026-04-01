@@ -3,12 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   DragDropContext, Droppable, Draggable, type DropResult, type DragStart,
 } from '@hello-pangea/dnd';
-import { Button, Input, Segmented, Spin, Typography, message, type InputRef } from 'antd';
-import {
-  ArrowLeftOutlined, PlusOutlined,
-  AppstoreOutlined, UnorderedListOutlined, CalendarOutlined,
-} from '@ant-design/icons';
+import { message } from 'antd';
 import type { Board, Task, WorkflowStatus, WorkspaceMember, Label } from '../types';
+import { useThemeStore } from '../store/theme.store';
 import * as boardsApi from '../api/boards';
 import * as tasksApi from '../api/tasks';
 import * as workspacesApi from '../api/workspaces';
@@ -18,8 +15,6 @@ import TaskDrawer from '../components/TaskDrawer';
 import BoardListView from '../components/BoardListView';
 import BoardCalendarView from '../components/BoardCalendarView';
 import FilterBar, { type FilterState, EMPTY_FILTERS } from '../components/FilterBar';
-
-const { Text } = Typography;
 
 type ViewMode = 'board' | 'list' | 'calendar';
 type Columns = Record<string, Task[]>;
@@ -31,9 +26,7 @@ function groupByStatus(tasks: Task[], statuses: WorkflowStatus[]): Columns {
     if (cols[t.statusId]) cols[t.statusId].push(t);
     else cols[t.statusId] = [t];
   }
-  for (const id of Object.keys(cols)) {
-    cols[id].sort((a, b) => a.orderIndex - b.orderIndex);
-  }
+  for (const id of Object.keys(cols)) cols[id].sort((a, b) => a.orderIndex - b.orderIndex);
   return cols;
 }
 
@@ -42,12 +35,12 @@ function columnsToList(columns: Columns): Task[] {
 }
 
 function applyFilters(tasks: Task[], f: FilterState): Task[] {
-  return tasks.filter((t) => {
+  return tasks.filter(t => {
     if (f.search && !t.title.toLowerCase().includes(f.search.toLowerCase())) return false;
     if (f.statusId && t.statusId !== f.statusId) return false;
     if (f.priority && t.priority !== f.priority) return false;
     if (f.assigneeId && t.assigneeId !== f.assigneeId) return false;
-    if (f.labelId && !(t.labels ?? []).some((tl) => tl.labelId === f.labelId)) return false;
+    if (f.labelId && !(t.labels ?? []).some(tl => tl.labelId === f.labelId)) return false;
     if (f.duePreset) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -67,10 +60,54 @@ function applyFilters(tasks: Task[], f: FilterState): Task[] {
   });
 }
 
+// ── View icons ─────────────────────────────────────────────────────────────────
+function KanbanIcon({ active, color }: { active: boolean; color: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="1" width="4" height="12" rx="1.5" fill={active ? color : 'currentColor'} opacity={active ? 1 : 0.4}/>
+      <rect x="6" y="1" width="4" height="8" rx="1.5" fill={active ? color : 'currentColor'} opacity={active ? 1 : 0.4}/>
+      <rect x="11" y="1" width="2" height="10" rx="1" fill={active ? color : 'currentColor'} opacity={active ? 1 : 0.3}/>
+    </svg>
+  );
+}
+function ListIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M2 3.5h10M2 7h10M2 10.5h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function CalIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M1 5.5h12M4.5 1v2M9.5 1v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
+  const mode = useThemeStore(s => s.mode);
+  const isDark = mode === 'dark';
 
+  // ── Theme tokens ──────────────────────────────────────────────────────────
+  const pageBg    = isDark ? '#03050F' : '#F5F3FF';
+  const headerBg  = isDark ? '#03050F' : '#F5F3FF';
+  const border    = isDark ? '#1C2236' : '#E8E5F0';
+  const nameColor = isDark ? '#E2E8F8' : '#1A1A2E';
+  const cntBg     = isDark ? '#1C2236' : '#EDE9FE';
+  const cntText   = isDark ? '#8B949E' : '#7C6FA8';
+  const colText   = isDark ? '#E2E8F8' : '#1A1A2E';
+  const addText   = isDark ? '#484F58' : '#9B96B8';
+  const dropOver  = isDark ? '#1C2236' : '#EDE9FE';
+  const inpBg     = isDark ? '#0F1320' : '#FDFCFF';
+  const inpBorder = isDark ? '#4F6EF7' : '#4F6EF7';
+  const viewActive= '#4F6EF7';
+
+  // ── State ─────────────────────────────────────────────────────────────────
   const [board, setBoard] = useState<Board | null>(null);
   const [columns, setColumns] = useState<Columns>({});
   const [loading, setLoading] = useState(true);
@@ -82,10 +119,11 @@ export default function BoardPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
-  const addInputRef = useRef<InputRef | null>(null);
+  const addInputRef = useRef<HTMLInputElement | null>(null);
 
   const statuses = board?.workflow.statuses ?? [];
 
+  // ── Load ──────────────────────────────────────────────────────────────────
   const loadBoard = useCallback(async () => {
     if (!boardId) return;
     try {
@@ -98,22 +136,19 @@ export default function BoardPage() {
 
   useEffect(() => { loadBoard(); }, [loadBoard]);
 
-  // Load workspace members + labels once board is loaded
   useEffect(() => {
     if (!board?.workspaceId) return;
     const wid = board.workspaceId;
-    Promise.all([
-      workspacesApi.listMembers(wid),
-      labelsApi.listLabels(wid),
-    ]).then(([m, l]) => { setMembers(m); setLabels(l); }).catch(() => {});
+    Promise.all([workspacesApi.listMembers(wid), labelsApi.listLabels(wid)])
+      .then(([m, l]) => { setMembers(m); setLabels(l); })
+      .catch(() => {});
   }, [board?.workspaceId]);
 
   useEffect(() => {
     if (addingTo) setTimeout(() => addInputRef.current?.focus(), 50);
   }, [addingTo]);
 
-  // ─── DnD ──────────────────────────────────────────────────────────────────
-
+  // ── DnD ───────────────────────────────────────────────────────────────────
   const onDragStart = (start: DragStart) => {
     setDraggingFromStatusId(start.source.droppableId);
   };
@@ -129,7 +164,7 @@ export default function BoardPage() {
 
     if (fromStatusId !== toStatusId && board?.workflow.transitions) {
       const allowed = board.workflow.transitions.some(
-        (t) => t.fromStatusId === fromStatusId && t.toStatusId === toStatusId,
+        t => t.fromStatusId === fromStatusId && t.toStatusId === toStatusId,
       );
       if (!allowed) { message.warning('Переход не разрешён правилами workflow'); return; }
     }
@@ -162,28 +197,23 @@ export default function BoardPage() {
     }
   };
 
-  // ─── Quick add ────────────────────────────────────────────────────────────
-
+  // ── Quick add ─────────────────────────────────────────────────────────────
   const submitAdd = async (statusId: string) => {
     if (!addTitle.trim()) { setAddingTo(null); return; }
     try {
       const task = await tasksApi.createTask(boardId!, { title: addTitle.trim(), statusId });
-      setColumns((prev) => ({
-        ...prev,
-        [statusId]: [...(prev[statusId] ?? []), task],
-      }));
+      setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), task] }));
       setAddTitle('');
       setAddingTo(null);
     } catch { message.error('Не удалось создать задачу'); }
   };
 
-  // ─── Task updates ─────────────────────────────────────────────────────────
-
+  // ── Task updates ──────────────────────────────────────────────────────────
   const onTaskUpdated = (updated: Task) => {
-    setColumns((prev) => {
+    setColumns(prev => {
       const newCols = { ...prev };
       for (const [sid, tasks] of Object.entries(newCols)) {
-        const idx = tasks.findIndex((t) => t.id === updated.id);
+        const idx = tasks.findIndex(t => t.id === updated.id);
         if (idx !== -1) {
           const arr = [...tasks];
           arr[idx] = { ...updated, status: arr[idx].status };
@@ -202,68 +232,108 @@ export default function BoardPage() {
   };
 
   const onTaskDeleted = (taskId: string) => {
-    setColumns((prev) => {
+    setColumns(prev => {
       const newCols = { ...prev };
       for (const [sid, tasks] of Object.entries(newCols)) {
-        newCols[sid] = tasks.filter((t) => t.id !== taskId);
+        newCols[sid] = tasks.filter(t => t.id !== taskId);
       }
       return newCols;
     });
   };
 
-  // ─── Filtered view ────────────────────────────────────────────────────────
-
+  // ── Filtered data ─────────────────────────────────────────────────────────
   const allTasks = useMemo(() => columnsToList(columns), [columns]);
   const filteredTasks = useMemo(() => applyFilters(allTasks, filters), [allTasks, filters]);
   const filteredColumns = useMemo(() => {
-    const filteredIds = new Set(filteredTasks.map((t) => t.id));
+    const ids = new Set(filteredTasks.map(t => t.id));
     const result: Columns = {};
     for (const [sid, tasks] of Object.entries(columns)) {
-      result[sid] = tasks.filter((t) => filteredIds.has(t.id));
+      result[sid] = tasks.filter(t => ids.has(t.id));
     }
     return result;
   }, [columns, filteredTasks]);
 
+  // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#03050F' }}>
-        <Spin size="large" />
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: pageBg }}>
+        <div style={{ width: 32, height: 32, border: `3px solid ${border}`, borderTopColor: '#4F6EF7', borderRadius: '50%', animation: 'ft-spin 0.8s linear infinite' }} />
+        <style>{`@keyframes ft-spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
   if (!board) return null;
 
+  const viewBtns: { mode: ViewMode; icon: React.ReactNode }[] = [
+    { mode: 'board',    icon: <KanbanIcon active={viewMode === 'board'} color={viewActive} /> },
+    { mode: 'list',     icon: <ListIcon /> },
+    { mode: 'calendar', icon: <CalIcon /> },
+  ];
+
   return (
-    <div style={{ minHeight: '100vh', background: '#03050F', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: pageBg }}>
+      <style>{`@keyframes ft-spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* ── Board header ─────────────────────────────────────────────────── */}
       <div style={{
-        padding: '16px 24px', background: '#0A0E1A',
-        borderBottom: '1px solid #1E2640',
-        display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '16px 24px', background: headerBg,
+        borderBottom: `1px solid ${border}`, flexShrink: 0,
       }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: '#4A5578' }} />
-        <div style={{ flex: 1 }}>
-          <Text strong style={{ color: '#E2E8F8', fontFamily: 'Space Grotesk', fontSize: 16 }}>
-            {board.name}
-          </Text>
-          <Text style={{ color: '#4A5578', fontSize: 12, marginLeft: 8, fontFamily: 'monospace' }}>
-            [{board.prefix}]
-          </Text>
+        {/* Back */}
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: addText }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+
+        {/* Board name + task count */}
+        <h1 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 700, color: nameColor, margin: 0, letterSpacing: '-0.3px' }}>
+          {board.name}
+        </h1>
+        <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: cntText, background: cntBg, borderRadius: 6, padding: '2px 8px', flexShrink: 0 }}>
+          {allTasks.length} задач
+        </span>
+
+        <div style={{ flex: 1 }} />
+
+        {/* View switcher */}
+        <div style={{ display: 'flex', gap: 2, background: isDark ? '#0F1320' : '#EDE9FE', borderRadius: 10, padding: 3 }}>
+          {viewBtns.map(btn => (
+            <button
+              key={btn.mode}
+              onClick={() => setViewMode(btn.mode)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 28, border: 'none', cursor: 'pointer', borderRadius: 7,
+                background: viewMode === btn.mode ? (isDark ? '#1C2236' : '#FFFFFF') : 'transparent',
+                color: viewMode === btn.mode ? viewActive : (isDark ? '#484F58' : '#9B96B8'),
+                boxShadow: viewMode === btn.mode ? (isDark ? 'none' : '0 1px 4px rgba(0,0,0,0.08)') : 'none',
+                transition: 'all 0.12s',
+              }}
+            >
+              {btn.icon}
+            </button>
+          ))}
         </div>
-        <Segmented
-          value={viewMode}
-          onChange={(v) => setViewMode(v as ViewMode)}
-          options={[
-            { value: 'board', icon: <AppstoreOutlined /> },
-            { value: 'list', icon: <UnorderedListOutlined /> },
-            { value: 'calendar', icon: <CalendarOutlined /> },
-          ]}
-          style={{ background: '#0F1320' }}
-        />
+
+        {/* Создать task button */}
+        <button
+          onClick={() => { if (statuses.length > 0) { setAddingTo(statuses[0].id); setAddTitle(''); } }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M6 1v10M1 6h10" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: '#fff' }}>Создать</span>
+        </button>
       </div>
 
-      {/* Filter bar */}
+      {/* ── Filter bar ───────────────────────────────────────────────────── */}
       <FilterBar
         filters={filters}
         statuses={statuses}
@@ -272,47 +342,60 @@ export default function BoardPage() {
         onChange={setFilters}
       />
 
-      {/* View content */}
+      {/* ── View content ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: viewMode === 'board' ? 'hidden' : 'auto' }}>
 
-        {/* ── Board (Kanban) ── */}
+        {/* Kanban */}
         {viewMode === 'board' && (
           <div style={{ overflowX: 'auto', padding: '24px', height: '100%' }}>
             <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
               <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 0 }}>
-                {statuses.map((status) => {
+                {statuses.map(status => {
                   const tasks = filteredColumns[status.id] ?? [];
-
-                  // Compute if this column is a valid drop target during drag
                   const isDropAllowed = !draggingFromStatusId
                     || draggingFromStatusId === status.id
-                    || !board?.workflow.transitions
+                    || !board.workflow.transitions
                     || board.workflow.transitions.some(
-                      (t) => t.fromStatusId === draggingFromStatusId && t.toStatusId === status.id,
+                      t => t.fromStatusId === draggingFromStatusId && t.toStatusId === status.id,
                     );
 
                   return (
                     <div
                       key={status.id}
                       style={{
-                        width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8,
+                        width: 290, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 0,
                         opacity: draggingFromStatusId && !isDropAllowed ? 0.4 : 1,
                         transition: 'opacity 0.15s',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', marginBottom: 4 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: status.color, flexShrink: 0 }} />
-                        <Text style={{ color: '#8B95B0', fontWeight: 600, fontSize: 13, flex: 1 }}>{status.name}</Text>
-                        <Text style={{ color: '#4A5578', fontSize: 12 }}>{tasks.length}</Text>
+                      {/* Column header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 2px 10px', marginBottom: 2 }}>
+                        <div style={{ width: 3, height: 18, borderRadius: 2, background: status.color, flexShrink: 0 }} />
+                        <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: colText, flex: 1 }}>
+                          {status.name}
+                        </span>
+                        <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: cntText, background: cntBg, borderRadius: 5, padding: '1px 7px' }}>
+                          {tasks.length}
+                        </span>
+                        <button
+                          onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: addText, padding: 2, display: 'flex', alignItems: 'center' }}
+                          title="Добавить задачу"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        </button>
                       </div>
+
                       <Droppable droppableId={status.id} isDropDisabled={!!draggingFromStatusId && !isDropAllowed}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
                             style={{
-                              flex: 1, minHeight: 80, borderRadius: 8, padding: 4,
-                              background: snapshot.isDraggingOver ? '#1E2640' : 'transparent',
+                              flex: 1, minHeight: 80, borderRadius: 10, padding: 4,
+                              background: snapshot.isDraggingOver ? dropOver : 'transparent',
                               transition: 'background 0.15s',
                             }}
                           >
@@ -334,24 +417,40 @@ export default function BoardPage() {
                           </div>
                         )}
                       </Droppable>
+
+                      {/* Quick add */}
                       {addingTo === status.id ? (
-                        <Input
+                        <input
                           ref={addInputRef}
                           value={addTitle}
-                          onChange={(e) => setAddTitle(e.target.value)}
-                          onPressEnter={() => submitAdd(status.id)}
+                          onChange={e => setAddTitle(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') setAddingTo(null); }}
                           onBlur={() => submitAdd(status.id)}
                           placeholder="Название задачи..."
-                          style={{ background: '#0F1320', border: '1px solid #4F6EF7', color: '#E2E8F8', borderRadius: 8 }}
+                          style={{
+                            background: inpBg, border: `1px solid ${inpBorder}`,
+                            borderRadius: 8, padding: '8px 10px',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
+                            color: nameColor, outline: 'none', width: '100%',
+                          }}
                         />
                       ) : (
-                        <Button
-                          type="text" icon={<PlusOutlined />}
+                        <button
                           onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
-                          style={{ color: '#4A5578', textAlign: 'left', width: '100%', justifyContent: 'flex-start' }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            background: 'transparent', border: `1px dashed ${border}`,
+                            borderRadius: 8, padding: '8px 10px',
+                            cursor: 'pointer', width: '100%',
+                          }}
                         >
-                          Добавить задачу
-                        </Button>
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M6 1v10M1 6h10" stroke={addText} strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: addText }}>
+                            Быстрое добавление...
+                          </span>
+                        </button>
                       )}
                     </div>
                   );
@@ -361,7 +460,7 @@ export default function BoardPage() {
           </div>
         )}
 
-        {/* ── List ── */}
+        {/* List */}
         {viewMode === 'list' && (
           <BoardListView
             statuses={statuses}
@@ -370,13 +469,13 @@ export default function BoardPage() {
             onTaskUpdated={onTaskUpdated}
             quickAddStatusId={addingTo}
             quickAddTitle={addTitle}
-            onQuickAddStart={(sid) => { setAddingTo(sid); setAddTitle(''); }}
+            onQuickAddStart={sid => { setAddingTo(sid); setAddTitle(''); }}
             onQuickAddChange={setAddTitle}
             onQuickAddSubmit={submitAdd}
           />
         )}
 
-        {/* ── Calendar ── */}
+        {/* Calendar */}
         {viewMode === 'calendar' && (
           <BoardCalendarView
             statuses={statuses}
@@ -394,7 +493,7 @@ export default function BoardPage() {
         workspaceId={board.workspaceId}
         boardId={boardId}
         workspaceLabels={labels}
-        onWorkspaceLabelCreated={(label) => setLabels((prev) => [...prev, label])}
+        onWorkspaceLabelCreated={label => setLabels(prev => [...prev, label])}
         onClose={() => setSelectedTaskId(null)}
         onUpdated={onTaskUpdated}
         onDeleted={onTaskDeleted}

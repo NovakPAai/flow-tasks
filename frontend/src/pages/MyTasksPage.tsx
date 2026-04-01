@@ -1,298 +1,412 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Button, Empty, Input, Select, Segmented,
-  Spin, Table, Tag, Typography, message,
-} from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import {
-  CalendarOutlined, BranchesOutlined, CheckCircleOutlined,
-} from '@ant-design/icons';
+import { message } from 'antd';
+import { useThemeStore } from '../store/theme.store';
 import * as tasksApi from '../api/tasks';
 import type { MyTask } from '../api/tasks';
 
-const { Title, Text } = Typography;
-const { Search } = Input;
+// ── Design tokens ──────────────────────────────────────────────────────────────
+type C = Record<string, string>;
 
-const PRIORITY_COLOR: Record<string, string> = {
-  HIGH: '#EF4444', MEDIUM: '#F59E0B', LOW: '#6B7280',
+const DARK: C = {
+  bg: '#03050F', rowBg: '#0F1320', border: '#1C2236', borderHover: '#4F6EF7',
+  text: '#E2E8F8', muted: '#8B949E', key: '#484F58',
+  chipBg: '#1C2236', chipText: '#8B949E',
+  chipActive: 'rgba(79,110,247,0.12)', chipActiveText: '#4F6EF7',
+  chipOverdue: 'rgba(239,68,68,0.12)', chipOverdueText: '#EF4444',
+  searchBg: '#0F1320', searchBorder: '#1C2236',
+  wsBg: '#0A0D1A', sectionBorder: '#1C2236',
 };
-const PRIORITY_LABEL: Record<string, string> = {
-  HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий',
+const LIGHT: C = {
+  bg: '#F5F3FF', rowBg: '#FDFCFF', border: '#E8E5F0', borderHover: '#4F6EF7',
+  text: '#1A1A2E', muted: '#9B96B8', key: '#B8B3D0',
+  chipBg: '#EDE9FE', chipText: '#7C6FA8',
+  chipActive: 'rgba(79,110,247,0.10)', chipActiveText: '#4F6EF7',
+  chipOverdue: '#FEE2E2', chipOverdueText: '#EF4444',
+  searchBg: '#FDFCFF', searchBorder: '#E8E5F0',
+  wsBg: '#F0EEF8', sectionBorder: '#E8E5F0',
 };
-const DUE_OPTS = [
-  { value: '', label: 'Все' },
-  { value: 'today', label: 'Сегодня' },
-  { value: 'this_week', label: 'Эта неделя' },
-  { value: 'next_week', label: 'Следующая' },
-  { value: 'overdue', label: 'Просрочено' },
-  { value: 'no_date', label: 'Без даты' },
-];
-const PRIORITY_FILTER_OPTS = [
-  { value: '', label: 'Любой' },
-  { value: 'HIGH', label: '🔴 Высокий' },
-  { value: 'MEDIUM', label: '🟡 Средний' },
-  { value: 'LOW', label: '⚪ Низкий' },
-];
 
-type GroupBy = 'none' | 'workspace' | 'priority' | 'due';
+const PRIO: Record<string, { bg: string; text: string }> = {
+  HIGH:   { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444' },
+  MEDIUM: { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B' },
+  LOW:    { bg: 'rgba(107,114,128,0.12)', text: '#6B7280' },
+};
 
+// ── Due preset helpers ─────────────────────────────────────────────────────────
+type DuePreset = '' | 'today' | 'this_week' | 'overdue' | 'no_date';
+
+function duePresetMatch(task: MyTask, preset: DuePreset): boolean {
+  if (preset === '') return true;
+  const now = new Date();
+  const today = new Date(now); today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+  if (preset === 'no_date') return !task.dueDate;
+  if (!task.dueDate) return false;
+  const d = new Date(task.dueDate);
+  if (preset === 'overdue') return d < today;
+  if (preset === 'today') return d >= today && d < tomorrow;
+  if (preset === 'this_week') return d >= today && d < weekEnd;
+  return true;
+}
+
+function presetCount(tasks: MyTask[], preset: DuePreset): number {
+  return tasks.filter((t) => duePresetMatch(t, preset)).length;
+}
+
+// ── Workspace icon colors ──────────────────────────────────────────────────────
+const WS_COLORS = ['#22C55E', '#4F6EF7', '#8B5CF6', '#F59E0B', '#EC4899', '#0EA5E9'];
+function wsColor(name: string): string {
+  return WS_COLORS[(name?.charCodeAt(0) ?? 0) % WS_COLORS.length];
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
 export default function MyTasksPage() {
   const navigate = useNavigate();
+  const mode = useThemeStore((s) => s.mode);
+  const c = mode === 'light' ? LIGHT : DARK;
 
-  const [tasks, setTasks] = useState<MyTask[]>([]);
+  const [allTasks, setAllTasks] = useState<MyTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [duePreset, setDuePreset] = useState<DuePreset>('');
   const [search, setSearch] = useState('');
-  const [priority, setPriority] = useState('');
-  const [duePreset, setDuePreset] = useState('');
-  const [groupBy, setGroupBy] = useState<GroupBy>('none');
 
-  const fetchTasks = async (filters: { search?: string; priority?: string; duePreset?: string }) => {
-    setLoading(true);
-    try {
-      const data = await tasksApi.listMyTasks({
-        ...(filters.search && { search: filters.search }),
-        ...(filters.priority && { priority: filters.priority }),
-        ...(filters.duePreset && { duePreset: filters.duePreset }),
-      });
-      setTasks(data);
-    } catch { message.error('Не удалось загрузить задачи'); }
-    finally { setLoading(false); }
-  };
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await tasksApi.listMyTasks();
+        setAllTasks(data);
+      } catch {
+        message.error('Не удалось загрузить задачи');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-  useEffect(() => { fetchTasks({ search, priority, duePreset }); }, []);
+  // Filtered + searched tasks
+  const visibleTasks = useMemo(() => {
+    let result = allTasks.filter((t) => duePresetMatch(t, duePreset));
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          (t.issueKey ?? '').toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [allTasks, duePreset, search]);
 
-  const applyFilters = () => fetchTasks({ search, priority, duePreset });
+  // Group by workspace → board
+  const grouped = useMemo(() => {
+    const wsMap = new Map<
+      string,
+      {
+        wsId: string;
+        wsName: string;
+        wsSlug: string;
+        boards: Map<string, { boardId: string; boardName: string; tasks: MyTask[] }>;
+      }
+    >();
+    for (const t of visibleTasks) {
+      const { workspace, id: boardId, name: boardName } = t.board;
+      if (!wsMap.has(workspace.id)) {
+        wsMap.set(workspace.id, {
+          wsId: workspace.id,
+          wsName: workspace.name,
+          wsSlug: workspace.slug,
+          boards: new Map(),
+        });
+      }
+      const ws = wsMap.get(workspace.id)!;
+      if (!ws.boards.has(boardId)) {
+        ws.boards.set(boardId, { boardId, boardName, tasks: [] });
+      }
+      ws.boards.get(boardId)!.tasks.push(t);
+    }
+    return Array.from(wsMap.values()).map((ws) => ({
+      ...ws,
+      boards: Array.from(ws.boards.values()),
+    }));
+  }, [visibleTasks]);
 
-  const columns: ColumnsType<MyTask> = [
-    {
-      title: 'Ключ',
-      dataIndex: 'issueKey',
-      width: 100,
-      render: (key: string) => (
-        <Text style={{ color: '#4A5578', fontFamily: 'monospace', fontSize: 11 }}>{key}</Text>
-      ),
-    },
-    {
-      title: 'Задача',
-      dataIndex: 'title',
-      render: (title: string, record: MyTask) => (
-        <div
-          style={{ cursor: 'pointer' }}
-          onClick={() => navigate(`/w/${record.board.workspace.slug}/boards/${record.board.id}`)}
-        >
-          <Text style={{ color: '#E2E8F8', fontSize: 13 }}>{title}</Text>
-          {(record._count?.children ?? 0) > 0 && (
-            <span style={{ marginLeft: 8, color: '#4A5578', fontSize: 11 }}>
-              <BranchesOutlined /> {record._count?.children}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      title: 'Доска',
-      key: 'board',
-      width: 160,
-      render: (_: unknown, record: MyTask) => (
-        <div>
-          <Text style={{ color: '#8B95B0', fontSize: 12 }}>{record.board.workspace.name}</Text>
-          <Text style={{ color: '#4A5578', fontSize: 11, display: 'block' }}>{record.board.name}</Text>
-        </div>
-      ),
-    },
-    {
-      title: 'Статус',
-      key: 'status',
-      width: 130,
-      render: (_: unknown, record: MyTask) => {
-        const s = record.status;
-        if (!s) return null;
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-            <Text style={{ color: '#8B95B0', fontSize: 12 }}>{s.name}</Text>
-          </div>
-        );
-      },
-    },
-    {
-      title: 'Приоритет',
-      dataIndex: 'priority',
-      width: 120,
-      render: (p: string | null) => {
-        if (!p) return <Text style={{ color: '#4A5578' }}>—</Text>;
-        return (
-          <Tag style={{
-            background: `${PRIORITY_COLOR[p]}18`,
-            border: `1px solid ${PRIORITY_COLOR[p]}44`,
-            color: PRIORITY_COLOR[p],
-            fontSize: 11,
-          }}>
-            {PRIORITY_LABEL[p]}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: 'Срок',
-      dataIndex: 'dueDate',
-      width: 120,
-      render: (dueDate: string | null) => {
-        if (!dueDate) return <Text style={{ color: '#4A5578' }}>—</Text>;
-        const due = new Date(dueDate);
-        const isOverdue = due < new Date();
-        return (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: isOverdue ? '#EF4444' : '#8B95B0', fontSize: 12 }}>
-            <CalendarOutlined />
-            {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-          </span>
-        );
-      },
-    },
+  const chips: { value: DuePreset; label: string }[] = [
+    { value: '', label: 'Все' },
+    { value: 'today', label: 'Сегодня' },
+    { value: 'this_week', label: 'Эта неделя' },
+    { value: 'overdue', label: 'Просрочено' },
+    { value: 'no_date', label: 'Без даты' },
   ];
 
-  // Build display list (optionally grouped)
-  const groupedSections: { label: string; color?: string; tasks: MyTask[] }[] = (() => {
-    if (groupBy === 'workspace') {
-      const map = new Map<string, { label: string; tasks: MyTask[] }>();
-      for (const t of tasks) {
-        const key = t.board.workspace.id;
-        if (!map.has(key)) map.set(key, { label: t.board.workspace.name, tasks: [] });
-        map.get(key)!.tasks.push(t);
-      }
-      return Array.from(map.values());
-    }
-    if (groupBy === 'priority') {
-      const order = ['HIGH', 'MEDIUM', 'LOW', '—'];
-      const map: Record<string, { label: string; color: string; tasks: MyTask[] }> = {
-        HIGH: { label: 'Высокий', color: '#EF4444', tasks: [] },
-        MEDIUM: { label: 'Средний', color: '#F59E0B', tasks: [] },
-        LOW: { label: 'Низкий', color: '#6B7280', tasks: [] },
-        '—': { label: 'Без приоритета', color: '#4A5578', tasks: [] },
-      };
-      for (const t of tasks) map[t.priority ?? '—'].tasks.push(t);
-      return order.map((k) => map[k]).filter((g) => g.tasks.length > 0);
-    }
-    if (groupBy === 'due') {
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-      const groups = [
-        { label: 'Просрочено', color: '#EF4444', tasks: [] as MyTask[] },
-        { label: 'Сегодня', color: '#4F6EF7', tasks: [] as MyTask[] },
-        { label: 'Позже', color: '#8B95B0', tasks: [] as MyTask[] },
-        { label: 'Без срока', color: '#4A5578', tasks: [] as MyTask[] },
-      ];
-      for (const t of tasks) {
-        if (!t.dueDate) { groups[3].tasks.push(t); continue; }
-        const d = new Date(t.dueDate);
-        if (d < today) groups[0].tasks.push(t);
-        else if (d < tomorrow) groups[1].tasks.push(t);
-        else groups[2].tasks.push(t);
-      }
-      return groups.filter((g) => g.tasks.length > 0);
-    }
-    return [{ label: '', tasks }];
-  })();
-
   return (
-    <div style={{ minHeight: '100vh', background: '#03050F', padding: '40px 48px' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-          <CheckCircleOutlined style={{ color: '#4F6EF7', fontSize: 22 }} />
-          <Title level={2} style={{ margin: 0, color: '#E2E8F8', fontFamily: 'Space Grotesk', fontWeight: 700 }}>
-            Мои задачи
-          </Title>
-          {!loading && (
-            <Text style={{ color: '#4A5578', fontSize: 14 }}>({tasks.length})</Text>
-          )}
-        </div>
-        <Text style={{ color: '#4A5578' }}>Все задачи назначенные на вас во всех пространствах</Text>
+    <div style={{
+      background: c.bg, minHeight: '100%',
+      display: 'flex', flexDirection: 'column',
+      padding: '32px 40px', fontFamily: '"Inter",system-ui,sans-serif',
+    }}>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
+        <h1 style={{
+          margin: 0, fontFamily: '"Space Grotesk",system-ui,sans-serif',
+          fontSize: 26, fontWeight: 700, color: c.text, letterSpacing: '-0.02em',
+        }}>
+          Мои задачи
+        </h1>
+        {!loading && (
+          <span style={{
+            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+            color: c.chipText, background: c.chipBg,
+            borderRadius: 6, padding: '2px 8px',
+          }}>
+            {allTasks.length} задач
+          </span>
+        )}
       </div>
 
-      {/* Filters */}
+      {/* ── Filter chips row ── */}
       <div style={{
-        display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center',
-        padding: '16px', background: '#0F1320', borderRadius: 10, border: '1px solid #1E2640',
+        display: 'flex', alignItems: 'center', gap: 6, marginBottom: 28, flexWrap: 'wrap',
       }}>
-        <Search
-          placeholder="Поиск задач..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onSearch={applyFilters}
-          style={{ width: 240 }}
-          allowClear
-        />
-        <Select
-          value={duePreset}
-          onChange={(v) => { setDuePreset(v); }}
-          options={DUE_OPTS}
-          style={{ width: 160 }}
-          placeholder="Срок"
-        />
-        <Select
-          value={priority}
-          onChange={(v) => { setPriority(v); }}
-          options={PRIORITY_FILTER_OPTS}
-          style={{ width: 140 }}
-          placeholder="Приоритет"
-        />
-        <Button type="primary" onClick={applyFilters} style={{ background: '#4F6EF7' }}>
-          Применить
-        </Button>
+        {chips.map((chip) => {
+          const active = duePreset === chip.value;
+          const isOverdue = chip.value === 'overdue';
+          const count = chip.value === '' ? null : presetCount(allTasks, chip.value);
+          return (
+            <button
+              key={chip.value}
+              onClick={() => setDuePreset(chip.value)}
+              style={{
+                fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+                fontWeight: active ? 500 : 400,
+                color: isOverdue && (active || count! > 0)
+                  ? c.chipOverdueText
+                  : active ? c.chipActiveText : c.chipText,
+                background: isOverdue && (active || count! > 0)
+                  ? c.chipOverdue
+                  : active ? c.chipActive : c.chipBg,
+                border: active
+                  ? `1px solid ${isOverdue ? c.chipOverdueText : c.chipActiveText}33`
+                  : '1px solid transparent',
+                borderRadius: 7, padding: '5px 12px',
+                cursor: 'pointer', transition: 'all 0.12s',
+              }}
+            >
+              {chip.label}
+              {count !== null && count > 0 && (
+                <span style={{ marginLeft: 4, opacity: 0.8 }}>· {count}</span>
+              )}
+            </button>
+          );
+        })}
+
         <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Text style={{ color: '#4A5578', fontSize: 12 }}>Группировка:</Text>
-          <Segmented
-            value={groupBy}
-            onChange={(v) => setGroupBy(v as GroupBy)}
-            options={[
-              { value: 'none', label: 'Нет' },
-              { value: 'workspace', label: 'Пространство' },
-              { value: 'priority', label: 'Приоритет' },
-              { value: 'due', label: 'Срок' },
-            ]}
-            style={{ background: '#161C30' }}
+
+        {/* Search */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"
+            style={{ position: 'absolute', left: 10, color: c.muted, pointerEvents: 'none' }}>
+            <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M9 9L12 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск по задачам..."
+            style={{
+              paddingLeft: 30, paddingRight: 12, paddingBlock: 6,
+              width: 220, fontSize: 12, color: c.text,
+              background: c.searchBg, border: `1px solid ${c.searchBorder}`,
+              borderRadius: 8, outline: 'none',
+              fontFamily: '"Inter",system-ui,sans-serif',
+            }}
           />
         </div>
       </div>
 
-      {/* Content */}
+      {/* ── Content ── */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}><Spin size="large" /></div>
-      ) : tasks.length === 0 ? (
-        <Empty
-          description={<Text style={{ color: '#4A5578' }}>Нет задач по выбранным фильтрам</Text>}
-          style={{ paddingTop: 80 }}
-        />
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: '50%',
+            border: `2px solid ${c.border}`, borderTopColor: '#4F6EF7',
+            animation: 'spin 0.7s linear infinite',
+          }} />
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        </div>
+      ) : visibleTasks.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 8 }}>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" stroke={c.border} strokeWidth="1.5"/>
+            <path d="M13 20h14M20 13v14" stroke={c.muted} strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontSize: 13, color: c.muted }}>Нет задач по выбранным фильтрам</span>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {groupedSections.map((section) => (
-            <div key={section.label}>
-              {groupBy !== 'none' && (
-                <div style={{
+          {grouped.map((ws) => (
+            <div key={ws.wsId}>
+              {/* Workspace header */}
+              <div
+                onClick={() => navigate(`/w/${ws.wsSlug}`)}
+                style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  marginBottom: 10, borderBottom: '1px solid #1E2640', paddingBottom: 8,
+                  marginBottom: 12, cursor: 'pointer',
+                }}
+              >
+                <div style={{
+                  width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+                  background: wsColor(ws.wsName),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {section.color && (
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: section.color, flexShrink: 0 }} />
-                  )}
-                  <Text style={{ color: '#8B95B0', fontWeight: 600, fontSize: 13 }}>{section.label}</Text>
-                  <Text style={{ color: '#4A5578', fontSize: 12 }}>({section.tasks.length})</Text>
+                  <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>
+                    {ws.wsName[0]?.toUpperCase()}
+                  </span>
                 </div>
-              )}
-              <Table<MyTask>
-                dataSource={section.tasks}
-                columns={columns}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                style={{ background: '#0F1320', borderRadius: 10, border: '1px solid #1E2640', overflow: 'hidden' }}
-                onRow={() => ({
-                  style: { background: 'transparent', cursor: 'default' },
-                })}
-              />
+                <span style={{
+                  fontSize: 14, fontWeight: 600, color: c.text,
+                  fontFamily: '"Space Grotesk",system-ui,sans-serif',
+                }}>
+                  {ws.wsName}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M5 3l4 4-4 4" stroke={c.muted} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+
+              {/* Boards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {ws.boards.map((board) => (
+                  <div key={board.boardId}>
+                    {/* Board header */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      marginBottom: 6, paddingLeft: 4,
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <rect x="1" y="1" width="3" height="10" rx="1" fill={c.muted}/>
+                        <rect x="6" y="1" width="3" height="10" rx="1" fill={c.muted} opacity="0.5"/>
+                      </svg>
+                      <span style={{ fontSize: 11, color: c.muted, fontWeight: 500 }}>
+                        {board.boardName}
+                      </span>
+                    </div>
+
+                    {/* Task rows */}
+                    <div style={{
+                      borderRadius: 10, overflow: 'hidden',
+                      border: `1px solid ${c.border}`,
+                    }}>
+                      {board.tasks.map((task, idx) => {
+                        const isDone = task.status?.category === 'DONE';
+                        const due = task.dueDate ? new Date(task.dueDate) : null;
+                        const isOverdue = due && due < new Date() && !isDone;
+                        const prio = task.priority ? PRIO[task.priority] : null;
+                        const statusColor = task.status?.color ?? '#484F58';
+
+                        return (
+                          <div
+                            key={task.id}
+                            onClick={() => navigate(`/w/${ws.wsSlug}/boards/${board.boardId}`)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '11px 16px',
+                              background: isOverdue
+                                ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
+                                : c.rowBg,
+                              borderBottom: idx < board.tasks.length - 1
+                                ? `1px solid ${c.border}` : 'none',
+                              borderLeft: `3px solid ${statusColor}`,
+                              cursor: 'pointer', transition: 'background 0.12s',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.background =
+                                mode === 'light' ? '#F0EEF8' : '#131729';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.background = isOverdue
+                                ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
+                                : c.rowBg;
+                            }}
+                          >
+                            {/* Status circle */}
+                            <div style={{
+                              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: isDone ? '#22C55E' : 'transparent',
+                              border: isDone ? 'none' : `2px solid ${statusColor}`,
+                            }}>
+                              {isDone && (
+                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                  <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </div>
+
+                            {/* Key */}
+                            <span style={{
+                              fontSize: 11, color: c.key, letterSpacing: '0.02em',
+                              fontFamily: '"Inter",system-ui,sans-serif',
+                              flexShrink: 0, minWidth: 52,
+                            }}>
+                              {task.issueKey}
+                            </span>
+
+                            {/* Title */}
+                            <span style={{
+                              fontSize: 13, color: isDone ? c.muted : c.text,
+                              textDecoration: isDone ? 'line-through' : 'none',
+                              flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>
+                              {task.title}
+                            </span>
+
+                            {/* Right side: status + priority + due */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                              {/* Status badge */}
+                              {task.status && (
+                                <span style={{
+                                  fontSize: 11, fontWeight: 500,
+                                  color: task.status.color,
+                                  background: `${task.status.color}18`,
+                                  borderRadius: 5, padding: '2px 7px',
+                                }}>
+                                  {task.status.name}
+                                </span>
+                              )}
+
+                              {/* Priority badge */}
+                              {prio && (
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600,
+                                  color: prio.text, background: prio.bg,
+                                  borderRadius: 4, padding: '2px 6px',
+                                  letterSpacing: '0.04em',
+                                }}>
+                                  {task.priority === 'MEDIUM' ? 'MED' : task.priority}
+                                </span>
+                              )}
+
+                              {/* Due date */}
+                              {due ? (
+                                <span style={{
+                                  fontSize: 11,
+                                  color: isOverdue ? '#EF4444' : c.muted,
+                                }}>
+                                  {isOverdue ? 'Просрочено · ' : ''}
+                                  {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

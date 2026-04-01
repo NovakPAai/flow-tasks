@@ -1,123 +1,147 @@
-import { Avatar, Tag, Tooltip } from 'antd';
-import { CalendarOutlined, BranchesOutlined } from '@ant-design/icons';
+import { useThemeStore } from '../store/theme.store';
 import type { Task } from '../types';
 
-const PRIORITY_COLOR: Record<string, string> = {
-  HIGH:   '#EF4444',
-  MEDIUM: '#F59E0B',
-  LOW:    '#6B7280',
+// ── Design tokens ──────────────────────────────────────────────────────────────
+type C = Record<string, string>;
+
+const DARK: C = {
+  bg: '#0F1320', border: '#1C2236', borderHover: '#4F6EF7',
+  key: '#484F58', title: '#E2E8F8', titleDone: '#484F58', meta: '#484F58',
+};
+const LIGHT: C = {
+  bg: '#FFFFFF', border: '#E8E5F0', borderHover: '#4F6EF7',
+  key: '#9B96B8', title: '#1A1A2E', titleDone: '#C4C0D8', meta: '#9B96B8',
 };
 
-const PRIORITY_LABEL: Record<string, string> = {
-  HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий',
+const PRIO: Record<string, { bg: string; text: string; label: string }> = {
+  HIGH:   { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444', label: 'HIGH' },
+  MEDIUM: { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B', label: 'MED' },
+  LOW:    { bg: 'rgba(107,114,128,0.12)', text: '#6B7280', label: 'LOW' },
 };
 
-interface Props {
-  task: Task;
-  onClick?: () => void;
+function avatarColor(name: string): string {
+  const palette = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+  return palette[(name?.charCodeAt(0) ?? 0) % palette.length];
 }
 
+function avatarInitials(name: string): string {
+  return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
+}
+
+interface Props { task: Task; onClick?: () => void }
+
 export default function TaskCard({ task, onClick }: Props) {
+  const mode = useThemeStore(s => s.mode);
+  const c = mode === 'light' ? LIGHT : DARK;
+
   const childCount = task._count?.children ?? 0;
   const due = task.dueDate ? new Date(task.dueDate) : null;
   const isOverdue = due && due < new Date();
+  const isDone = task.status?.category === 'DONE';
+  const prio = task.priority ? PRIO[task.priority] : null;
+  const taskLabels = task.labels ?? [];
 
   return (
     <div
       onClick={onClick}
       style={{
-        background: '#0F1320',
-        border: '1px solid #1E2640',
-        borderRadius: 8,
-        padding: '10px 12px',
-        cursor: 'pointer',
-        userSelect: 'none',
-        transition: 'border-color 0.15s',
+        background: c.bg, border: `1px solid ${c.border}`,
+        borderRadius: 10, padding: '12px 14px',
+        cursor: 'pointer', userSelect: 'none', transition: 'border-color 0.15s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#4F6EF7')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#1E2640')}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = c.borderHover)}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = c.border)}
     >
-      {/* Issue key + priority */}
+      {/* Key + priority badge */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ color: '#4A5578', fontSize: 11, fontFamily: 'monospace' }}>{task.issueKey}</span>
-        {task.priority && (
-          <span
-            style={{
-              width: 6, height: 6, borderRadius: '50%',
-              background: PRIORITY_COLOR[task.priority],
-              flexShrink: 0,
-            }}
-            title={PRIORITY_LABEL[task.priority]}
-          />
+        <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.key, letterSpacing: '0.02em' }}>
+          {task.issueKey}
+        </span>
+        {prio && (
+          <span style={{
+            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, fontWeight: 600,
+            color: prio.text, background: prio.bg, borderRadius: 4,
+            padding: '1px 6px', letterSpacing: '0.04em',
+          }}>
+            {prio.label}
+          </span>
         )}
       </div>
 
       {/* Title */}
       <p style={{
-        margin: '0 0 8px',
-        color: '#E2E8F8',
-        fontSize: 13,
-        lineHeight: '18px',
-        fontWeight: 500,
-        wordBreak: 'break-word',
+        margin: '0 0 8px', fontFamily: '"Inter",system-ui,sans-serif',
+        fontSize: 13, lineHeight: '18px', fontWeight: 500, wordBreak: 'break-word',
+        color: isDone ? c.titleDone : c.title,
+        textDecoration: isDone ? 'line-through' : 'none',
       }}>
+        {isDone && (
+          <span style={{ fontSize: 11, marginRight: 4, color: '#22C55E' }}>✓</span>
+        )}
         {task.title}
       </p>
 
-      {/* Footer */}
+      {/* Labels */}
+      {taskLabels.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
+          {taskLabels.map(tl => (
+            <span
+              key={tl.labelId}
+              style={{
+                fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, fontWeight: 500,
+                color: tl.label.color, background: `${tl.label.color}1A`,
+                border: `1px solid ${tl.label.color}33`,
+                borderRadius: 4, padding: '1px 6px',
+              }}
+            >
+              {tl.label.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Footer: date + subtasks | assignee */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Due date */}
           {due && (
-            <Tooltip title={due.toLocaleDateString('ru-RU')}>
-              <span style={{
-                display: 'flex', alignItems: 'center', gap: 3,
-                color: isOverdue ? '#EF4444' : '#4A5578', fontSize: 11,
-              }}>
-                <CalendarOutlined />
-                {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-              </span>
-            </Tooltip>
+            <span
+              title={due.toLocaleDateString('ru-RU')}
+              style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: isOverdue ? '#EF4444' : c.meta }}
+            >
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
+                <rect x="0.5" y="1.5" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
+                <path d="M3 0.5v2M8 0.5v2M0.5 4.5h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+              {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+            </span>
           )}
-          {/* Subtasks */}
           {childCount > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: '#4A5578', fontSize: 11 }}>
-              <BranchesOutlined />
-              {childCount}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.meta }}>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
+                <circle cx="5.5" cy="2" r="1.5" stroke="currentColor" strokeWidth="1"/>
+                <circle cx="2" cy="9" r="1.5" stroke="currentColor" strokeWidth="1"/>
+                <circle cx="9" cy="9" r="1.5" stroke="currentColor" strokeWidth="1"/>
+                <path d="M5.5 3.5V5.5M5.5 5.5L2 7.5M5.5 5.5L9 7.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+              {childCount} subtask
             </span>
           )}
         </div>
-
-        {/* Assignee */}
         {task.assignee && (
-          <Tooltip title={task.assignee.name}>
-            <Avatar
-              size={20}
-              src={task.assignee.avatar}
-              style={{ background: '#4F6EF7', fontSize: 10, flexShrink: 0 }}
-            >
-              {task.assignee.name?.[0]?.toUpperCase()}
-            </Avatar>
-          </Tooltip>
+          <div
+            title={task.assignee.name}
+            style={{
+              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+              background: avatarColor(task.assignee.name),
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: '#fff' }}>
+              {avatarInitials(task.assignee.name)}
+            </span>
+          </div>
         )}
       </div>
-
-      {/* Priority tag (for accessibility) */}
-      {task.priority && (
-        <Tag
-          style={{
-            marginTop: 6,
-            background: `${PRIORITY_COLOR[task.priority]}18`,
-            border: `1px solid ${PRIORITY_COLOR[task.priority]}44`,
-            color: PRIORITY_COLOR[task.priority],
-            fontSize: 10,
-            lineHeight: '16px',
-            padding: '0 6px',
-          }}
-        >
-          {PRIORITY_LABEL[task.priority]}
-        </Tag>
-      )}
     </div>
   );
 }
