@@ -10,6 +10,8 @@ import workflowsRouter, {
   workflowStatusesRouter,
   workflowTransitionsRouter,
 } from './modules/workflows/workflows.router.js';
+import boardsRouter, { workspaceBoardsRouter } from './modules/boards/boards.router.js';
+import tasksRouter, { boardTasksRouter } from './modules/tasks/tasks.router.js';
 
 export function createApp() {
   const app = express();
@@ -35,6 +37,10 @@ export function createApp() {
   app.use('/api/workflows', workflowsRouter);
   app.use('/api/workflow-statuses', workflowStatusesRouter);
   app.use('/api/workflow-transitions', workflowTransitionsRouter);
+  app.use('/api/workspaces/:wid/boards', workspaceBoardsRouter);
+  app.use('/api/boards', boardsRouter);
+  app.use('/api/boards/:bid/tasks', boardTasksRouter);
+  app.use('/api/tasks', tasksRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);

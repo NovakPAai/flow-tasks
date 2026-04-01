@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import WorkspacesPage from './pages/WorkspacesPage';
 import WorkspaceDashboardPage from './pages/WorkspaceDashboardPage';
+import BoardPage from './pages/BoardPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/workspaces" replace />} />
           <Route path="/workspaces" element={<PrivateRoute><WorkspacesPage /></PrivateRoute>} />
           <Route path="/w/:slug" element={<PrivateRoute><WorkspaceDashboardPage /></PrivateRoute>} />
+          <Route path="/w/:slug/boards/:boardId" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
           {/* Legacy — kept for now */}
           <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
         </Routes>

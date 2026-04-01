@@ -36,11 +36,11 @@ export interface Workspace {
   creatorId: string;
   createdAt: string;
   updatedAt: string;
-  // joined fields
   role?: WorkspaceRole;
   memberCount?: number;
   members?: WorkspaceMember[];
   workflows?: Workflow[];
+  boards?: Board[];
 }
 
 // ─── Workflows ────────────────────────────────────────────────────────────────
@@ -75,4 +75,57 @@ export interface Workflow {
   createdAt: string;
   statuses: WorkflowStatus[];
   transitions?: WorkflowTransition[];
+}
+
+// ─── Boards ───────────────────────────────────────────────────────────────────
+
+export interface Board {
+  id: string;
+  workspaceId: string;
+  workflowId: string;
+  name: string;
+  prefix: string;
+  description?: string;
+  createdAt: string;
+  workflow: Workflow;
+  tasks?: Task[];
+  _count?: { tasks: number };
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+export type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export interface TaskStatus {
+  id: string;
+  name: string;
+  color: string;
+  category: StatusCategory;
+}
+
+export interface Task {
+  id: string;
+  boardId: string;
+  statusId: string;
+  title: string;
+  description?: string;
+  priority?: Priority;
+  dueDate?: string;
+  startDate?: string;
+  assigneeId?: string;
+  creatorId: string;
+  orderIndex: number;
+  issueKey: string;
+  issueNumber: number;
+  parentId?: string;
+  depth: number;
+  createdAt: string;
+  updatedAt: string;
+  // joined
+  status?: TaskStatus;
+  assignee?: Pick<User, 'id' | 'name' | 'avatar'>;
+  creator?: Pick<User, 'id' | 'name' | 'avatar'>;
+  parent?: { id: string; title: string; issueKey: string };
+  children?: Task[];
+  _count?: { children: number };
 }

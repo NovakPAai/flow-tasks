@@ -21,9 +21,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  refreshTokens    RefreshToken[]
+  refreshTokens        RefreshToken[]
   workspaceMemberships WorkspaceMember[]
   createdWorkspaces    Workspace[]       @relation("WorkspaceCreator")
+  createdTasks         Task[]            @relation("taskCreator")
+  assignedTasks        Task[]            @relation("taskAssignee")
 
   @@map("users")
 }
@@ -54,6 +56,7 @@ model Workspace {
   creator   User              @relation("WorkspaceCreator", fields: [creatorId], references: [id])
   members   WorkspaceMember[]
   workflows Workflow[]
+  boards    Board[]
 
   @@map("workspaces")
 }
@@ -92,6 +95,7 @@ model Workflow {
   workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   statuses    WorkflowStatus[]
   transitions WorkflowTransition[]
+  boards      Board[]
 
   @@map("workflows")
 }
@@ -115,6 +119,7 @@ model WorkflowStatus {
   workflow        Workflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   transitionsFrom WorkflowTransition[] @relation("FromStatus")
   transitionsTo   WorkflowTransition[] @relation("ToStatus")
+  tasks           Task[]
 
   @@index([workflowId, position])
   @@map("workflow_statuses")
@@ -139,4 +144,73 @@ model WorkflowTransition {
 
   @@unique([workflowId, fromStatusId, toStatusId])
   @@map("workflow_transitions")
+}
+
+// ─── Boards ───────────────────────────────────────────────────────────────────
+
+model Board {
+  id          String   @id @default(uuid())
+  workspaceId String
+  workflowId  String
+  name        String
+  prefix      String   // "DEV", "OPS" — для issueKey
+  description String?
+  nextNumber  Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflow  Workflow  @relation(fields: [workflowId], references: [id])
+  tasks     Task[]
+
+  @@unique([workspaceId, prefix])
+  @@map("boards")
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+model Task {
+  id          String    @id @default(uuid())
+  boardId     String
+  statusId    String
+  title       String
+  description String?
+  priority    Priority?
+  dueDate     DateTime? @db.Date
+  startDate   DateTime? @db.Date
+  assigneeId  String?
+  creatorId   String
+  orderIndex  Int       @default(0)
+
+  // Issue key (BOARD_PREFIX-NUMBER)
+  issueKey    String    @unique
+  issueNumber Int
+
+  // Unlimited nesting via materialized path
+  parentId    String?
+  path        String    @default("/")
+  depth       Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  board    Board          @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  status   WorkflowStatus @relation(fields: [statusId], references: [id])
+  creator  User           @relation("taskCreator", fields: [creatorId], references: [id])
+  assignee User?          @relation("taskAssignee", fields: [assigneeId], references: [id])
+  parent   Task?          @relation("Subtasks", fields: [parentId], references: [id])
+  children Task[]         @relation("Subtasks")
+
+  @@index([boardId, statusId, orderIndex])
+  @@index([parentId])
+  @@index([assigneeId])
+  @@index([path])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
 }
