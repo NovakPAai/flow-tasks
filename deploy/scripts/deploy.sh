@@ -35,19 +35,20 @@ git checkout "$GIT_SHA" 2>/dev/null || git reset --hard "origin/main"
 echo "→ Building backend..."
 cd "$REPO_DIR/backend"
 npm ci --prefer-offline
-npx tsc --outDir dist
-cp -r dist "$APP_DIR/backend/"
-cp package*.json "$APP_DIR/backend/"
-cd "$APP_DIR/backend" && npm ci --omit=dev --prefer-offline
 
-# Copy .env if not present (never overwrite)
+# .env lives in APP_DIR — symlink into repo so dotenv/config finds it
 [[ -f "$APP_DIR/backend/.env" ]] || { echo "ERROR: $APP_DIR/backend/.env missing. Create it first."; exit 1; }
+ln -sf "$APP_DIR/backend/.env" "$REPO_DIR/backend/.env"
+
+# Generate Prisma client + build
+DATABASE_URL=$(grep DATABASE_URL "$APP_DIR/backend/.env" | cut -d= -f2-)
+export DATABASE_URL
+npx prisma generate --schema=src/prisma/schema.prisma
+npm run build
 
 # Run migrations
 echo "→ Running migrations..."
-cd "$APP_DIR/backend"
-DATABASE_URL=$(grep DATABASE_URL .env | cut -d= -f2-) \
-  npx prisma migrate deploy --schema="$REPO_DIR/backend/src/prisma/schema.prisma"
+npx prisma migrate deploy --schema=src/prisma/schema.prisma
 
 # Build frontend
 echo "→ Building frontend..."
@@ -58,7 +59,7 @@ rsync -a --delete dist/ "$APP_DIR/frontend/dist/"
 
 # Restart backend
 echo "→ Restarting PM2..."
-cd "$APP_DIR/backend"
+cd "$REPO_DIR/backend"
 if pm2 describe flowtask-api &>/dev/null; then
   pm2 reload "$REPO_DIR/deploy/ecosystem.config.js" --env production
 else
