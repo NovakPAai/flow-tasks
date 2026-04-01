@@ -6,15 +6,22 @@ import {
   Draggable,
   type DropResult,
 } from '@hello-pangea/dnd';
-import { Button, Input, Spin, Typography, message, type InputRef } from 'antd';
-import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Input, Segmented, Spin, Typography, message, type InputRef } from 'antd';
+import {
+  ArrowLeftOutlined, PlusOutlined,
+  AppstoreOutlined, UnorderedListOutlined, CalendarOutlined,
+} from '@ant-design/icons';
 import type { Board, Task, WorkflowStatus } from '../types';
 import * as boardsApi from '../api/boards';
 import * as tasksApi from '../api/tasks';
 import TaskCard from '../components/TaskCard';
 import TaskDrawer from '../components/TaskDrawer';
+import BoardListView from '../components/BoardListView';
+import BoardCalendarView from '../components/BoardCalendarView';
 
 const { Text } = Typography;
+
+type ViewMode = 'board' | 'list' | 'calendar';
 
 // Tasks grouped by statusId
 type Columns = Record<string, Task[]>;
@@ -26,11 +33,14 @@ function groupByStatus(tasks: Task[], statuses: WorkflowStatus[]): Columns {
     if (cols[t.statusId]) cols[t.statusId].push(t);
     else cols[t.statusId] = [t];
   }
-  // sort by orderIndex within each column
   for (const id of Object.keys(cols)) {
     cols[id].sort((a, b) => a.orderIndex - b.orderIndex);
   }
   return cols;
+}
+
+function columnsToList(columns: Columns): Task[] {
+  return Object.values(columns).flat();
 }
 
 export default function BoardPage() {
@@ -41,8 +51,9 @@ export default function BoardPage() {
   const [columns, setColumns] = useState<Columns>({});
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [addingTo, setAddingTo] = useState<string | null>(null); // statusId
+  const [addingTo, setAddingTo] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
   const addInputRef = useRef<InputRef | null>(null);
 
   const statuses = board?.workflow.statuses ?? [];
@@ -99,7 +110,6 @@ export default function BoardPage() {
     }
     setColumns(newCols);
 
-    // Persist reorder
     const updates: { id: string; statusId: string; orderIndex: number }[] = [];
     for (const [sid, tasks] of Object.entries(newCols)) {
       if (sid === fromStatusId || sid === toStatusId) {
@@ -111,7 +121,7 @@ export default function BoardPage() {
       await tasksApi.reorderTasks(boardId!, updates);
     } catch {
       message.error('Не удалось сохранить порядок');
-      loadBoard(); // rollback
+      loadBoard();
     }
   };
 
@@ -140,7 +150,6 @@ export default function BoardPage() {
         if (idx !== -1) {
           const arr = [...tasks];
           arr[idx] = { ...updated, status: arr[idx].status };
-          // If status changed, move between columns
           if (updated.statusId !== sid) {
             arr.splice(idx, 1);
             newCols[sid] = arr;
@@ -175,6 +184,8 @@ export default function BoardPage() {
 
   if (!board) return null;
 
+  const allTasks = columnsToList(columns);
+
   return (
     <div style={{ minHeight: '100vh', background: '#03050F', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
@@ -193,7 +204,7 @@ export default function BoardPage() {
           onClick={() => navigate(-1)}
           style={{ color: '#4A5578' }}
         />
-        <div>
+        <div style={{ flex: 1 }}>
           <Text strong style={{ color: '#E2E8F8', fontFamily: 'Space Grotesk', fontSize: 16 }}>
             {board.name}
           </Text>
@@ -201,110 +212,143 @@ export default function BoardPage() {
             [{board.prefix}]
           </Text>
         </div>
+
+        {/* View switcher */}
+        <Segmented
+          value={viewMode}
+          onChange={(v) => setViewMode(v as ViewMode)}
+          options={[
+            { value: 'board', icon: <AppstoreOutlined /> },
+            { value: 'list', icon: <UnorderedListOutlined /> },
+            { value: 'calendar', icon: <CalendarOutlined /> },
+          ]}
+          style={{ background: '#0F1320' }}
+        />
       </div>
 
-      {/* Kanban columns */}
-      <div style={{ flex: 1, overflowX: 'auto', padding: '24px' }}>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 0 }}>
-            {statuses.map((status) => {
-              const tasks = columns[status.id] ?? [];
-              return (
-                <div
-                  key={status.id}
-                  style={{
-                    width: 280,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                  }}
-                >
-                  {/* Column header */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '0 4px',
-                    marginBottom: 4,
-                  }}>
-                    <span style={{
-                      width: 8, height: 8, borderRadius: '50%',
-                      background: status.color, flexShrink: 0,
-                    }} />
-                    <Text style={{ color: '#8B95B0', fontWeight: 600, fontSize: 13, flex: 1 }}>
-                      {status.name}
-                    </Text>
-                    <Text style={{ color: '#4A5578', fontSize: 12 }}>{tasks.length}</Text>
-                  </div>
+      {/* View content */}
+      <div style={{ flex: 1, overflow: viewMode === 'board' ? 'hidden' : 'auto' }}>
 
-                  {/* Droppable */}
-                  <Droppable droppableId={status.id}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        style={{
-                          flex: 1,
-                          minHeight: 80,
-                          borderRadius: 8,
-                          padding: 4,
-                          background: snapshot.isDraggingOver ? '#1E2640' : 'transparent',
-                          transition: 'background 0.15s',
-                        }}
-                      >
-                        {tasks.map((task, index) => (
-                          <Draggable key={task.id} draggableId={task.id} index={index}>
-                            {(drag, snap) => (
-                              <div
-                                ref={drag.innerRef}
-                                {...drag.draggableProps}
-                                {...drag.dragHandleProps}
-                                style={{
-                                  marginBottom: 8,
-                                  opacity: snap.isDragging ? 0.85 : 1,
-                                  ...drag.draggableProps.style,
-                                }}
-                              >
-                                <TaskCard task={task} onClick={() => setSelectedTaskId(task.id)} />
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-
-                  {/* Quick add */}
-                  {addingTo === status.id ? (
-                    <Input
-                      ref={addInputRef}
-                      value={addTitle}
-                      onChange={(e) => setAddTitle(e.target.value)}
-                      onPressEnter={() => submitAdd(status.id)}
-                      onBlur={() => submitAdd(status.id)}
-                      placeholder="Название задачи..."
-                      style={{
-                        background: '#0F1320', border: '1px solid #4F6EF7',
-                        color: '#E2E8F8', borderRadius: 8,
-                      }}
-                    />
-                  ) : (
-                    <Button
-                      type="text"
-                      icon={<PlusOutlined />}
-                      onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
-                      style={{ color: '#4A5578', textAlign: 'left', width: '100%', justifyContent: 'flex-start' }}
+        {/* ── Board (Kanban) view ── */}
+        {viewMode === 'board' && (
+          <div style={{ overflowX: 'auto', padding: '24px', height: '100%' }}>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 0 }}>
+                {statuses.map((status) => {
+                  const tasks = columns[status.id] ?? [];
+                  return (
+                    <div
+                      key={status.id}
+                      style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}
                     >
-                      Добавить задачу
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
+                      {/* Column header */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '0 4px', marginBottom: 4,
+                      }}>
+                        <span style={{
+                          width: 8, height: 8, borderRadius: '50%',
+                          background: status.color, flexShrink: 0,
+                        }} />
+                        <Text style={{ color: '#8B95B0', fontWeight: 600, fontSize: 13, flex: 1 }}>
+                          {status.name}
+                        </Text>
+                        <Text style={{ color: '#4A5578', fontSize: 12 }}>{tasks.length}</Text>
+                      </div>
+
+                      {/* Droppable */}
+                      <Droppable droppableId={status.id}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            style={{
+                              flex: 1,
+                              minHeight: 80,
+                              borderRadius: 8,
+                              padding: 4,
+                              background: snapshot.isDraggingOver ? '#1E2640' : 'transparent',
+                              transition: 'background 0.15s',
+                            }}
+                          >
+                            {tasks.map((task, index) => (
+                              <Draggable key={task.id} draggableId={task.id} index={index}>
+                                {(drag, snap) => (
+                                  <div
+                                    ref={drag.innerRef}
+                                    {...drag.draggableProps}
+                                    {...drag.dragHandleProps}
+                                    style={{
+                                      marginBottom: 8,
+                                      opacity: snap.isDragging ? 0.85 : 1,
+                                      ...drag.draggableProps.style,
+                                    }}
+                                  >
+                                    <TaskCard task={task} onClick={() => setSelectedTaskId(task.id)} />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+
+                      {/* Quick add */}
+                      {addingTo === status.id ? (
+                        <Input
+                          ref={addInputRef}
+                          value={addTitle}
+                          onChange={(e) => setAddTitle(e.target.value)}
+                          onPressEnter={() => submitAdd(status.id)}
+                          onBlur={() => submitAdd(status.id)}
+                          placeholder="Название задачи..."
+                          style={{
+                            background: '#0F1320', border: '1px solid #4F6EF7',
+                            color: '#E2E8F8', borderRadius: 8,
+                          }}
+                        />
+                      ) : (
+                        <Button
+                          type="text"
+                          icon={<PlusOutlined />}
+                          onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
+                          style={{ color: '#4A5578', textAlign: 'left', width: '100%', justifyContent: 'flex-start' }}
+                        >
+                          Добавить задачу
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </DragDropContext>
           </div>
-        </DragDropContext>
+        )}
+
+        {/* ── List view ── */}
+        {viewMode === 'list' && (
+          <BoardListView
+            statuses={statuses}
+            tasks={allTasks}
+            onTaskClick={setSelectedTaskId}
+            onTaskUpdated={onTaskUpdated}
+            quickAddStatusId={addingTo}
+            quickAddTitle={addTitle}
+            onQuickAddStart={(sid) => { setAddingTo(sid); setAddTitle(''); }}
+            onQuickAddChange={setAddTitle}
+            onQuickAddSubmit={submitAdd}
+          />
+        )}
+
+        {/* ── Calendar view ── */}
+        {viewMode === 'calendar' && (
+          <BoardCalendarView
+            statuses={statuses}
+            tasks={allTasks}
+            onTaskClick={setSelectedTaskId}
+          />
+        )}
       </div>
 
       {/* Task detail drawer */}

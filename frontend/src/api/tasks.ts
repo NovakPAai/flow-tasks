@@ -52,3 +52,22 @@ export async function reorderTasks(boardId: string, updates: {
 }[]): Promise<void> {
   await api.patch(`/boards/${boardId}/tasks/reorder`, { updates });
 }
+
+export interface MyTask extends Task {
+  board: {
+    id: string;
+    name: string;
+    prefix: string;
+    workspace: { id: string; name: string; slug: string };
+  };
+}
+
+export async function listMyTasks(params?: {
+  priority?: string;
+  duePreset?: string;
+  search?: string;
+  workspaceId?: string;
+}): Promise<MyTask[]> {
+  const { data } = await api.get<MyTask[]>('/my-tasks', { params });
+  return data;
+}

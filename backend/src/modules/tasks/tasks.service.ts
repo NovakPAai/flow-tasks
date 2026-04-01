@@ -1,6 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
-import type { CreateTaskDto, UpdateTaskDto, TaskFiltersDto } from './tasks.dto.js';
+import type { CreateTaskDto, UpdateTaskDto, TaskFiltersDto, MyTasksFiltersDto } from './tasks.dto.js';
 import type { Prisma } from '@prisma/client';
 
 // ─── Access helpers ───────────────────────────────────────────────────────────
@@ -287,6 +287,47 @@ export async function deleteTask(taskId: string, userId: string) {
     where: { path: { startsWith: `${task.path}${taskId}/` } },
   });
   await prisma.task.delete({ where: { id: taskId } });
+}
+
+// ─── My Tasks (cross-workspace) ───────────────────────────────────────────────
+
+export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
+  // All workspaces where user is a member
+  const memberships = await prisma.workspaceMember.findMany({
+    where: { userId },
+    select: { workspaceId: true },
+  });
+  const workspaceIds = memberships.map((m) => m.workspaceId);
+
+  if (workspaceIds.length === 0) return [];
+
+  // Filter by specific workspace if requested
+  const filteredWorkspaceIds = filters.workspaceId
+    ? workspaceIds.filter((id) => id === filters.workspaceId)
+    : workspaceIds;
+
+  const where: Prisma.TaskWhereInput = {
+    assigneeId: userId,
+    board: { workspaceId: { in: filteredWorkspaceIds } },
+    ...(filters.priority && { priority: filters.priority }),
+    ...(filters.search && { title: { contains: filters.search, mode: 'insensitive' } }),
+    ...buildDueDateFilter(filters.duePreset),
+  };
+
+  return prisma.task.findMany({
+    where,
+    orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+    include: {
+      status: { select: { id: true, name: true, color: true, category: true } },
+      board: {
+        select: {
+          id: true, name: true, prefix: true,
+          workspace: { select: { id: true, name: true, slug: true } },
+        },
+      },
+      _count: { select: { children: true } },
+    },
+  });
 }
 
 // ─── DnD reorder ──────────────────────────────────────────────────────────────

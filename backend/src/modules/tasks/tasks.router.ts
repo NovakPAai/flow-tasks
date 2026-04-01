@@ -7,6 +7,7 @@ import {
   moveTaskDto,
   reorderTasksDto,
   taskFiltersDto,
+  myTasksFiltersDto,
 } from './tasks.dto.js';
 import * as tasks from './tasks.service.js';
 import type { AuthRequest } from '../../shared/types/index.js';
@@ -70,3 +71,13 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
 });
 
 export default router;
+
+// ─── /my-tasks ────────────────────────────────────────────────────────────────
+export const myTasksRouter = Router();
+myTasksRouter.use(authenticate);
+
+myTasksRouter.get('/', validate(myTasksFiltersDto, 'query'), async (req: AuthRequest, res, next) => {
+  try {
+    res.json(await tasks.listMyTasks(req.user!.userId, req.query as never));
+  } catch (e) { next(e); }
+});

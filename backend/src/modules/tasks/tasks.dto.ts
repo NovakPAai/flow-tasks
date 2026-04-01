@@ -43,6 +43,14 @@ export const taskFiltersDto = z.object({
   duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),
 });
 
+export const myTasksFiltersDto = z.object({
+  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+  duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),
+  search: z.string().optional(),
+  workspaceId: z.string().uuid().optional(),
+});
+
 export type CreateTaskDto = z.infer<typeof createTaskDto>;
 export type UpdateTaskDto = z.infer<typeof updateTaskDto>;
 export type TaskFiltersDto = z.infer<typeof taskFiltersDto>;
+export type MyTasksFiltersDto = z.infer<typeof myTasksFiltersDto>;
