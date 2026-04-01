@@ -89,6 +89,7 @@ export async function listTasks(boardId: string, userId: string, filters: TaskFi
     ...(filters.statusId && { statusId: filters.statusId }),
     ...(filters.assigneeId && { assigneeId: filters.assigneeId }),
     ...(filters.priority && { priority: filters.priority }),
+    ...(filters.labelId && { labels: { some: { labelId: filters.labelId } } }),
     ...(filters.search && { title: { contains: filters.search, mode: 'insensitive' } }),
     ...buildDueDateFilter(filters.duePreset),
   };
@@ -190,6 +191,18 @@ export async function getTask(taskId: string, userId: string) {
           status: { select: { id: true, name: true, color: true, category: true } },
           _count: { select: { children: true } },
         },
+      },
+      labels: {
+        include: { label: true },
+        orderBy: { label: { name: 'asc' } },
+      },
+      comments: {
+        orderBy: { createdAt: 'asc' },
+        include: { author: { select: { id: true, name: true, avatar: true } } },
+      },
+      checklists: {
+        orderBy: { orderIndex: 'asc' },
+        include: { items: { orderBy: { orderIndex: 'asc' } } },
       },
     },
   });

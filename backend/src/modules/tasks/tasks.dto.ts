@@ -38,6 +38,7 @@ export const taskFiltersDto = z.object({
   statusId: z.string().uuid().optional(),
   assigneeId: z.string().uuid().optional(),
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+  labelId: z.string().uuid().optional(),
   parentId: z.string().uuid().nullable().optional(),
   search: z.string().optional(),
   duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),

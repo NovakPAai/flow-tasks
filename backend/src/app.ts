@@ -12,6 +12,9 @@ import workflowsRouter, {
 } from './modules/workflows/workflows.router.js';
 import boardsRouter, { workspaceBoardsRouter } from './modules/boards/boards.router.js';
 import tasksRouter, { boardTasksRouter, myTasksRouter } from './modules/tasks/tasks.router.js';
+import labelsRouter, { workspaceLabelsRouter, taskLabelsRouter } from './modules/labels/labels.router.js';
+import commentsRouter, { taskCommentsRouter } from './modules/comments/comments.router.js';
+import checklistsRouter, { taskChecklistsRouter, checklistItemsRouter } from './modules/checklists/checklists.router.js';
 
 export function createApp() {
   const app = express();
@@ -42,6 +45,14 @@ export function createApp() {
   app.use('/api/boards/:bid/tasks', boardTasksRouter);
   app.use('/api/tasks', tasksRouter);
   app.use('/api/my-tasks', myTasksRouter);
+  app.use('/api/workspaces/:wid/labels', workspaceLabelsRouter);
+  app.use('/api/labels', labelsRouter);
+  app.use('/api/tasks/:tid/labels', taskLabelsRouter);
+  app.use('/api/tasks/:tid/comments', taskCommentsRouter);
+  app.use('/api/comments', commentsRouter);
+  app.use('/api/tasks/:tid/checklists', taskChecklistsRouter);
+  app.use('/api/checklists', checklistsRouter);
+  app.use('/api/checklist-items', checklistItemsRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);

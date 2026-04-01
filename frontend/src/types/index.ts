@@ -103,6 +103,46 @@ export interface TaskStatus {
   category: StatusCategory;
 }
 
+export interface Label {
+  id: string;
+  workspaceId: string;
+  name: string;
+  color: string;
+  _count?: { tasks: number };
+}
+
+export interface TaskLabel {
+  taskId: string;
+  labelId: string;
+  label: Label;
+}
+
+export interface Comment {
+  id: string;
+  taskId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  author: Pick<User, 'id' | 'name' | 'avatar'>;
+}
+
+export interface ChecklistItem {
+  id: string;
+  checklistId: string;
+  title: string;
+  isDone: boolean;
+  orderIndex: number;
+}
+
+export interface Checklist {
+  id: string;
+  taskId: string;
+  title: string;
+  orderIndex: number;
+  items: ChecklistItem[];
+}
+
 export interface Task {
   id: string;
   boardId: string;
@@ -127,5 +167,8 @@ export interface Task {
   creator?: Pick<User, 'id' | 'name' | 'avatar'>;
   parent?: { id: string; title: string; issueKey: string };
   children?: Task[];
+  labels?: TaskLabel[];
+  comments?: Comment[];
+  checklists?: Checklist[];
   _count?: { children: number };
 }

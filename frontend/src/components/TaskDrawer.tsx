@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import {
-  Drawer, Typography, Spin, Button, Select, Avatar,
+  Drawer, Typography, Tag, Spin, Button, Select, Avatar,
   Divider, Input, message, Popconfirm,
 } from 'antd';
 import { DeleteOutlined, BranchesOutlined } from '@ant-design/icons';
-import type { Task, WorkflowStatus } from '../types';
+import type { Task, WorkflowStatus, Label, TaskLabel, Comment, Checklist } from '../types';
 import * as tasksApi from '../api/tasks';
+import CommentThread from './CommentThread';
+import ChecklistBlock from './ChecklistBlock';
+import LabelPicker from './LabelPicker';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -16,15 +19,25 @@ const PRIORITY_OPTS = [
   { value: 'LOW', label: '⚪ Низкий' },
 ];
 
+const PRIORITY_COLOR: Record<string, string> = {
+  HIGH: '#EF4444', MEDIUM: '#F59E0B', LOW: '#6B7280',
+};
+
 interface Props {
   taskId: string | null;
   statuses: WorkflowStatus[];
+  workspaceId?: string;
+  workspaceLabels?: Label[];
+  onWorkspaceLabelCreated?: (label: Label) => void;
   onClose: () => void;
   onUpdated: (task: Task) => void;
   onDeleted: (taskId: string) => void;
 }
 
-export default function TaskDrawer({ taskId, statuses, onClose, onUpdated, onDeleted }: Props) {
+export default function TaskDrawer({
+  taskId, statuses, workspaceId, workspaceLabels = [],
+  onWorkspaceLabelCreated, onClose, onUpdated, onDeleted,
+}: Props) {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
   const [editTitle, setEditTitle] = useState(false);
@@ -46,7 +59,7 @@ export default function TaskDrawer({ taskId, statuses, onClose, onUpdated, onDel
     setSaving(true);
     try {
       const updated = await tasksApi.updateTask(task.id, patch);
-      setTask(updated);
+      setTask((prev) => prev ? { ...prev, ...updated } : updated);
       onUpdated(updated);
     } catch { message.error('Ошибка сохранения'); }
     finally { setSaving(false); }
@@ -61,11 +74,23 @@ export default function TaskDrawer({ taskId, statuses, onClose, onUpdated, onDel
     } catch { message.error('Ошибка удаления'); }
   };
 
+  const handleLabelsChanged = (labels: TaskLabel[]) => {
+    setTask((prev) => prev ? { ...prev, labels } : prev);
+  };
+
+  const handleCommentsChanged = (comments: Comment[]) => {
+    setTask((prev) => prev ? { ...prev, comments } : prev);
+  };
+
+  const handleChecklistsChanged = (checklists: Checklist[]) => {
+    setTask((prev) => prev ? { ...prev, checklists } : prev);
+  };
+
   return (
     <Drawer
       open={!!taskId}
       onClose={onClose}
-      width={480}
+      width={520}
       styles={{
         body: { background: '#0A0E1A', padding: '24px' },
         header: { background: '#0A0E1A', borderBottom: '1px solid #1E2640' },
@@ -107,6 +132,35 @@ export default function TaskDrawer({ taskId, statuses, onClose, onUpdated, onDel
             </Title>
           )}
 
+          {/* Labels */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              {(task.labels ?? []).map((tl) => (
+                <Tag
+                  key={tl.labelId}
+                  style={{
+                    background: `${tl.label.color}22`,
+                    border: `1px solid ${tl.label.color}55`,
+                    color: tl.label.color,
+                    fontSize: 11,
+                  }}
+                >
+                  {tl.label.name}
+                </Tag>
+              ))}
+              {workspaceId && (
+                <LabelPicker
+                  taskId={task.id}
+                  workspaceId={workspaceId}
+                  workspaceLabels={workspaceLabels}
+                  taskLabels={task.labels ?? []}
+                  onLabelsChanged={handleLabelsChanged}
+                  onWorkspaceLabelCreated={onWorkspaceLabelCreated ?? (() => {})}
+                />
+              )}
+            </div>
+          </div>
+
           {/* Status + Priority */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1 }}>
@@ -115,7 +169,7 @@ export default function TaskDrawer({ taskId, statuses, onClose, onUpdated, onDel
                 value={task.statusId}
                 style={{ width: '100%' }}
                 disabled={saving}
-                onChange={(_v) => save({ title: task.title })} // placeholder — move via API
+                onChange={(v) => save({ statusId: v } as never)}
                 options={statuses.map((s) => ({
                   value: s.id,
                   label: (
@@ -171,15 +225,55 @@ export default function TaskDrawer({ taskId, statuses, onClose, onUpdated, onDel
             />
           </div>
 
+          {/* Checklists */}
+          {((task.checklists ?? []).length > 0 || true) && (
+            <div style={{ marginBottom: 20 }}>
+              <Text style={{ color: '#4A5578', fontSize: 11, display: 'block', marginBottom: 8 }}>ЧЕКЛИСТЫ</Text>
+              <ChecklistBlock
+                taskId={task.id}
+                checklists={task.checklists ?? []}
+                onChecklistsChanged={handleChecklistsChanged}
+              />
+            </div>
+          )}
+
           {/* Subtasks count */}
           {(task._count?.children ?? 0) > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
               <BranchesOutlined style={{ color: '#4A5578' }} />
               <Text style={{ color: '#4A5578', fontSize: 12 }}>
                 {task._count?.children} подзадач
               </Text>
             </div>
           )}
+
+          <Divider style={{ borderColor: '#1E2640' }} />
+
+          {/* Priority display */}
+          {task.priority && (
+            <div style={{ marginBottom: 12 }}>
+              <Tag style={{
+                background: `${PRIORITY_COLOR[task.priority]}18`,
+                border: `1px solid ${PRIORITY_COLOR[task.priority]}44`,
+                color: PRIORITY_COLOR[task.priority],
+                fontSize: 11,
+              }}>
+                {PRIORITY_OPTS.find((o) => o.value === task.priority)?.label}
+              </Tag>
+            </div>
+          )}
+
+          {/* Comments */}
+          <div style={{ marginBottom: 20 }}>
+            <Text style={{ color: '#4A5578', fontSize: 11, display: 'block', marginBottom: 12 }}>
+              КОММЕНТАРИИ {(task.comments ?? []).length > 0 && `(${task.comments!.length})`}
+            </Text>
+            <CommentThread
+              taskId={task.id}
+              comments={task.comments ?? []}
+              onCommentsChanged={handleCommentsChanged}
+            />
+          </div>
 
           {/* Meta */}
           <Divider style={{ borderColor: '#1E2640' }} />
