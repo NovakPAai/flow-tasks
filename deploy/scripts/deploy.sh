@@ -25,11 +25,11 @@ fi
 # Pull latest code
 echo "→ Pulling code..."
 if [[ ! -d "$REPO_DIR/.git" ]]; then
-  git clone https://github.com/NovakPAai/flow-tasks.git "$REPO_DIR"
+  git clone git@github.com:NovakPAai/flow-tasks.git "$REPO_DIR"
 fi
 cd "$REPO_DIR"
 git fetch origin
-git checkout "$GIT_SHA" 2>/dev/null || git reset --hard "origin/main"
+git reset --hard "${GIT_SHA:-origin/main}"
 
 # Build backend
 echo "→ Building backend..."
