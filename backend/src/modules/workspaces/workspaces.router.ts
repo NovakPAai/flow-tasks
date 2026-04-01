@@ -76,4 +76,10 @@ router.delete('/:id/members/:userId', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.get('/:id/history', async (req: AuthRequest, res, next) => {
+  try {
+    res.json(await ws.getWorkspaceHistory(String(req.params.id), req.user!.userId));
+  } catch (e) { next(e); }
+});
+
 export default router;

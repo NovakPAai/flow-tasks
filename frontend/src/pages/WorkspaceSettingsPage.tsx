@@ -11,6 +11,7 @@ import * as workspacesApi from '../api/workspaces';
 import * as labelsApi from '../api/labels';
 import * as wfApi from '../api/workflows';
 import WorkflowEditor from '../components/WorkflowEditor';
+import WorkspaceHistoryTimeline from '../components/WorkspaceHistoryTimeline';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useAuthStore } from '../store/auth.store';
 
@@ -452,11 +453,16 @@ export default function WorkspaceSettingsPage() {
     </div>
   );
 
+  const historyTab = isOwner && workspace ? (
+    <WorkspaceHistoryTimeline workspaceId={workspace.id} />
+  ) : null;
+
   const tabItems = [
     { key: 'general',   label: 'Основное',     children: generalTab },
     { key: 'members',   label: `Участники (${members.length})`, children: membersTab },
     { key: 'workflows', label: `Workflows (${workflows.length})`, children: workflowsTab },
     { key: 'labels',    label: `Метки (${labels.length})`,   children: labelsTab },
+    ...(isOwner ? [{ key: 'history', label: 'История', children: historyTab }] : []),
   ];
 
   return (

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
 import AppLayout from './components/AppLayout';
+import OnboardingProvider from './components/OnboardingProvider';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import WorkspacesPage from './pages/WorkspacesPage';
@@ -23,7 +24,11 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
-  return <AppLayout>{children}</AppLayout>;
+  return (
+    <OnboardingProvider>
+      <AppLayout>{children}</AppLayout>
+    </OnboardingProvider>
+  );
 }
 
 export default function App() {

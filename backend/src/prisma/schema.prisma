@@ -28,6 +28,7 @@ model User {
   assignedTasks        Task[]            @relation("taskAssignee")
   comments             Comment[]
   taskHistories        TaskHistory[]
+  workspaceEvents      WorkspaceEvent[]
 
   @@map("users")
 }
@@ -60,6 +61,7 @@ model Workspace {
   workflows Workflow[]
   boards    Board[]
   labels    Label[]
+  events    WorkspaceEvent[]
 
   @@map("workspaces")
 }
@@ -291,6 +293,25 @@ model ChecklistItem {
   checklist Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
 
   @@map("checklist_items")
+}
+
+// ─── Workspace Events ─────────────────────────────────────────────────────────
+
+model WorkspaceEvent {
+  id          String   @id @default(uuid())
+  workspaceId String
+  userId      String
+  action      String   // "workspace_created","workspace_updated","member_added","member_removed","member_role_changed","workflow_created","workflow_deleted","board_created","board_deleted"
+  entityType  String   // "workspace","member","workflow","board"
+  entityId    String?
+  meta        Json?    // e.g. { "name": "Alice", "role": "MEMBER" }
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@map("workspace_events")
 }
 
 // ─── Task History ─────────────────────────────────────────────────────────────

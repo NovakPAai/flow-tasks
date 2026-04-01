@@ -392,6 +392,7 @@ export default function BoardPage() {
         statuses={statuses}
         members={members}
         workspaceId={board.workspaceId}
+        boardId={boardId}
         workspaceLabels={labels}
         onWorkspaceLabelCreated={(label) => setLabels((prev) => [...prev, label])}
         onClose={() => setSelectedTaskId(null)}

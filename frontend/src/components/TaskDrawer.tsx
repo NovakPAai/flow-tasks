@@ -11,6 +11,7 @@ import CommentThread from './CommentThread';
 import ChecklistBlock from './ChecklistBlock';
 import LabelPicker from './LabelPicker';
 import TaskHistoryTimeline from './TaskHistoryTimeline';
+import SubtaskTree from './SubtaskTree';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -30,6 +31,7 @@ interface Props {
   statuses: WorkflowStatus[];
   members?: WorkspaceMember[];
   workspaceId?: string;
+  boardId?: string;
   workspaceLabels?: Label[];
   onWorkspaceLabelCreated?: (label: Label) => void;
   onClose: () => void;
@@ -38,7 +40,7 @@ interface Props {
 }
 
 export default function TaskDrawer({
-  taskId, statuses, members = [], workspaceId, workspaceLabels = [],
+  taskId, statuses, members = [], workspaceId, boardId, workspaceLabels = [],
   onWorkspaceLabelCreated, onClose, onUpdated, onDeleted,
 }: Props) {
   const [task, setTask] = useState<Task | null>(null);
@@ -273,15 +275,35 @@ export default function TaskDrawer({
             </div>
           )}
 
-          {/* Subtasks count */}
-          {(task._count?.children ?? 0) > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+          {/* Subtasks */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <BranchesOutlined style={{ color: '#4A5578' }} />
-              <Text style={{ color: '#4A5578', fontSize: 12 }}>
-                {task._count?.children} подзадач
-              </Text>
+              <Text style={{ color: '#4A5578', fontSize: 11 }}>ПОДЗАДАЧИ</Text>
             </div>
-          )}
+            {boardId ? (
+              <SubtaskTree
+                tasks={task.children ?? []}
+                parentId={task.id}
+                boardId={boardId}
+                statuses={statuses}
+                onRefresh={() => {
+                  tasksApi.getTask(task.id).then((t) => {
+                    setTask(t);
+                    setTitleVal(t.title);
+                    setDescVal(t.description ?? '');
+                    onUpdated(t);
+                  }).catch(() => {});
+                }}
+              />
+            ) : (
+              (task._count?.children ?? 0) > 0 && (
+                <Text style={{ color: '#4A5578', fontSize: 12 }}>
+                  {task._count?.children} подзадач
+                </Text>
+              )
+            )}
+          </div>
 
           <Divider style={{ borderColor: '#1E2640' }} />
 

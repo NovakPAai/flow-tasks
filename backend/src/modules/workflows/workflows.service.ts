@@ -1,5 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
+import { logEvent } from '../workspaces/workspaces.service.js';
 import type { CreateWorkflowDto, UpdateWorkflowDto, AddStatusDto, UpdateStatusDto } from './workflows.dto.js';
 
 // ─── Default workflow ─────────────────────────────────────────────────────────
@@ -123,6 +124,8 @@ export async function createWorkflow(workspaceId: string, userId: string, dto: C
     await generateTransitions(workflow.id);
   }
 
+  await logEvent(workspaceId, userId, 'workflow_created', 'workflow', workflow.id, { name: dto.name });
+
   return workflow;
 }
 
@@ -166,6 +169,8 @@ export async function deleteWorkflow(workflowId: string, userId: string) {
   if (workflow.isDefault) throw new AppError(400, 'Cannot delete the default workflow');
 
   await prisma.workflow.delete({ where: { id: workflowId } });
+
+  await logEvent(workflow.workspaceId, userId, 'workflow_deleted', 'workflow', workflowId, { name: workflow.name });
 }
 
 // ─── Statuses ─────────────────────────────────────────────────────────────────

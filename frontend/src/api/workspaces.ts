@@ -1,5 +1,5 @@
 import api from './client';
-import type { Workspace, WorkspaceMember } from '../types';
+import type { Workspace, WorkspaceMember, WorkspaceEvent } from '../types';
 
 export async function listWorkspaces(): Promise<Workspace[]> {
   const { data } = await api.get<Workspace[]>('/workspaces');
@@ -65,5 +65,10 @@ export async function inviteByEmail(
   role: 'OWNER' | 'MEMBER' | 'VIEWER' = 'MEMBER',
 ): Promise<WorkspaceMember> {
   const { data } = await api.post<WorkspaceMember>(`/workspaces/${workspaceId}/invite`, { email, role });
+  return data;
+}
+
+export async function getWorkspaceHistory(workspaceId: string): Promise<WorkspaceEvent[]> {
+  const { data } = await api.get<WorkspaceEvent[]>(`/workspaces/${workspaceId}/history`);
   return data;
 }

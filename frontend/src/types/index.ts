@@ -19,6 +19,18 @@ export interface AuthResponse {
 
 export type WorkspaceRole = 'OWNER' | 'MEMBER' | 'VIEWER';
 
+export interface WorkspaceEvent {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  meta?: Record<string, unknown>;
+  createdAt: string;
+  user: Pick<User, 'id' | 'name' | 'avatar'>;
+}
+
 export interface WorkspaceMember {
   id: string;
   workspaceId: string;

@@ -62,6 +62,11 @@ export interface MyTask extends Task {
   };
 }
 
+export async function getSubtree(taskId: string): Promise<Task[]> {
+  const { data } = await api.get<Task[]>(`/tasks/${taskId}/subtree`);
+  return data;
+}
+
 export async function getTaskHistory(taskId: string): Promise<TaskHistory[]> {
   const { data } = await api.get<TaskHistory[]>(`/tasks/${taskId}/history`);
   return data;
