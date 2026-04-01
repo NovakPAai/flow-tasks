@@ -13,7 +13,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 echo "=== FlowTask Deploy $GIT_SHA at $TIMESTAMP ==="
 
 # Backup DB before migrate
-mkdir -p "$BACKUP_DIR"
+mkdir -p "$BACKUP_DIR" 2>/dev/null || true
 if command -v pg_dump &>/dev/null; then
   DB_URL="${DATABASE_URL:-}"
   if [[ -n "$DB_URL" ]]; then
