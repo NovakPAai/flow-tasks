@@ -15,12 +15,16 @@ async function getRedisClientInternal(): Promise<RedisClient | null> {
 
   if (!connecting) {
     const instance = createClient({ url: config.REDIS_URL }) as RedisClient;
-    instance.on('error', (err) => console.error('Redis client error:', err));
+    instance.on('error', () => { /* suppress repeated noise */ });
 
-    connecting = instance
-      .connect()
-      .then(() => { client = instance; return instance; })
-      .catch((err) => { console.error('Failed to connect to Redis:', err); client = null; return null; });
+    const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 2000));
+    connecting = Promise.race([
+      instance
+        .connect()
+        .then(() => { client = instance; return instance; })
+        .catch(() => { client = null; return null; }),
+      timeout,
+    ]).then(result => { if (result === null) connecting = null; return result; });
   }
 
   return connecting;
