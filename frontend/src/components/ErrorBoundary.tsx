@@ -50,10 +50,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
           <button
-            onClick={() => {
-              this.setState({ hasError: false, error: null });
-              window.location.href = '/';
-            }}
+            onClick={() => { window.location.href = '/'; }}
             style={{
               background: '#4F6EF7', border: 'none', borderRadius: 8,
               padding: '8px 20px', cursor: 'pointer',

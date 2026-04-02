@@ -159,7 +159,11 @@ export default function LabelPicker({
             return (
               <div
                 key={label.id}
+                role="checkbox"
+                aria-checked={checked}
+                tabIndex={0}
                 onClick={() => !saving && toggle(label)}
+                onKeyDown={e => { if (!saving && (e.key === 'Enter' || e.key === ' ')) toggle(label); }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '5px 0', cursor: saving ? 'default' : 'pointer',

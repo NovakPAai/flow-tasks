@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { WorkspaceEvent } from '../types';
 import * as workspacesApi from '../api/workspaces';
@@ -74,12 +75,28 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
   const [events, setEvents] = useState<WorkspaceEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Inject spin keyframe once into document head
+  const keyframeInjected = useRef(false);
   useEffect(() => {
+    if (keyframeInjected.current) return;
+    const id = 'flow-spin-keyframe';
+    if (!document.getElementById(id)) {
+      const style = document.createElement('style');
+      style.id = id;
+      style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+      document.head.appendChild(style);
+    }
+    keyframeInjected.current = true;
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     workspacesApi.getWorkspaceHistory(workspaceId)
-      .then(setEvents)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .then(data => { if (!controller.signal.aborted) setEvents(data); })
+      .catch(() => { if (!controller.signal.aborted) message.error('Не удалось загрузить историю'); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
   }, [workspaceId]);
 
   if (loading) {
@@ -91,7 +108,6 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
           borderTopColor: '#4F6EF7',
           animation: 'spin 0.7s linear infinite',
         }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }

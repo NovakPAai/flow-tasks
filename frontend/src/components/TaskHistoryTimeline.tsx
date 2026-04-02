@@ -50,11 +50,13 @@ export default function TaskHistoryTimeline({ taskId, statuses }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
     tasksApi.getTaskHistory(taskId)
-      .then(setHistory)
-      .catch(() => message.error('Не удалось загрузить историю'))
-      .finally(() => setLoading(false));
+      .then(data => { if (!controller.signal.aborted) setHistory(data); })
+      .catch(() => { if (!controller.signal.aborted) message.error('Не удалось загрузить историю'); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
   }, [taskId]);
 
   if (loading) {

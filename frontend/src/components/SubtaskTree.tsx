@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { Task, WorkflowStatus } from '../types';
@@ -64,14 +64,17 @@ export default function SubtaskTree({
 
   const indent = depth * 16;
 
+  const fetchSubtree = useCallback(async (id: string) => {
+    const children = await tasksApi.getSubtree(id);
+    setSubtrees(p => ({ ...p, [id]: children.filter(ch => ch.parentId === id) }));
+  }, []);
+
   const handleExpand = async (task: Task) => {
     const id = task.id;
     if (expanded[id]) { setExpanded(p => ({ ...p, [id]: false })); return; }
     setLoadingExpand(p => ({ ...p, [id]: true }));
     try {
-      const children = await tasksApi.getSubtree(id);
-      const direct = children.filter(ch => ch.parentId === id);
-      setSubtrees(p => ({ ...p, [id]: direct }));
+      await fetchSubtree(id);
       setExpanded(p => ({ ...p, [id]: true }));
     } catch { message.error('Не удалось загрузить подзадачи'); }
     finally { setLoadingExpand(p => ({ ...p, [id]: false })); }
@@ -126,12 +129,15 @@ export default function SubtaskTree({
             >
               {/* Expand toggle */}
               <span
+                role={hasChildren ? 'button' : undefined}
+                tabIndex={hasChildren ? 0 : undefined}
                 style={{
                   width: 16, height: 16, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: hasChildren ? 'pointer' : 'default', color: c.dimText,
                 }}
                 onClick={() => hasChildren && handleExpand(task)}
+                onKeyDown={e => { if (hasChildren && (e.key === 'Enter' || e.key === ' ')) handleExpand(task); }}
               >
                 {hasChildren && (
                   loadingExpand[task.id]
@@ -152,8 +158,12 @@ export default function SubtaskTree({
 
               {/* Done checkbox */}
               <span
+                role="checkbox"
+                aria-checked={done}
+                tabIndex={0}
                 title={done ? 'Снять отметку' : 'Отметить выполненным'}
                 onClick={() => handleToggleDone(task)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleToggleDone(task); }}
                 style={{
                   width: 15, height: 15, borderRadius: 3, flexShrink: 0,
                   border: `1px solid ${done ? c.doneCheckBorder : c.checkBorder}`,
@@ -245,7 +255,7 @@ export default function SubtaskTree({
                   boardId={boardId}
                   statuses={statuses}
                   depth={depth + 1}
-                  onRefresh={() => { handleExpand(task); onRefresh(); }}
+                  onRefresh={() => { fetchSubtree(task.id); onRefresh(); }}
                 />
               </div>
             )}
@@ -300,6 +310,8 @@ export default function SubtaskTree({
         </div>
       ) : (
         <div
+          role="button"
+          tabIndex={0}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             paddingLeft: indent + (depth > 0 ? 12 : 0), paddingTop: 4,
@@ -307,6 +319,7 @@ export default function SubtaskTree({
             fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.addText,
           }}
           onClick={() => setAdding(true)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setAdding(true); }}
           onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.color = isDark ? '#8B9DC8' : '#6B7194'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.color = c.addText; }}
         >

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { Checklist, ChecklistItem } from '../types';
@@ -48,6 +48,7 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
   const [addingItem, setAddingItem]     = useState<string | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [confirmClId, setConfirmClId]   = useState<string | null>(null);
+  const escapeRef = useRef(false);
 
   const addChecklist = async () => {
     if (!addingTitle.trim()) return;
@@ -188,7 +189,11 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
               <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
                 {/* Custom checkbox */}
                 <div
+                  role="checkbox"
+                  aria-checked={item.isDone}
+                  tabIndex={0}
                   onClick={() => toggleItem(checklist.id, item)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') toggleItem(checklist.id, item); }}
                   style={{
                     width: 15, height: 15, borderRadius: 3, flexShrink: 0,
                     background: item.isDone ? c.checkActiveBg : c.checkBg,
@@ -244,9 +249,12 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
                   onChange={e => setNewItemTitle(e.target.value)}
                   onKeyDown={e => {
                     if (e.key === 'Enter') addItem(checklist.id);
-                    if (e.key === 'Escape') setAddingItem(null);
+                    if (e.key === 'Escape') { escapeRef.current = true; setAddingItem(null); setNewItemTitle(''); }
                   }}
-                  onBlur={() => addItem(checklist.id)}
+                  onBlur={() => {
+                    if (escapeRef.current) { escapeRef.current = false; return; }
+                    addItem(checklist.id);
+                  }}
                   placeholder="Добавить пункт..."
                   autoFocus
                   style={{ ...inputStyle, flex: 1 }}
@@ -255,7 +263,7 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
               </div>
             ) : (
               <button
-                onClick={() => { setAddingItem(checklist.id); setNewItemTitle(''); }}
+                onClick={() => { setAddingItem(checklist.id); setNewItemTitle(''); escapeRef.current = false; }}
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 5,
