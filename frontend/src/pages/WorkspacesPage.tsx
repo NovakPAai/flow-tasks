@@ -240,6 +240,7 @@ function NewWorkspaceCard({ onClick, C }: { onClick: () => void; C: Theme }) {
         paddingBlock: 24, paddingInline: 24, width: 380,
         transition: 'opacity 0.15s',
       }}
+      data-onboarding="create-workspace"
     >
       <div style={{
         alignItems: 'center', backgroundColor: C.newIconBg,

@@ -587,6 +587,7 @@ export default function WorkspaceSettingsPage() {
             <button
               key={item.key}
               onClick={() => setSearchParams({ tab: item.key })}
+              data-onboarding={item.key === 'members' ? 'ws-members' : item.key === 'workflows' ? 'ws-workflows' : undefined}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 padding: '9px 20px', fontSize: 13,

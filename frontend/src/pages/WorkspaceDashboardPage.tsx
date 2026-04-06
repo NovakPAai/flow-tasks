@@ -316,6 +316,7 @@ export default function WorkspaceDashboardPage() {
 
           {/* Create board button */}
           <button
+            data-onboarding="create-board"
             onClick={() => setCreateOpen(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', flexShrink: 0 }}
           >

@@ -26,8 +26,9 @@ export default function OnboardingProvider({ children }: Props) {
         <OnboardingTooltip
           step={step}
           total={ONBOARDING_STEPS.length}
+          title={currentStep.title}
           message={currentStep.message}
-          hint={currentStep.hint}
+          target={currentStep.target}
           onNext={nextStep}
           onSkip={skipAll}
         />

@@ -323,6 +323,7 @@ export default function BoardPage() {
 
         {/* Создать task button */}
         <button
+          data-onboarding="create-task"
           onClick={() => { if (statuses.length > 0) { setAddingTo(statuses[0].id); setAddTitle(''); } }}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }}
         >
