@@ -47,7 +47,7 @@ export async function listMyWorkspaces(userId: string) {
     include: {
       workspace: {
         include: {
-          _count: { select: { members: true } },
+          _count: { select: { members: true, boards: true } },
         },
       },
     },
@@ -58,6 +58,7 @@ export async function listMyWorkspaces(userId: string) {
     ...m.workspace,
     role: m.role,
     memberCount: m.workspace._count.members,
+    boardCount: m.workspace._count.boards,
   }));
 }
 

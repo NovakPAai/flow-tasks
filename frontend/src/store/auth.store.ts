@@ -16,16 +16,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
 
   login: async (email, password) => {
-    const { user, accessToken, refreshToken } = await authApi.login(email, password);
+    const { accessToken, refreshToken } = await authApi.login(email, password);
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
+    const user = await authApi.getMe();
     set({ user });
   },
 
   register: async (email, password, name) => {
-    const { user, accessToken, refreshToken } = await authApi.register(email, password, name);
+    const { accessToken, refreshToken } = await authApi.register(email, password, name);
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
+    const user = await authApi.getMe();
     set({ user });
   },
 

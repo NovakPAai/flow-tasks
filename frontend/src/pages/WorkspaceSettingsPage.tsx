@@ -539,6 +539,25 @@ export default function WorkspaceSettingsPage() {
         </div>
         {isOwner && <PrimaryBtn onClick={saveSettings} loading={saving} style={{ alignSelf: 'flex-start' }}>Сохранить</PrimaryBtn>}
       </div>
+
+      {isOwner && (
+        <div style={{ maxWidth: 480, marginTop: 48, border: `1px solid #EF444440`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444', letterSpacing: '0.04em', marginBottom: 8, textTransform: 'uppercase' }}>Опасная зона</div>
+          <div style={{ fontSize: 13, color: c.muted, marginBottom: 16 }}>
+            Удаление пространства необратимо. Все доски, задачи и участники будут удалены.
+          </div>
+          <button
+            onClick={handleDeleteWorkspace}
+            style={{
+              background: 'transparent', border: '1px solid #EF4444', borderRadius: 8,
+              color: '#EF4444', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif',
+              fontSize: 13, fontWeight: 600, padding: '8px 18px',
+            }}
+          >
+            Удалить пространство
+          </button>
+        </div>
+      )}
     </div>
   );
 

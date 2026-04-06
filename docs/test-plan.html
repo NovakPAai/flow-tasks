@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowTask — Полный тест-план</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0c14; color: #c8d0e8; font-size: 14px; }
+
+  .header { background: linear-gradient(135deg, #1a1f35 0%, #0f1320 100%); border-bottom: 1px solid #2a3050; padding: 24px 32px; display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 22px; font-weight: 700; color: #4f6ef7; letter-spacing: -0.5px; }
+  .header-sub { color: #6b7a99; font-size: 13px; margin-top: 2px; }
+  .header-right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .badge { background: #1e2740; border: 1px solid #2a3050; border-radius: 6px; padding: 4px 10px; font-size: 12px; color: #8892aa; }
+  .badge.green { border-color: #10b981; color: #10b981; background: rgba(16,185,129,.1); }
+  .badge.blue { border-color: #4f6ef7; color: #4f6ef7; background: rgba(79,110,247,.1); }
+
+  .toolbar { background: #0f1320; border-bottom: 1px solid #1e2740; padding: 12px 32px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .toolbar label { color: #6b7a99; font-size: 12px; margin-right: 4px; }
+  select, input[type=text] { background: #1a1f35; border: 1px solid #2a3050; color: #c8d0e8; border-radius: 6px; padding: 5px 10px; font-size: 12px; outline: none; }
+  select:focus, input:focus { border-color: #4f6ef7; }
+  .btn { background: #4f6ef7; color: #fff; border: none; border-radius: 6px; padding: 5px 14px; font-size: 12px; cursor: pointer; font-weight: 600; }
+  .btn.secondary { background: #1e2740; color: #c8d0e8; border: 1px solid #2a3050; font-weight: 400; }
+  .btn:hover { opacity: 0.85; }
+  .progress-bar { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 10px; }
+  .progress-track { flex: 1; height: 6px; background: #1e2740; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #4f6ef7, #10b981); border-radius: 3px; transition: width .3s; }
+  .progress-text { font-size: 12px; color: #6b7a99; white-space: nowrap; min-width: 70px; }
+
+  .layout { display: flex; height: calc(100vh - 120px); overflow: hidden; }
+  .sidebar { width: 240px; min-width: 240px; background: #0f1320; border-right: 1px solid #1e2740; overflow-y: auto; padding: 12px 0; }
+  .sidebar-section { padding: 8px 16px 4px; font-size: 11px; font-weight: 600; color: #4b5470; text-transform: uppercase; letter-spacing: .8px; }
+  .sidebar-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 16px; cursor: pointer; border-radius: 0; transition: background .15s; gap: 8px; }
+  .sidebar-item:hover { background: #1a1f35; }
+  .sidebar-item.active { background: rgba(79,110,247,.12); border-left: 2px solid #4f6ef7; }
+  .sidebar-item-label { font-size: 13px; color: #8892aa; flex: 1; }
+  .sidebar-item.active .sidebar-item-label { color: #c8d0e8; }
+  .count-badge { background: #1e2740; border-radius: 10px; padding: 1px 7px; font-size: 11px; color: #6b7a99; }
+  .count-badge.ok { background: rgba(16,185,129,.15); color: #10b981; }
+  .count-badge.fail { background: rgba(239,68,68,.15); color: #ef4444; }
+  .count-badge.skip { background: rgba(245,158,11,.15); color: #f59e0b; }
+
+  .main { flex: 1; overflow-y: auto; padding: 24px 32px; }
+  .section-title { font-size: 18px; font-weight: 700; color: #e2e8f8; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .section-desc { color: #6b7a99; font-size: 13px; margin-bottom: 20px; }
+
+  .test-group { margin-bottom: 32px; }
+  .group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #1e2740; }
+  .group-title { font-size: 15px; font-weight: 600; color: #c8d0e8; }
+  .group-roles { display: flex; gap: 6px; }
+  .role-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .role-owner { background: rgba(79,110,247,.2); color: #7b96ff; border: 1px solid rgba(79,110,247,.3); }
+  .role-member { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.25); }
+  .role-viewer { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+  .role-anon { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #0f1320; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #4b5470; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid #1e2740; position: sticky; top: 0; z-index: 1; }
+  tbody tr { border-bottom: 1px solid #131828; transition: background .1s; }
+  tbody tr:hover { background: #111627; }
+  tbody td { padding: 10px 12px; vertical-align: top; }
+
+  .tc-id { font-size: 11px; color: #4b5470; font-family: monospace; white-space: nowrap; }
+  .tc-name { color: #c8d0e8; font-weight: 500; }
+  .tc-desc { color: #6b7a99; font-size: 12px; margin-top: 2px; }
+  .nav-hint { font-size: 11px; color: #4b5470; margin-top: 3px; font-style: italic; }
+  .tc-method { font-family: monospace; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .GET { color: #34d399; background: rgba(16,185,129,.1); }
+  .POST { color: #7b96ff; background: rgba(79,110,247,.1); }
+  .PATCH { color: #fbbf24; background: rgba(245,158,11,.1); }
+  .DELETE { color: #f87171; background: rgba(239,68,68,.1); }
+  .tc-endpoint { font-family: monospace; font-size: 11px; color: #6b7a99; margin-top: 3px; }
+  .tc-roles-cell { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tc-expect { font-size: 12px; color: #8892aa; }
+  .tc-expect .allowed { color: #10b981; }
+  .tc-expect .denied { color: #ef4444; }
+
+  .status-cell { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .s-pass { background: #10b981; box-shadow: 0 0 4px #10b981; }
+  .s-fail { background: #ef4444; box-shadow: 0 0 4px #ef4444; }
+  .s-skip { background: #f59e0b; }
+  .s-question { background: #f59e0b; box-shadow: 0 0 4px #f59e0b; }
+  .s-todo { background: #2a3050; }
+  .status-label { font-size: 12px; }
+
+  .check-btn { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #2a3050; background: #1a1f35; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
+  .check-btn:hover { border-color: #4f6ef7; }
+  .check-btn.checked { background: #4f6ef7; border-color: #4f6ef7; }
+  .check-btn.failed { background: #ef4444; border-color: #ef4444; }
+  .check-btn.question { background: #f59e0b; border-color: #f59e0b; }
+  .check-btn svg { display: none; }
+  .check-btn.checked svg, .check-btn.failed svg, .check-btn.question svg { display: block; }
+
+  .action-cell { display: flex; gap: 6px; }
+  .mini-btn { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid #2a3050; background: #1a1f35; color: #8892aa; cursor: pointer; }
+  .mini-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
+  .mini-btn.red:hover { border-color: #ef4444; color: #ef4444; }
+
+  .creds-panel { background: #0f1320; border: 1px solid #1e2740; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+  .creds-title { font-size: 13px; font-weight: 600; color: #8892aa; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .6px; }
+  .creds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cred-card { background: #1a1f35; border: 1px solid #2a3050; border-radius: 8px; padding: 12px; }
+  .cred-role { font-size: 11px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .cred-field { display: flex; justify-content: space-between; margin-top: 4px; }
+  .cred-key { color: #4b5470; font-size: 12px; }
+  .cred-val { font-family: monospace; font-size: 12px; color: #c8d0e8; }
+  .cred-copy { font-size: 10px; color: #4f6ef7; cursor: pointer; margin-left: 6px; }
+  .cred-copy:hover { text-decoration: underline; }
+
+  .api-panel { background: #0f1320; border: 1px solid #1e2740; border-radius: 10px; padding: 20px; margin-bottom: 24px; }
+  .api-row { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .api-label { color: #4b5470; font-size: 12px; width: 80px; flex-shrink: 0; }
+  .api-val { font-family: monospace; font-size: 13px; color: #4f6ef7; }
+  code { font-family: monospace; background: #1a1f35; border: 1px solid #2a3050; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #c8d0e8; }
+
+  .notes-cell { font-size: 11px; color: #4b5470; font-style: italic; }
+  .ui-result { font-size: 12px; color: #8892aa; line-height: 1.5; }
+  .ui-result .ui-ok { color: #10b981; font-weight: 500; }
+  .ui-result .ui-err { color: #f87171; font-weight: 500; }
+  .ui-result .ui-warn { color: #fbbf24; font-weight: 500; }
+  .expected-badge { font-size: 11px; padding: 1px 6px; border-radius: 3px; font-family: monospace; font-weight: 600; }
+  .e-201 { color: #34d399; background: rgba(16,185,129,.1); }
+  .e-200 { color: #60a5fa; background: rgba(96,165,250,.1); }
+  .e-400 { color: #fbbf24; background: rgba(245,158,11,.1); }
+  .e-401 { color: #f87171; background: rgba(239,68,68,.1); }
+  .e-403 { color: #f87171; background: rgba(239,68,68,.1); }
+  .e-404 { color: #a78bfa; background: rgba(167,139,250,.1); }
+  .e-409 { color: #fb923c; background: rgba(251,146,60,.1); }
+
+  .summary-bar { display: flex; gap: 16px; margin-bottom: 20px; }
+  .stat-card { flex: 1; background: #0f1320; border: 1px solid #1e2740; border-radius: 8px; padding: 12px 16px; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: #6b7a99; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-pass .stat-num { color: #10b981; }
+  .stat-fail .stat-num { color: #ef4444; }
+  .stat-skip .stat-num { color: #f59e0b; }
+  .stat-question .stat-num { color: #f59e0b; }
+  .stat-total .stat-num { color: #4f6ef7; }
+
+  .notes-row { background: rgba(79,110,247,.04); }
+  .notes-row td { padding: 6px 12px 10px 36px; font-size: 12px; color: #4b5470; border-bottom: 1px solid #131828; }
+  .comment-row td { padding: 4px 12px 8px 36px; border-bottom: 1px solid #131828; }
+  .comment-ta { width: 100%; background: #1a1f35; border: 1px solid #2a3050; border-radius: 6px; color: #c8d0e8; font-size: 12px; padding: 6px 10px; resize: vertical; min-height: 48px; font-family: inherit; outline: none; box-sizing: border-box; }
+  .comment-ta:focus { border-color: #4f6ef7; }
+  .comment-btn { font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid #2a3050; background: #1a1f35; color: #6b7a99; cursor: pointer; margin-left: 4px; }
+  .comment-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
+  .comment-btn.has-comment { border-color: #f59e0b; color: #f59e0b; }
+  .step-list { list-style: none; }
+  .step-list li { margin-bottom: 3px; }
+  .step-list li::before { content: '→ '; color: #4f6ef7; }
+
+  .filter-active { color: #4f6ef7 !important; border-color: #4f6ef7 !important; }
+
+  @media print { .toolbar, .sidebar { display: none; } .main { padding: 16px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">FlowTask</div>
+    <div class="header-sub">Полный функциональный тест-план · API + UI</div>
+  </div>
+  <div class="header-right">
+    <span class="badge">v1.0</span>
+    <span class="badge blue">96 тест-кейсов</span>
+    <span class="badge green" id="last-run">Не запускался</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <label>Роль:</label>
+  <select id="filter-role" onchange="applyFilters()">
+    <option value="all">Все роли</option>
+    <option value="owner">OWNER</option>
+    <option value="member">MEMBER</option>
+    <option value="viewer">VIEWER</option>
+    <option value="anon">Анонимный</option>
+  </select>
+  <label>Модуль:</label>
+  <select id="filter-module" onchange="applyFilters()">
+    <option value="all">Все модули</option>
+    <option value="auth">Auth</option>
+    <option value="workspaces">Workspaces</option>
+    <option value="boards">Boards</option>
+    <option value="tasks">Tasks</option>
+    <option value="labels">Labels</option>
+    <option value="comments">Comments</option>
+    <option value="checklists">Checklists</option>
+    <option value="workflows">Workflows</option>
+  </select>
+  <label>Статус:</label>
+  <select id="filter-status" onchange="applyFilters()">
+    <option value="all">Все</option>
+    <option value="todo">Не проверены</option>
+    <option value="pass">Пройдены</option>
+    <option value="fail">Провалены</option>
+    <option value="question">Вопросы</option>
+  </select>
+  <div class="progress-bar">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <span class="progress-text" id="progress-text">0 / 96</span>
+  </div>
+  <button class="btn secondary" onclick="resetAll()">Сбросить</button>
+  <button class="btn" onclick="exportResults()">Экспорт JSON</button>
+</div>
+
+<div class="layout">
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-section">Модули</div>
+  <div class="sidebar-item active" onclick="showModule('all')" id="nav-all">
+    <span class="sidebar-item-label">Все тесты</span>
+    <span class="count-badge" id="cnt-all">96</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('auth')" id="nav-auth">
+    <span class="sidebar-item-label">🔐 Auth</span>
+    <span class="count-badge" id="cnt-auth">10</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('workspaces')" id="nav-workspaces">
+    <span class="sidebar-item-label">🏢 Workspaces</span>
+    <span class="count-badge" id="cnt-workspaces">16</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('boards')" id="nav-boards">
+    <span class="sidebar-item-label">📋 Boards</span>
+    <span class="count-badge" id="cnt-boards">12</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('tasks')" id="nav-tasks">
+    <span class="sidebar-item-label">✅ Tasks</span>
+    <span class="count-badge" id="cnt-tasks">24</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('labels')" id="nav-labels">
+    <span class="sidebar-item-label">🏷️ Labels</span>
+    <span class="count-badge" id="cnt-labels">12</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('comments')" id="nav-comments">
+    <span class="sidebar-item-label">💬 Comments</span>
+    <span class="count-badge" id="cnt-comments">8</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('checklists')" id="nav-checklists">
+    <span class="sidebar-item-label">☑️ Checklists</span>
+    <span class="count-badge" id="cnt-checklists">8</span>
+  </div>
+  <div class="sidebar-item" onclick="showModule('workflows')" id="nav-workflows">
+    <span class="sidebar-item-label">⚙️ Workflows</span>
+    <span class="count-badge" id="cnt-workflows">6</span>
+  </div>
+</div>
+
+<div class="main" id="main-content">
+
+<!-- CREDENTIALS -->
+<div class="creds-panel">
+  <div class="creds-title">🔑 Учётные данные дев-стенда · http://localhost:3101</div>
+  <div class="creds-grid">
+    <div class="cred-card">
+      <div class="cred-role role-owner" style="color:#7b96ff">👑 OWNER</div>
+      <div class="cred-field"><span class="cred-key">Email</span><span class="cred-val">admin@flowtask.dev <span class="cred-copy" onclick="copy('admin@flowtask.dev')">copy</span></span></div>
+      <div class="cred-field"><span class="cred-key">Password</span><span class="cred-val">Password1 <span class="cred-copy" onclick="copy('Password1')">copy</span></span></div>
+      <div class="cred-field"><span class="cred-key">Name</span><span class="cred-val">Admin</span></div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role role-member" style="color:#34d399">👤 MEMBER</div>
+      <div class="cred-field"><span class="cred-key">Email</span><span class="cred-val">user@flowtask.dev <span class="cred-copy" onclick="copy('user@flowtask.dev')">copy</span></span></div>
+      <div class="cred-field"><span class="cred-key">Password</span><span class="cred-val">Password1 <span class="cred-copy" onclick="copy('Password1')">copy</span></span></div>
+      <div class="cred-field"><span class="cred-key">Name</span><span class="cred-val">Demo User</span></div>
+    </div>
+    <div class="cred-card">
+      <div class="cred-role role-viewer" style="color:#fbbf24">👁️ VIEWER</div>
+      <div class="cred-field"><span class="cred-key">Email</span><span class="cred-val">viewer@flowtask.dev <span class="cred-copy" onclick="copy('viewer@flowtask.dev')">copy</span></span></div>
+      <div class="cred-field"><span class="cred-key">Password</span><span class="cred-val">Password1 <span class="cred-copy" onclick="copy('Password1')">copy</span></span></div>
+      <div class="cred-field"><span class="cred-key">Name</span><span class="cred-val">View Only</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="api-panel">
+  <div class="creds-title">🌐 Эндпоинты стенда</div>
+  <div class="api-row"><span class="api-label">Frontend</span><span class="api-val">http://localhost:5174</span></div>
+  <div class="api-row"><span class="api-label">API Base</span><span class="api-val">http://localhost:3101/api</span></div>
+  <div class="api-row"><span class="api-label">Health</span><span class="api-val">http://localhost:3101/api/health</span></div>
+  <div class="api-row"><span class="api-label">Workspace</span><span class="api-val">My Team</span> &nbsp;<code>slug: my-team</code> &nbsp;<code>id: d4cd93d0-4937-4223-a58a-5d0b91eff510</code></div>
+  <div class="api-row"><span class="api-label">Board</span><span class="api-val">Dev Board</span> &nbsp;<code>prefix: DEV</code> &nbsp;<code>id: 22cb5cb0-4820-45b7-b39e-d32cc3886e5a</code></div>
+</div>
+
+<!-- SUMMARY -->
+<div class="summary-bar">
+  <div class="stat-card stat-total"><div class="stat-num" id="s-total">96</div><div class="stat-label">Всего</div></div>
+  <div class="stat-card stat-pass"><div class="stat-num" id="s-pass">0</div><div class="stat-label">Пройдено</div></div>
+  <div class="stat-card stat-fail"><div class="stat-num" id="s-fail">0</div><div class="stat-label">Провалено</div></div>
+  <div class="stat-card stat-question"><div class="stat-num" id="s-question">0</div><div class="stat-label">Вопросы</div></div>
+  <div class="stat-card stat-skip"><div class="stat-num" id="s-skip">96</div><div class="stat-label">Ожидают</div></div>
+</div>
+
+<!-- AUTH MODULE -->
+<div class="test-group" data-module="auth">
+<div class="group-header">
+  <div class="group-title">🔐 Auth — Аутентификация</div>
+  <div class="group-roles">
+    <span class="role-tag role-anon">Анонимный</span>
+    <span class="role-tag role-owner">OWNER</span>
+  </div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-auth">
+</tbody>
+</table>
+</div>
+
+<!-- WORKSPACES MODULE -->
+<div class="test-group" data-module="workspaces">
+<div class="group-header">
+  <div class="group-title">🏢 Workspaces — Рабочие пространства</div>
+  <div class="group-roles">
+    <span class="role-tag role-owner">OWNER</span>
+    <span class="role-tag role-member">MEMBER</span>
+    <span class="role-tag role-viewer">VIEWER</span>
+  </div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-workspaces"></tbody>
+</table>
+</div>
+
+<!-- BOARDS -->
+<div class="test-group" data-module="boards">
+<div class="group-header">
+  <div class="group-title">📋 Boards — Доски</div>
+  <div class="group-roles">
+    <span class="role-tag role-owner">OWNER</span>
+    <span class="role-tag role-member">MEMBER</span>
+    <span class="role-tag role-viewer">VIEWER</span>
+  </div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-boards"></tbody>
+</table>
+</div>
+
+<!-- TASKS -->
+<div class="test-group" data-module="tasks">
+<div class="group-header">
+  <div class="group-title">✅ Tasks — Задачи</div>
+  <div class="group-roles">
+    <span class="role-tag role-owner">OWNER</span>
+    <span class="role-tag role-member">MEMBER</span>
+    <span class="role-tag role-viewer">VIEWER</span>
+  </div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-tasks"></tbody>
+</table>
+</div>
+
+<!-- LABELS -->
+<div class="test-group" data-module="labels">
+<div class="group-header">
+  <div class="group-title">🏷️ Labels — Метки</div>
+  <div class="group-roles">
+    <span class="role-tag role-owner">OWNER</span>
+    <span class="role-tag role-member">MEMBER</span>
+    <span class="role-tag role-viewer">VIEWER</span>
+  </div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-labels"></tbody>
+</table>
+</div>
+
+<!-- COMMENTS -->
+<div class="test-group" data-module="comments">
+<div class="group-header">
+  <div class="group-title">💬 Comments — Комментарии</div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-comments"></tbody>
+</table>
+</div>
+
+<!-- CHECKLISTS -->
+<div class="test-group" data-module="checklists">
+<div class="group-header">
+  <div class="group-title">☑️ Checklists — Чеклисты</div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-checklists"></tbody>
+</table>
+</div>
+
+<!-- WORKFLOWS -->
+<div class="test-group" data-module="workflows">
+<div class="group-header">
+  <div class="group-title">⚙️ Workflows — Рабочие процессы</div>
+</div>
+<table>
+<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<tbody id="tbody-workflows"></tbody>
+</table>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ─── TEST DATA ────────────────────────────────────────────────────────────────
+const TESTS = {
+  auth: [
+    { id:'A-01', name:'Регистрация нового пользователя', method:'POST', endpoint:'/api/auth/register', expect:'201', roles:['anon'], notes:'Уникальный email обязателен', nav:'Страница входа → переключатель «Регистрация»',
+      ui:'<span class="ui-ok">В ответе: объект user (id, email, name) + accessToken.</span> В UI: форма логина → редирект на дашборд.' },
+    { id:'A-02', name:'Регистрация с дублирующим email', method:'POST', endpoint:'/api/auth/register', expect:'409', roles:['anon'], notes:'Повторный email → конфликт', nav:'Страница входа → переключатель «Регистрация» → поле email',
+      ui:'<span class="ui-err">Ошибка: {"error":"Email already in use"}.</span> В UI: красный баннер под полем email — «Этот email уже зарегистрирован».' },
+    { id:'A-03', name:'Регистрация без пароля', method:'POST', endpoint:'/api/auth/register', expect:'400', roles:['anon'], notes:'Zod валидация', nav:'Страница входа → переключатель «Регистрация» → поле пароля',
+      ui:'<span class="ui-err">Ошибка: {"error":"Validation failed", details:[...]}.</span> В UI: подсветка пустого поля пароля, кнопка неактивна.' },
+    { id:'A-04', name:'Логин с верными данными', method:'POST', endpoint:'/api/auth/login', expect:'200', roles:['anon'], notes:'Возвращает accessToken + refreshToken', nav:'Страница входа → форма',
+      ui:'<span class="ui-ok">В ответе: accessToken (JWT) + user (id, email, name).</span> В UI: редирект на /dashboard, в хедере — имя пользователя.' },
+    { id:'A-05', name:'Логин с неверным паролем', method:'POST', endpoint:'/api/auth/login', expect:'401', roles:['anon'], notes:'', nav:'Страница входа → форма → кнопка «Войти»',
+      ui:'<span class="ui-err">Ошибка: {"error":"Invalid credentials"}.</span> В UI: красное сообщение «Неверный email или пароль», поля не очищаются.' },
+    { id:'A-06', name:'Логин с несуществующим email', method:'POST', endpoint:'/api/auth/login', expect:'401', roles:['anon'], notes:'', nav:'Страница входа → форма → кнопка «Войти»',
+      ui:'<span class="ui-err">Та же ошибка что и неверный пароль</span> — не раскрываем наличие аккаунта.' },
+    { id:'A-07', name:'GET /me — текущий пользователь', method:'GET', endpoint:'/api/auth/me', expect:'200', roles:['owner'], notes:'Возвращает id, email, name', nav:'Хедер → аватар пользователя → профиль',
+      ui:'<span class="ui-ok">JSON: {id, email, name, avatar, createdAt}.</span> В UI: данные отображаются в профиле / хедере.' },
+    { id:'A-08', name:'GET /me без токена', method:'GET', endpoint:'/api/auth/me', expect:'401', roles:['anon'], notes:'', nav:'Страница входа → форма',
+      ui:'<span class="ui-err">{"error":"No token provided"}.</span> В UI: редирект на страницу логина.' },
+    { id:'A-09', name:'Обновление токена (refresh)', method:'POST', endpoint:'/api/auth/refresh', expect:'200', roles:['owner'], notes:'Нужен refreshToken из cookie', nav:'Автоматически при истечении сессии',
+      ui:'<span class="ui-ok">Новый accessToken в ответе.</span> В UI: сессия продолжается без запроса логина.' },
+    { id:'A-10', name:'Логаут', method:'POST', endpoint:'/api/auth/logout', expect:'200', roles:['owner'], notes:'Инвалидирует refreshToken', nav:'Хедер → меню пользователя → «Выйти»',
+      ui:'<span class="ui-ok">{"message":"Logged out"}.</span> В UI: очищается токен, редирект на /login, хедер без имени пользователя.' },
+  ],
+  workspaces: [
+    { id:'W-01', name:'Создать workspace (OWNER)', method:'POST', endpoint:'/api/workspaces', expect:'201', roles:['owner'], notes:'slug уникальный, [a-z0-9-]', nav:'Главная → кнопка «+ Создать пространство»',
+      ui:'<span class="ui-ok">Возвращает объект workspace с id, name, slug, createdAt.</span> В UI: новая карточка появляется в списке workspace, переход внутрь.' },
+    { id:'W-02', name:'Создать workspace с занятым slug', method:'POST', endpoint:'/api/workspaces', expect:'409', roles:['owner'], notes:'', nav:'Главная → кнопка «+ Создать пространство» → поле slug',
+      ui:'<span class="ui-err">{"error":"Slug already taken"}.</span> В UI: красная подсветка поля slug, сообщение под ним.' },
+    { id:'W-03', name:'Список workspace текущего юзера', method:'GET', endpoint:'/api/workspaces', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Главная → список карточек пространств',
+      ui:'<span class="ui-ok">Массив workspace с полями name, slug, memberCount, role.</span> В UI: список карточек на дашборде, у каждой — роль текущего пользователя.' },
+    { id:'W-04', name:'Список workspace без авторизации', method:'GET', endpoint:'/api/workspaces', expect:'401', roles:['anon'], notes:'', nav:'Страница входа → форма',
+      ui:'<span class="ui-err">{"error":"No token provided"}.</span> В UI: редирект на /login.' },
+    { id:'W-05', name:'GET workspace по ID (член)', method:'GET', endpoint:'/api/workspaces/:id', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Главная → карточка пространства',
+      ui:'<span class="ui-ok">Детали: name, slug, description, members count, роль текущего пользователя.</span> В UI: страница workspace с досками и участниками.' },
+    { id:'W-06', name:'GET workspace чужой', method:'GET', endpoint:'/api/workspaces/:id', expect:'403', roles:['owner'], notes:'Enumeration protection', nav:'Прямой URL чужого пространства',
+      ui:'<span class="ui-err">{"error":"Access denied"} — одинаково для несуществующих и чужих.</span> В UI: страница 403 / пустой экран.' },
+    { id:'W-07', name:'PATCH workspace (OWNER)', method:'PATCH', endpoint:'/api/workspaces/:id', expect:'200', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Основное»',
+      ui:'<span class="ui-ok">Обновлённый объект workspace.</span> В UI: название/описание меняется на странице без перезагрузки.' },
+    { id:'W-08', name:'PATCH workspace (MEMBER)', method:'PATCH', endpoint:'/api/workspaces/:id', expect:'403', roles:['member'], notes:'', nav:'Настройки пространства → вкладка «Основное»',
+      ui:'<span class="ui-err">{"error":"Only workspace owners can perform this action"}.</span> В UI: кнопка «Редактировать» скрыта или заблокирована для MEMBER.' },
+    { id:'W-09', name:'Список участников', method:'GET', endpoint:'/api/workspaces/:id/members', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Настройки пространства → вкладка «Участники»',
+      ui:'<span class="ui-ok">Массив [{user: {name, email, avatar}, role, createdAt}].</span> В UI: таблица участников с ролями и аватарами.' },
+    { id:'W-10', name:'Добавить участника (OWNER)', method:'POST', endpoint:'/api/workspaces/:id/members', expect:'201', roles:['owner'], notes:'userId + role', nav:'Настройки пространства → вкладка «Участники» → кнопка «Добавить»',
+      ui:'<span class="ui-ok">Объект нового участника.</span> В UI: пользователь появляется в списке с выбранной ролью.' },
+    { id:'W-11', name:'Добавить участника (MEMBER)', method:'POST', endpoint:'/api/workspaces/:id/members', expect:'403', roles:['member'], notes:'', nav:'Настройки пространства → вкладка «Участники»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка «Добавить» недоступна / не отображается.' },
+    { id:'W-12', name:'Добавить уже существующего', method:'POST', endpoint:'/api/workspaces/:id/members', expect:'409', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Участники» → кнопка «Добавить»',
+      ui:'<span class="ui-err">{"error":"User is already a member"}.</span> В UI: всплывающее сообщение об ошибке.' },
+    { id:'W-13', name:'Изменить роль участника (OWNER)', method:'PATCH', endpoint:'/api/workspaces/:id/members/:uid', expect:'200', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Участники» → дропдаун роли',
+      ui:'<span class="ui-ok">Обновлённый member с новой ролью.</span> В UI: дропдаун роли обновляется, сохраняется без перезагрузки.' },
+    { id:'W-14', name:'Пригласить по email', method:'POST', endpoint:'/api/workspaces/:id/invite', expect:'201', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Участники» → «Пригласить по email»',
+      ui:'<span class="ui-ok">Объект участника с данными приглашённого.</span> В UI: новый участник в списке.' },
+    { id:'W-15', name:'История событий workspace', method:'GET', endpoint:'/api/workspaces/:id/history', expect:'200', roles:['owner','member'], notes:'', nav:'Настройки пространства → вкладка «История»',
+      ui:'<span class="ui-ok">Массив событий [{action, entityType, actor, createdAt, meta}].</span> В UI: лента событий с иконками и именами пользователей.' },
+    { id:'W-16', name:'Удалить workspace (OWNER)', method:'DELETE', endpoint:'/api/workspaces/:id', expect:'200', roles:['owner'], notes:'Каскадно удаляет всё', nav:'Настройки пространства → вкладка «Основное» → «Удалить пространство»',
+      ui:'<span class="ui-ok">{"message":"Workspace deleted"}.</span> В UI: workspace исчезает из списка, редирект на дашборд.' },
+  ],
+  boards: [
+    { id:'B-01', name:'Создать доску (OWNER)', method:'POST', endpoint:'/api/workspaces/:wid/boards', expect:'201', roles:['owner'], notes:'prefix UPPERCASE', nav:'Пространство → кнопка «+ Создать доску»',
+      ui:'<span class="ui-ok">Объект доски с id, name, prefix, workflowId.</span> В UI: новая доска в списке, префикс отображается рядом с именем.' },
+    { id:'B-02', name:'Создать доску (MEMBER)', method:'POST', endpoint:'/api/workspaces/:wid/boards', expect:'403', roles:['member'], notes:'', nav:'Пространство → кнопка «+ Создать доску»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка «Создать доску» скрыта или заблокирована для MEMBER.' },
+    { id:'B-03', name:'Создать доску с дубл. prefix', method:'POST', endpoint:'/api/workspaces/:wid/boards', expect:'409', roles:['owner'], notes:'', nav:'Пространство → кнопка «+ Создать доску» → поле Prefix',
+      ui:'<span class="ui-err">{"error":"Board prefix already exists in this workspace"}.</span> В UI: ошибка под полем Prefix.' },
+    { id:'B-04', name:'Создать доску с невалидным prefix', method:'POST', endpoint:'/api/workspaces/:wid/boards', expect:'400', roles:['owner'], notes:'строчные → 400', nav:'Пространство → кнопка «+ Создать доску» → поле Prefix',
+      ui:'<span class="ui-err">Validation error — prefix должен быть UPPERCASE.</span> В UI: подсветка поля, подсказка о формате.' },
+    { id:'B-05', name:'Список досок workspace', method:'GET', endpoint:'/api/workspaces/:wid/boards', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Пространство → список досок',
+      ui:'<span class="ui-ok">Массив досок с name, prefix, taskCount.</span> В UI: карточки досок с кол-вом задач.' },
+    { id:'B-06', name:'Детали доски с workflow и задачами', method:'GET', endpoint:'/api/boards/:id', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Пространство → доска → канбан-вид',
+      ui:'<span class="ui-ok">Объект: {board, workflow: {statuses}, tasks: [...]}.</span> В UI: канбан-колонки по статусам, задачи в карточках.' },
+    { id:'B-07', name:'GET несуществующей доски', method:'GET', endpoint:'/api/boards/:id', expect:'404', roles:['owner'], notes:'', nav:'Прямой URL несуществующей доски',
+      ui:'<span class="ui-err">{"error":"Board not found"}.</span> В UI: страница 404 или редирект на список досок.' },
+    { id:'B-08', name:'Обновить доску (OWNER)', method:'PATCH', endpoint:'/api/boards/:id', expect:'200', roles:['owner'], notes:'', nav:'Пространство → доска → настройки → «Редактировать»',
+      ui:'<span class="ui-ok">Обновлённый объект доски.</span> В UI: название доски меняется в хедере и сайдбаре.' },
+    { id:'B-09', name:'Обновить доску (MEMBER)', method:'PATCH', endpoint:'/api/boards/:id', expect:'403', roles:['member'], notes:'', nav:'Пространство → доска → настройки',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка настроек доски скрыта для MEMBER.' },
+    { id:'B-10', name:'Удалить доску (OWNER)', method:'DELETE', endpoint:'/api/boards/:id', expect:'200', roles:['owner'], notes:'', nav:'Пространство → доска → настройки → «Удалить доску»',
+      ui:'<span class="ui-ok">{"message":"Board deleted"}.</span> В UI: доска исчезает из списка, все её задачи удалены.' },
+    { id:'B-11', name:'Удалить доску (MEMBER)', method:'DELETE', endpoint:'/api/boards/:id', expect:'403', roles:['member'], notes:'', nav:'Пространство → доска → настройки → «Удалить доску»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка «Удалить» недоступна.' },
+    { id:'B-12', name:'Переупорядочить задачи на доске', method:'PATCH', endpoint:'/api/boards/:id/tasks/reorder', expect:'200', roles:['owner','member'], notes:'', nav:'Пространство → доска → drag-n-drop карточек',
+      ui:'<span class="ui-ok">{"updated": N}.</span> В UI: карточки перемещаются drag-n-drop, позиция сохраняется после обновления страницы.' },
+  ],
+  tasks: [
+    { id:'T-01', name:'Создать задачу (OWNER)', method:'POST', endpoint:'/api/boards/:bid/tasks', expect:'201', roles:['owner'], notes:'', nav:'Доска → колонка → кнопка «+»',
+      ui:'<span class="ui-ok">Объект задачи с issueKey (DEV-5), statusId, priority.</span> В UI: карточка появляется в колонке «Backlog» на канбане.' },
+    { id:'T-02', name:'Создать задачу (MEMBER)', method:'POST', endpoint:'/api/boards/:bid/tasks', expect:'201', roles:['member'], notes:'', nav:'Доска → колонка → кнопка «+»',
+      ui:'<span class="ui-ok">Аналогично OWNER.</span> В UI: MEMBER видит кнопку «+ Задача» и может создавать.' },
+    { id:'T-03', name:'Создать задачу без title', method:'POST', endpoint:'/api/boards/:bid/tasks', expect:'400', roles:['owner'], notes:'', nav:'Доска → колонка → кнопка «+» → поле заголовка',
+      ui:'<span class="ui-err">{"error":"Validation failed", details:[{field:"title"}]}.</span> В UI: поле title подсвечено, кнопка сохранения заблокирована.' },
+    { id:'T-04', name:'Создать задачу с priority=HIGH', method:'POST', endpoint:'/api/boards/:bid/tasks', expect:'201', roles:['owner'], notes:'', nav:'Доска → колонка → кнопка «+» → поле приоритета',
+      ui:'<span class="ui-ok">В ответе priority:"HIGH".</span> В UI: карточка задачи отображает оранжевый бейдж HIGH.' },
+    { id:'T-05', name:'Создать подзадачу (parentId)', method:'POST', endpoint:'/api/boards/:bid/tasks', expect:'201', roles:['owner'], notes:'', nav:'Доска → карточка задачи → «+ Подзадача»',
+      ui:'<span class="ui-ok">В ответе depth:1, parentId заполнен.</span> В UI: подзадача отображается вложенно под родительской задачей с отступом.' },
+    { id:'T-06', name:'Список задач доски', method:'GET', endpoint:'/api/boards/:bid/tasks', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Доска → канбан-вид',
+      ui:'<span class="ui-ok">Массив задач с issueKey, title, status, priority, assignee.</span> В UI: карточки по колонкам статусов.' },
+    { id:'T-07', name:'Фильтрация по priority=LOW', method:'GET', endpoint:'/api/boards/:bid/tasks?priority=LOW', expect:'200', roles:['owner'], notes:'', nav:'Доска → панель фильтров → «Приоритет»',
+      ui:'<span class="ui-ok">Только задачи с priority LOW.</span> В UI: при выборе фильтра остальные карточки скрываются.' },
+    { id:'T-08', name:'Поиск по title (search)', method:'GET', endpoint:'/api/boards/:bid/tasks?search=X', expect:'200', roles:['owner'], notes:'', nav:'Доска → поле поиска',
+      ui:'<span class="ui-ok">Задачи где title содержит строку поиска.</span> В UI: поле поиска, карточки мгновенно фильтруются при вводе.' },
+    { id:'T-09', name:'Детали задачи', method:'GET', endpoint:'/api/tasks/:id', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Доска → карточка задачи → клик',
+      ui:'<span class="ui-ok">Полный объект: title, description, status, priority, assignee, children[], labels[], comments[], checklists[], history[].</span> В UI: страница задачи со всеми секциями.' },
+    { id:'T-10', name:'GET несуществующей задачи', method:'GET', endpoint:'/api/tasks/:id', expect:'404', roles:['owner'], notes:'', nav:'Прямой URL несуществующей задачи',
+      ui:'<span class="ui-err">{"error":"Task not found"}.</span> В UI: страница 404 с кнопкой «Вернуться к задачам».' },
+    { id:'T-11', name:'Обновить title и priority', method:'PATCH', endpoint:'/api/tasks/:id', expect:'200', roles:['owner','member'], notes:'', nav:'Доска → карточка задачи → поля заголовка/приоритета',
+      ui:'<span class="ui-ok">Обновлённый объект задачи.</span> В UI: заголовок и бейдж приоритета обновляются без перезагрузки. В истории — запись об изменении.' },
+    { id:'T-12', name:'Обновить задачу без токена', method:'PATCH', endpoint:'/api/tasks/:id', expect:'401', roles:['anon'], notes:'', nav:'Страница входа → форма',
+      ui:'<span class="ui-err">{"error":"No token provided"}.</span> В UI: редирект на /login.' },
+    { id:'T-13', name:'Переместить задачу в статус (move)', method:'PATCH', endpoint:'/api/tasks/:id/move', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Доска → карточка задачи → drag-n-drop в колонку',
+      ui:'<span class="ui-ok">В ответе statusId обновлён.</span> В UI: карточка перемещается в новую колонку без перезагрузки (drag-n-drop или кнопка статуса).' },
+    { id:'T-14', name:'Move — невалидный statusId', method:'PATCH', endpoint:'/api/tasks/:id/move', expect:'400', roles:['owner'], notes:'', nav:'Доска → карточка задачи → смена статуса',
+      ui:'<span class="ui-err">Validation error / Status not found.</span> В UI: уведомление об ошибке, карточка остаётся на месте.' },
+    { id:'T-15', name:'История изменений задачи', method:'GET', endpoint:'/api/tasks/:id/history', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Доска → карточка задачи → вкладка «История»',
+      ui:'<span class="ui-ok">Массив [{field, oldValue, newValue, changedBy, createdAt}].</span> В UI: хронологическая лента изменений в боковой панели задачи.' },
+    { id:'T-16', name:'Назначить исполнителя', method:'PATCH', endpoint:'/api/tasks/:id', expect:'200', roles:['owner'], notes:'assigneeId — член ws', nav:'Доска → карточка задачи → поле «Исполнитель»',
+      ui:'<span class="ui-ok">В ответе assignee: {name, email, avatar}.</span> В UI: аватар исполнителя появляется на карточке задачи.' },
+    { id:'T-17', name:'Поддерево задачи (subtree)', method:'GET', endpoint:'/api/tasks/:id/subtree', expect:'200', roles:['owner'], notes:'', nav:'Доска → карточка задачи → секция «Подзадачи»',
+      ui:'<span class="ui-ok">Плоский массив всех потомков с полями depth, parentId.</span> В UI: раскрываемое дерево подзадач.' },
+    { id:'T-18', name:'Мои задачи (/my-tasks)', method:'GET', endpoint:'/api/my-tasks', expect:'200', roles:['owner'], notes:'', nav:'Сайдбар → «Мои задачи»',
+      ui:'<span class="ui-ok">Массив задач где assigneeId = текущий пользователь.</span> В UI: раздел «Мои задачи» в сайдбаре, список карточек.' },
+    { id:'T-19', name:'Мои задачи без токена', method:'GET', endpoint:'/api/my-tasks', expect:'401', roles:['anon'], notes:'', nav:'Страница входа → форма',
+      ui:'<span class="ui-err">{"error":"No token provided"}.</span> В UI: редирект на /login.' },
+    { id:'T-20', name:'Удалить задачу (OWNER)', method:'DELETE', endpoint:'/api/tasks/:id', expect:'200', roles:['owner'], notes:'', nav:'Доска → карточка задачи → меню «...» → «Удалить»',
+      ui:'<span class="ui-ok">{"message":"Task deleted"}.</span> В UI: карточка исчезает с доски, все подзадачи тоже удалены.' },
+    { id:'T-21', name:'Удалить задачу (VIEWER)', method:'DELETE', endpoint:'/api/tasks/:id', expect:'403', roles:['viewer'], notes:'', nav:'Доска → карточка задачи → меню «...»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка «Удалить» скрыта или недоступна для VIEWER.' },
+    { id:'T-22', name:'Обновить description', method:'PATCH', endpoint:'/api/tasks/:id', expect:'200', roles:['owner'], notes:'произвольный текст', nav:'Доска → карточка задачи → поле «Описание»',
+      ui:'<span class="ui-ok">В ответе обновлённое поле description.</span> В UI: текстовый редактор сохраняет, рендерит markdown если поддерживается.' },
+    { id:'T-23', name:'Невалидный priority', method:'POST', endpoint:'/api/boards/:bid/tasks', expect:'400', roles:['owner'], notes:'priority: "ULTRA"', nav:'Доска → колонка → кнопка «+» → поле приоритета',
+      ui:'<span class="ui-err">Validation error: priority must be one of CRITICAL/HIGH/MEDIUM/LOW.</span> В UI: дропдаун содержит только допустимые значения.' },
+    { id:'T-24', name:'Переупорядочить задачи (reorder)', method:'PATCH', endpoint:'/api/boards/:bid/tasks/reorder', expect:'200', roles:['owner'], notes:'', nav:'Доска → drag-n-drop карточек внутри колонки',
+      ui:'<span class="ui-ok">{"updated": N}.</span> В UI: порядок карточек сохраняется после DnD, не сбрасывается при обновлении.' },
+  ],
+  labels: [
+    { id:'L-01', name:'Создать метку (OWNER)', method:'POST', endpoint:'/api/workspaces/:wid/labels', expect:'201', roles:['owner'], notes:'color=#RRGGBB', nav:'Настройки пространства → вкладка «Метки» → «+ Метка»',
+      ui:'<span class="ui-ok">Объект метки с id, name, color.</span> В UI: метка появляется в списке настроек workspace с цветным кружком.' },
+    { id:'L-02', name:'Создать метку (MEMBER)', method:'POST', endpoint:'/api/workspaces/:wid/labels', expect:'201', roles:['member'], notes:'', nav:'Настройки пространства → вкладка «Метки» → «+ Метка»',
+      ui:'<span class="ui-ok">Аналогично OWNER.</span> В UI: MEMBER видит кнопку «+ Метка» и может создавать.' },
+    { id:'L-03', name:'Создать метку (VIEWER)', method:'POST', endpoint:'/api/workspaces/:wid/labels', expect:'403', roles:['viewer'], notes:'', nav:'Настройки пространства → вкладка «Метки»',
+      ui:'<span class="ui-err">{"error":"Viewers cannot create labels"}.</span> В UI: кнопка создания метки скрыта для VIEWER.' },
+    { id:'L-04', name:'Дублирующее имя метки', method:'POST', endpoint:'/api/workspaces/:wid/labels', expect:'409', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Метки» → «+ Метка» → поле имени',
+      ui:'<span class="ui-err">{"error":"Label \\"bug\\" already exists"}.</span> В UI: сообщение об ошибке под полем имени.' },
+    { id:'L-05', name:'Невалидный цвет (#ABC)', method:'POST', endpoint:'/api/workspaces/:wid/labels', expect:'400', roles:['owner'], notes:'нужен #RRGGBB', nav:'Настройки пространства → вкладка «Метки» → «+ Метка» → поле цвета',
+      ui:'<span class="ui-err">Validation error: color must match #RRGGBB.</span> В UI: color picker ограничивает ввод, ошибка под полем.' },
+    { id:'L-06', name:'Список меток workspace', method:'GET', endpoint:'/api/workspaces/:wid/labels', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Настройки пространства → вкладка «Метки»',
+      ui:'<span class="ui-ok">Массив [{id, name, color}].</span> В UI: список меток с цветными тегами, у каждой — кнопки редактирования (только OWNER/MEMBER).' },
+    { id:'L-07', name:'Добавить метку к задаче', method:'POST', endpoint:'/api/tasks/:tid/labels/:lid', expect:'200', roles:['owner','member'], notes:'', nav:'Доска → задача → поле «Метки» → LabelPicker',
+      ui:'<span class="ui-ok">Массив всех меток задачи.</span> В UI: цветной тег появляется на карточке задачи и в её детальной странице.' },
+    { id:'L-08', name:'Добавить метку (VIEWER)', method:'POST', endpoint:'/api/tasks/:tid/labels/:lid', expect:'403', roles:['viewer'], notes:'', nav:'Доска → задача → поле «Метки» → LabelPicker',
+      ui:'<span class="ui-err">Access denied.</span> В UI: label picker в задаче не отображается или неактивен.' },
+    { id:'L-09', name:'Удалить метку с задачи', method:'DELETE', endpoint:'/api/tasks/:tid/labels/:lid', expect:'200', roles:['owner'], notes:'', nav:'Доска → задача → поле «Метки» → LabelPicker → снять метку',
+      ui:'<span class="ui-ok">Метка исчезает из массива labels задачи.</span> В UI: тег удаляется с карточки мгновенно.' },
+    { id:'L-10', name:'Обновить цвет метки', method:'PATCH', endpoint:'/api/labels/:id', expect:'200', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Метки» → редактировать метку',
+      ui:'<span class="ui-ok">Обновлённый объект метки.</span> В UI: цвет тега обновляется везде где используется метка.' },
+    { id:'L-11', name:'Удалить метку (OWNER)', method:'DELETE', endpoint:'/api/labels/:id', expect:'200', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Метки» → удалить метку',
+      ui:'<span class="ui-ok">{"message":"Label deleted"}.</span> В UI: метка исчезает из списка, снимается со всех задач.' },
+    { id:'L-12', name:'Удалить метку (VIEWER)', method:'DELETE', endpoint:'/api/labels/:id', expect:'403', roles:['viewer'], notes:'', nav:'Настройки пространства → вкладка «Метки»',
+      ui:'<span class="ui-err">{"error":"Only owners can delete labels"}.</span> В UI: кнопка удалить скрыта для VIEWER.' },
+  ],
+  comments: [
+    { id:'C-01', name:'Создать комментарий', method:'POST', endpoint:'/api/tasks/:tid/comments', expect:'201', roles:['owner','member'], notes:'body обязателен', nav:'Задача → секция «Комментарии» → поле ввода',
+      ui:'<span class="ui-ok">Объект комментария с id, body, author (name, avatar), createdAt.</span> В UI: комментарий появляется внизу ленты задачи с аватаром автора и временем.' },
+    { id:'C-02', name:'Создать комментарий (VIEWER)', method:'POST', endpoint:'/api/tasks/:tid/comments', expect:'403', roles:['viewer'], notes:'', nav:'Задача → секция «Комментарии»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: поле ввода комментария скрыто / заблокировано для VIEWER — только чтение.' },
+    { id:'C-03', name:'Список комментариев задачи', method:'GET', endpoint:'/api/tasks/:tid/comments', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Задача → секция «Комментарии»',
+      ui:'<span class="ui-ok">Массив [{id, body, author:{name, avatar}, createdAt, updatedAt}].</span> В UI: хронологическая лента, аватары, время «5 минут назад».' },
+    { id:'C-04', name:'Редактировать свой комментарий', method:'PATCH', endpoint:'/api/comments/:id', expect:'200', roles:['member'], notes:'Только автор', nav:'Задача → секция «Комментарии» → свой комментарий → «Редактировать»',
+      ui:'<span class="ui-ok">Обновлённый объект + поле updatedAt.</span> В UI: кнопка «Редактировать» у своих комментариев, inline-редактор, метка «(ред.)» после сохранения.' },
+    { id:'C-05', name:'Редактировать чужой комментарий', method:'PATCH', endpoint:'/api/comments/:id', expect:'403', roles:['member'], notes:'', nav:'Задача → секция «Комментарии» → чужой комментарий',
+      ui:'<span class="ui-err">{"error":"Access denied"}.</span> В UI: кнопка «Редактировать» не отображается у чужих комментариев.' },
+    { id:'C-06', name:'Удалить свой комментарий', method:'DELETE', endpoint:'/api/comments/:id', expect:'200', roles:['member'], notes:'', nav:'Задача → секция «Комментарии» → свой комментарий → «Удалить»',
+      ui:'<span class="ui-ok">{"message":"Comment deleted"}.</span> В UI: комментарий удаляется из ленты, иногда заменяется «Комментарий удалён».' },
+    { id:'C-07', name:'Удалить чужой комментарий (MEMBER)', method:'DELETE', endpoint:'/api/comments/:id', expect:'403', roles:['member'], notes:'', nav:'Задача → секция «Комментарии» → чужой комментарий',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка удалить у чужих комментариев для MEMBER не отображается.' },
+    { id:'C-08', name:'Удалить чужой комментарий (OWNER)', method:'DELETE', endpoint:'/api/comments/:id', expect:'200', roles:['owner'], notes:'OWNER удаляет любые', nav:'Задача → секция «Комментарии» → любой комментарий → «Удалить»',
+      ui:'<span class="ui-ok">Комментарий удалён.</span> В UI: OWNER видит кнопку удалить у любых комментариев (модерация).' },
+  ],
+  checklists: [
+    { id:'CL-01', name:'Создать чеклист', method:'POST', endpoint:'/api/tasks/:tid/checklists', expect:'201', roles:['owner','member'], notes:'', nav:'Задача → секция «Чеклисты» → кнопка «+ Чеклист»',
+      ui:'<span class="ui-ok">Объект чеклиста с id, title, items:[].</span> В UI: блок «Checklist» появляется в задаче с заголовком, прогресс-баром 0/0.' },
+    { id:'CL-02', name:'Создать чеклист (VIEWER)', method:'POST', endpoint:'/api/tasks/:tid/checklists', expect:'403', roles:['viewer'], notes:'', nav:'Задача → секция «Чеклисты»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: кнопка «+ Checklist» не видна для VIEWER.' },
+    { id:'CL-03', name:'Создать чеклист без title', method:'POST', endpoint:'/api/tasks/:tid/checklists', expect:'400', roles:['owner'], notes:'', nav:'Задача → секция «Чеклисты» → кнопка «+ Чеклист» → поле заголовка',
+      ui:'<span class="ui-err">Validation error: title is required.</span> В UI: поле title подсвечено.' },
+    { id:'CL-04', name:'Добавить пункт в чеклист', method:'POST', endpoint:'/api/checklists/:id/items', expect:'201', roles:['owner','member'], notes:'', nav:'Задача → секция «Чеклисты» → чеклист → кнопка «+ Пункт»',
+      ui:'<span class="ui-ok">Объект пункта с id, title, done:false.</span> В UI: пункт появляется в списке с незачёркнутым текстом и пустым чекбоксом.' },
+    { id:'CL-05', name:'Добавить пункт без title', method:'POST', endpoint:'/api/checklists/:id/items', expect:'400', roles:['owner'], notes:'', nav:'Задача → секция «Чеклисты» → чеклист → кнопка «+ Пункт»',
+      ui:'<span class="ui-err">Validation error.</span> В UI: поле ввода подсвечивается.' },
+    { id:'CL-06', name:'Отметить пункт выполненным', method:'PATCH', endpoint:'/api/checklist-items/:id', expect:'200', roles:['owner','member'], notes:'done:true', nav:'Задача → секция «Чеклисты» → чекбокс пункта',
+      ui:'<span class="ui-ok">В ответе done:true.</span> В UI: чекбокс отмечен ✓, текст зачёркнут серым, прогресс-бар обновляется (напр. 2/3).' },
+    { id:'CL-07', name:'Обновить заголовок пункта', method:'PATCH', endpoint:'/api/checklist-items/:id', expect:'200', roles:['owner'], notes:'', nav:'Задача → секция «Чеклисты» → пункт → клик для редактирования',
+      ui:'<span class="ui-ok">В ответе обновлённый title.</span> В UI: inline-редактирование по клику, сохранение по Enter/blur.' },
+    { id:'CL-08', name:'Удалить пункт чеклиста', method:'DELETE', endpoint:'/api/checklist-items/:id', expect:'200', roles:['owner'], notes:'', nav:'Задача → секция «Чеклисты» → пункт → иконка удаления',
+      ui:'<span class="ui-ok">Пункт удалён, прогресс-бар пересчитывается.</span> В UI: строка исчезает из списка, счётчик обновляется.' },
+  ],
+  workflows: [
+    { id:'WF-01', name:'Список workflow workspace', method:'GET', endpoint:'/api/workspaces/:wid/workflows', expect:'200', roles:['owner','member','viewer'], notes:'', nav:'Настройки пространства → вкладка «Workflows»',
+      ui:'<span class="ui-ok">Массив [{id, name, mode, isDefault, statusCount}].</span> В UI: список workflow в настройках workspace.' },
+    { id:'WF-02', name:'Создать workflow (OWNER)', method:'POST', endpoint:'/api/workspaces/:wid/workflows', expect:'201', roles:['owner'], notes:'mode: STRICT|BIDIRECTIONAL', nav:'Настройки пространства → вкладка «Workflows» → «+ Workflow»',
+      ui:'<span class="ui-ok">Новый workflow с дефолтными статусами (если заданы).</span> В UI: можно назначить новый workflow доске.' },
+    { id:'WF-03', name:'Создать workflow (MEMBER)', method:'POST', endpoint:'/api/workspaces/:wid/workflows', expect:'403', roles:['member'], notes:'', nav:'Настройки пространства → вкладка «Workflows»',
+      ui:'<span class="ui-err">Access denied.</span> В UI: раздел настройки workflow недоступен для MEMBER.' },
+    { id:'WF-04', name:'Детали workflow со статусами', method:'GET', endpoint:'/api/workflows/:id', expect:'200', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Workflows» → клик по workflow',
+      ui:'<span class="ui-ok">Объект с массивами statuses (name, color, category, position) и transitions.</span> В UI: визуальная схема переходов между статусами.' },
+    { id:'WF-05', name:'Добавить статус в workflow', method:'POST', endpoint:'/api/workflows/:id/statuses', expect:'200', roles:['owner'], notes:'name, color, category', nav:'Настройки пространства → вкладка «Workflows» → workflow → «+ Статус»',
+      ui:'<span class="ui-ok">Обновлённый workflow со статусом.</span> В UI: новая колонка появляется на доске, привязанной к workflow.' },
+    { id:'WF-06', name:'Обновить workflow', method:'PATCH', endpoint:'/api/workflows/:id', expect:'200', roles:['owner'], notes:'', nav:'Настройки пространства → вкладка «Workflows» → workflow → «Редактировать»',
+      ui:'<span class="ui-ok">Обновлённые поля name/mode.</span> В UI: изменение режима STRICT→BIDIRECTIONAL влияет на доступные переходы в дропдауне статуса.' },
+  ],
+};
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+const state = {};
+let comments = JSON.parse(localStorage.getItem('ft-test-comments') || '{}');
+const TOTAL = Object.values(TESTS).flat().length;
+
+function loadState() {
+  try { Object.assign(state, JSON.parse(localStorage.getItem('ft-test-state') || '{}')); } catch(e) {}
+}
+function saveState() {
+  localStorage.setItem('ft-test-state', JSON.stringify(state));
+}
+
+function saveComment(id, value) {
+  comments[id] = value;
+  localStorage.setItem('ft-test-comments', JSON.stringify(comments));
+  const btn = document.querySelector(`[onclick="toggleComment('${id}')"]`);
+  if (btn) btn.className = 'comment-btn' + (value.trim() ? ' has-comment' : '');
+}
+
+function toggleComment(id) {
+  const row = document.getElementById('comment-row-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+const methodColors = { GET:'GET', POST:'POST', PATCH:'PATCH', DELETE:'DELETE', PUT:'PUT' };
+const roleLabels = { owner:'OWNER', member:'MEMBER', viewer:'VIEWER', anon:'Анон.' };
+const roleClass = { owner:'role-owner', member:'role-member', viewer:'role-viewer', anon:'role-anon' };
+
+function renderRow(tc) {
+  const s = state[tc.id] || 'todo';
+  const dotClass = { pass:'s-pass', fail:'s-fail', skip:'s-skip', question:'s-question', todo:'s-todo' }[s] || 's-todo';
+  const checkHtml = s === 'pass'
+    ? `<div class="check-btn checked" onclick="cycleStatus('${tc.id}')"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`
+    : s === 'fail'
+    ? `<div class="check-btn failed" onclick="cycleStatus('${tc.id}')"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1L7 7M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`
+    : s === 'question'
+    ? `<div class="check-btn question" onclick="cycleStatus('${tc.id}')"><svg width="8" height="10" viewBox="0 0 8 10" fill="none"><text x="1" y="9" font-size="10" fill="white" font-family="sans-serif">?</text></svg></div>`
+    : `<div class="check-btn" onclick="cycleStatus('${tc.id}')"></div>`;
+
+  const rolesHtml = tc.roles.map(r =>
+    `<span class="role-tag ${roleClass[r]}" style="font-size:10px;padding:1px 6px">${roleLabels[r]}</span>`
+  ).join('');
+
+  const expectClass = `e-${tc.expect}`;
+
+  return `<tr data-id="${tc.id}" data-module="${Object.entries(TESTS).find(([k,v])=>v.includes(tc))?.[0]}" data-roles="${tc.roles.join(',')}" data-status="${s}">
+    <td style="white-space:nowrap">${checkHtml}<button class="comment-btn${comments[tc.id] ? ' has-comment' : ''}" onclick="toggleComment('${tc.id}')" title="Комментарий">💬</button></td>
+    <td class="tc-id">${tc.id}</td>
+    <td>
+      <div class="tc-name">${tc.name}</div>
+      ${tc.nav ? `<div class="nav-hint">→ ${tc.nav}</div>` : ''}
+    </td>
+    <td>
+      <span class="tc-method ${tc.method}">${tc.method}</span>
+      <div class="tc-endpoint">${tc.endpoint}</div>
+    </td>
+    <td><span class="expected-badge ${expectClass}">${tc.expect}</span></td>
+    <td><div class="tc-roles-cell">${rolesHtml}</div></td>
+    <td class="ui-result">${tc.ui || ''}</td>
+    <td class="notes-cell">${tc.notes}</td>
+  </tr>
+  <tr id="comment-row-${tc.id}" class="comment-row" style="display:${comments[tc.id] ? 'table-row' : 'none'}">
+    <td colspan="8"><textarea class="comment-ta" placeholder="Комментарий к тест-кейсу..." oninput="saveComment('${tc.id}', this.value)">${comments[tc.id] || ''}</textarea></td>
+  </tr>`;
+}
+
+function renderAll() {
+  Object.entries(TESTS).forEach(([mod, tests]) => {
+    const tbody = document.getElementById(`tbody-${mod}`);
+    if (tbody) tbody.innerHTML = tests.map(renderRow).join('');
+  });
+  updateStats();
+}
+
+// ─── STATUS CYCLE ────────────────────────────────────────────────────────────
+function cycleStatus(id) {
+  const current = state[id] || 'todo';
+  const next = { todo:'pass', pass:'fail', fail:'question', question:'todo' }[current];
+  state[id] = next;
+  saveState();
+  // update row
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  if (row) {
+    row.dataset.status = next;
+    const cell = row.cells[0];
+    const dotClass = { pass:'s-pass', fail:'s-fail', question:'s-question', todo:'s-todo' }[next];
+    if (next === 'pass') {
+      cell.innerHTML = `<div class="check-btn checked" onclick="cycleStatus('${id}')"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`;
+    } else if (next === 'fail') {
+      cell.innerHTML = `<div class="check-btn failed" onclick="cycleStatus('${id}')"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1L7 7M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`;
+    } else if (next === 'question') {
+      cell.innerHTML = `<div class="check-btn question" onclick="cycleStatus('${id}')"><svg width="8" height="10" viewBox="0 0 8 10" fill="none"><text x="1" y="9" font-size="10" fill="white" font-family="sans-serif">?</text></svg></div>`;
+    } else {
+      cell.innerHTML = `<div class="check-btn" onclick="cycleStatus('${id}')"></div>`;
+    }
+  }
+  updateStats();
+}
+
+// ─── STATS ───────────────────────────────────────────────────────────────────
+function updateStats() {
+  const allTests = Object.values(TESTS).flat();
+  const pass = allTests.filter(t => state[t.id] === 'pass').length;
+  const fail = allTests.filter(t => state[t.id] === 'fail').length;
+  const qCount = allTests.filter(t => state[t.id] === 'question').length;
+  const skip = allTests.filter(t => !state[t.id] || state[t.id] === 'todo').length;
+  const done = pass + fail + qCount;
+
+  document.getElementById('s-total').textContent = TOTAL;
+  document.getElementById('s-pass').textContent = pass;
+  document.getElementById('s-fail').textContent = fail;
+  document.getElementById('s-question').textContent = qCount;
+  document.getElementById('s-skip').textContent = skip;
+
+  const pct = Math.round(done / TOTAL * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${done} / ${TOTAL} (${pct}%)`;
+
+  if (done > 0) {
+    document.getElementById('last-run').textContent = `Обновлено ${new Date().toLocaleTimeString('ru')}`;
+  }
+
+  // update sidebar counts
+  Object.keys(TESTS).forEach(mod => {
+    const tests = TESTS[mod];
+    const p = tests.filter(t => state[t.id] === 'pass').length;
+    const f = tests.filter(t => state[t.id] === 'fail').length;
+    const el = document.getElementById(`cnt-${mod}`);
+    if (el) {
+      if (f > 0) { el.className = 'count-badge fail'; el.textContent = `${p}/${tests.length} ❌${f}`; }
+      else if (p === tests.length) { el.className = 'count-badge ok'; el.textContent = `✓ ${tests.length}`; }
+      else if (p > 0) { el.className = 'count-badge ok'; el.textContent = `${p}/${tests.length}`; }
+      else { el.className = 'count-badge'; el.textContent = tests.length; }
+    }
+  });
+  const allEl = document.getElementById('cnt-all');
+  if (allEl) {
+    if (fail > 0) { allEl.className = 'count-badge fail'; allEl.textContent = `${pass}/${TOTAL} ❌${fail}`; }
+    else if (pass === TOTAL) { allEl.className = 'count-badge ok'; allEl.textContent = `✓ ${TOTAL}`; }
+    else { allEl.className = 'count-badge'; allEl.textContent = `${pass}/${TOTAL}`; }
+  }
+}
+
+// ─── FILTERS ────────────────────────────────────────────────────────────────
+function applyFilters() {
+  const role = document.getElementById('filter-role').value;
+  const mod = document.getElementById('filter-module').value;
+  const status = document.getElementById('filter-status').value;
+
+  document.querySelectorAll('tbody tr').forEach(row => {
+    const rowMod = row.dataset.module;
+    const rowRoles = row.dataset.roles ? row.dataset.roles.split(',') : [];
+    const rowStatus = state[row.dataset.id] || 'todo';
+
+    let show = true;
+    if (mod !== 'all' && rowMod !== mod) show = false;
+    if (role !== 'all' && !rowRoles.includes(role)) show = false;
+    if (status !== 'all' && rowStatus !== status) show = false;
+    row.style.display = show ? '' : 'none';
+  });
+
+  // hide empty groups
+  document.querySelectorAll('.test-group').forEach(grp => {
+    const groupMod = grp.dataset.module;
+    if (mod !== 'all' && groupMod !== mod) { grp.style.display = 'none'; return; }
+    grp.style.display = '';
+  });
+}
+
+function showModule(mod) {
+  document.getElementById('filter-module').value = mod;
+  applyFilters();
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById(`nav-${mod}`);
+  if (nav) nav.classList.add('active');
+}
+
+function resetAll() {
+  if (!confirm('Сбросить все результаты?')) return;
+  Object.keys(state).forEach(k => delete state[k]);
+  saveState();
+  renderAll();
+}
+
+function copy(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    // brief flash
+    const old = event.target.textContent;
+    event.target.textContent = '✓';
+    setTimeout(() => event.target.textContent = old, 800);
+  });
+}
+
+function exportResults() {
+  const allTests = Object.values(TESTS).flat();
+  const results = allTests.map(t => ({
+    id: t.id, name: t.name, module: Object.entries(TESTS).find(([k,v]) => v.includes(t))?.[0],
+    method: t.method, endpoint: t.endpoint, expected: t.expect,
+    status: state[t.id] || 'todo', roles: t.roles, notes: t.notes
+  }));
+  const pass = results.filter(r => r.status === 'pass').length;
+  const fail = results.filter(r => r.status === 'fail').length;
+  const output = { exportedAt: new Date().toISOString(), summary: { total: TOTAL, pass, fail, todo: TOTAL-pass-fail }, results, comments };
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `flowtask-test-results-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+loadState();
+renderAll();
+</script>
+</body>
+</html>

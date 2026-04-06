@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const passwordSchema = z.string().min(8).max(128)
-  .refine((p) => /[A-Z]/.test(p), { message: 'Password must contain at least one uppercase letter' })
-  .refine((p) => /\d/.test(p), { message: 'Password must contain at least one digit' });
+  .refine((p) => /[A-Z]/.test(p), { message: 'Пароль должен содержать хотя бы одну заглавную букву' })
+  .refine((p) => /\d/.test(p), { message: 'Пароль должен содержать хотя бы одну цифру' });
 
 export const registerDto = z.object({
   email: z.string().email(),

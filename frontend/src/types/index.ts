@@ -50,6 +50,7 @@ export interface Workspace {
   updatedAt: string;
   role?: WorkspaceRole;
   memberCount?: number;
+  boardCount?: number;
   members?: WorkspaceMember[];
   workflows?: Workflow[];
   boards?: Board[];

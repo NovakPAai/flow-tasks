@@ -9,7 +9,7 @@ export function validate(schema: ZodSchema, source: 'body' | 'params' | 'query' 
     } catch (err) {
       if (err instanceof ZodError) {
         res.status(400).json({
-          error: 'Validation failed',
+          error: 'Ошибка валидации',
           details: err.errors.map((e) => ({
             field: e.path.join('.'),
             message: e.message,

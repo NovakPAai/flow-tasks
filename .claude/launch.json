@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "/Users/pavelnovak/flow-tasks/.claude/start-frontend.sh",
+      "runtimeArgs": [],
+      "port": 5174
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "backend"],
+      "port": 3101
+    }
+  ]
+}

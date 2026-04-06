@@ -18,7 +18,7 @@ async function checkBruteForce(email: string): Promise<void> {
     console.warn('Brute force protection disabled: Redis not available.');
   }
   if (attempts !== null && attempts >= MAX_LOGIN_ATTEMPTS) {
-    throw new AppError(429, 'Too many login attempts. Try again in 15 minutes.');
+    throw new AppError(429, 'Слишком много попыток. Попробуйте через 15 минут.');
   }
 }
 
@@ -41,7 +41,7 @@ export async function register(dto: RegisterDto) {
   const email = dto.email.trim().toLowerCase();
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    throw new AppError(409, 'Email already registered');
+    throw new AppError(409, 'Email уже зарегистрирован');
   }
 
   const passwordHash = await hashPassword(dto.password);
@@ -75,13 +75,13 @@ export async function login(dto: LoginDto) {
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) {
     await recordFailedAttempt(normalizedEmail);
-    throw new AppError(401, 'Invalid credentials');
+    throw new AppError(401, 'Неверный email или пароль');
   }
 
   const valid = await comparePassword(dto.password, user.password);
   if (!valid) {
     await recordFailedAttempt(normalizedEmail);
-    throw new AppError(401, 'Invalid credentials');
+    throw new AppError(401, 'Неверный email или пароль');
   }
 
   await clearFailedAttempts(normalizedEmail);
@@ -119,25 +119,25 @@ export async function refresh(refreshToken: string) {
   try {
     payload = verifyRefreshToken(refreshToken);
   } catch {
-    throw new AppError(401, 'Invalid refresh token');
+    throw new AppError(401, 'Недействительный токен');
   }
 
   const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
   const stored = await prisma.refreshToken.findUnique({ where: { token: tokenHash } });
   if (!stored || stored.expiresAt < new Date()) {
-    throw new AppError(401, 'Refresh token expired or revoked');
+    throw new AppError(401, 'Сессия истекла, войдите снова');
   }
 
   const user = await prisma.user.findUnique({ where: { id: payload.userId } });
   if (!user) {
-    throw new AppError(401, 'User not found');
+    throw new AppError(401, 'Пользователь не найден');
   }
 
   const deleteResult = await prisma.refreshToken.deleteMany({
     where: { id: stored.id, token: tokenHash },
   });
   if (deleteResult.count === 0) {
-    throw new AppError(401, 'Refresh token expired or revoked');
+    throw new AppError(401, 'Сессия истекла, войдите снова');
   }
 
   const newPayload = { userId: user.id, email: user.email };
@@ -176,6 +176,6 @@ export async function getMe(userId: string) {
     where: { id: userId },
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
   });
-  if (!user) throw new AppError(404, 'User not found');
+  if (!user) throw new AppError(404, 'Пользователь не найден');
   return user;
 }

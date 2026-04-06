@@ -175,7 +175,7 @@ export default function WorkspaceDashboardPage() {
     setBoardsLoading(true);
     boardsApi.listBoards(current.id)
       .then(setBoards)
-      .catch(() => message.error('Не удалось загрузить доски'))
+      .catch(() => setBoards([]))
       .finally(() => setBoardsLoading(false));
   }, [current?.id]);
 
@@ -301,6 +301,18 @@ export default function WorkspaceDashboardPage() {
               </div>
             ))}
           </div>
+
+          {/* Settings button */}
+          <button
+            onClick={() => navigate(`/w/${slug}/settings`)}
+            title="Настройки пространства"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: 'transparent', border: `1px solid ${c.hdrBorder}`, borderRadius: 8, cursor: 'pointer', flexShrink: 0, marginRight: 8 }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
+              <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          </button>
 
           {/* Create board button */}
           <button

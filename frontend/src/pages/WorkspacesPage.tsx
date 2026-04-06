@@ -4,7 +4,8 @@ import { message } from 'antd';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
-import type { Workspace } from '../types';
+import type { Workspace, WorkspaceEvent } from '../types';
+import * as workspacesApi from '../api/workspaces';
 
 // ─── Design tokens (Paper: 135-0 dark, 16D-0 light) ──────────────────────────
 type Theme = Record<string, string>;
@@ -102,7 +103,7 @@ function WorkspaceCard({ ws, idx, onClick, C, isDark }: {
   const members = ws.members ?? [];
   const visibleAvatars = members.slice(0, 3);
   const extraCount = Math.max(0, (ws.memberCount ?? members.length) - 3);
-  const boardCount = ws.boards?.length ?? 0;
+  const boardCount = ws.boardCount ?? ws.boards?.length ?? 0;
   const taskCount = 0; // no task count in API yet
 
   return (
@@ -273,7 +274,13 @@ function CreateModal({ open, onClose, onCreate, C, isDark }: {
   const [creating, setCreating] = useState(false);
 
   function toSlug(s: string) {
-    return s.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 50);
+    const CYR: Record<string, string> = {
+      а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',
+      к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',
+      х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'shch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya',
+    };
+    return s.toLowerCase().split('').map(c => CYR[c] ?? c).join('')
+      .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 50);
   }
 
   const handleNameChange = (v: string) => {
@@ -367,8 +374,18 @@ export default function WorkspacesPage() {
   const { mode } = useThemeStore();
   const C = mode === 'light' ? LIGHT_C : DARK_C;
   const [modalOpen, setModalOpen] = useState(false);
+  const [recentEvents, setRecentEvents] = useState<WorkspaceEvent[]>([]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (workspaces.length === 0) return;
+    const ownerWs = workspaces.find(w => w.role === 'OWNER');
+    if (!ownerWs) return;
+    workspacesApi.getWorkspaceHistory(ownerWs.id)
+      .then(events => setRecentEvents(events.slice(0, 5)))
+      .catch(() => {});
+  }, [workspaces]);
 
   const firstName = user?.name?.split(' ')[0]?.toUpperCase() ?? 'ПОЛЬЗОВАТЕЛЬ';
 
@@ -433,9 +450,35 @@ export default function WorkspacesPage() {
         <div style={{ color: C.actHeader, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', lineHeight: '16px', marginBottom: 16, textTransform: 'uppercase' }}>
           Последняя активность
         </div>
-        <div style={{ color: C.actTime, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '18px', opacity: 0.6 }}>
-          Нет последних событий
-        </div>
+        {recentEvents.length === 0 ? (
+          <div style={{ color: C.actTime, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '18px', opacity: 0.6 }}>
+            Нет последних событий
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {recentEvents.map(ev => {
+              const ACTION_LABELS: Record<string, string> = {
+                workspace_created: 'создал(а) пространство',
+                workspace_updated: 'обновил(а) пространство',
+                member_added: 'добавил(а) участника',
+                member_removed: 'удалил(а) участника',
+              };
+              const label = ACTION_LABELS[ev.action] ?? ev.action;
+              const ws = workspaces.find(w => w.id === ev.workspaceId);
+              const time = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+              return (
+                <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0 }} />
+                  <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, color: C.actText }}>
+                    <span style={{ fontWeight: 600 }}>{ev.user?.name ?? 'Кто-то'}</span>
+                    {' '}{label}{ws ? ` «${ws.name}»` : ''}
+                  </span>
+                  <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, color: C.actTime, marginLeft: 'auto', flexShrink: 0 }}>{time}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <CreateModal open={modalOpen} onClose={() => setModalOpen(false)} onCreate={handleCreate} C={C} isDark={mode !== 'light'}/>
