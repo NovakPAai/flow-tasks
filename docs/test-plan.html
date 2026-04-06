@@ -85,13 +85,29 @@
   .s-todo { background: #2a3050; }
   .status-label { font-size: 12px; }
 
-  .check-btn { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #2a3050; background: #1a1f35; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
-  .check-btn:hover { border-color: #4f6ef7; }
-  .check-btn.checked { background: #4f6ef7; border-color: #4f6ef7; }
-  .check-btn.failed { background: #ef4444; border-color: #ef4444; }
-  .check-btn.question { background: #f59e0b; border-color: #f59e0b; }
-  .check-btn svg { display: none; }
-  .check-btn.checked svg, .check-btn.failed svg, .check-btn.question svg { display: block; }
+  /* ── Status button group ─────────────────────────────────── */
+  .sbg { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
+  .sb { display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 6px; border-radius: 4px; border: 1px solid #2a3050; background: #1a1f35; color: #6b7a99; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .12s; white-space: nowrap; font-family: inherit; }
+  .sb span { display: none; font-size: 11px; }
+  .sb-p:hover { border-color: #10b981; color: #10b981; background: rgba(16,185,129,.08); }
+  .sb-f:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,.08); }
+  .sb-q:hover { border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,.08); }
+
+  /* selected: hide siblings, show icon + label on active */
+  .sbg[data-status="pass"] .sb-f,
+  .sbg[data-status="pass"] .sb-q  { display: none; }
+  .sbg[data-status="pass"] .sb-p  { background: #10b981; border-color: #10b981; color: #fff; padding: 0 8px; }
+  .sbg[data-status="pass"] .sb-p span { display: inline; }
+
+  .sbg[data-status="fail"] .sb-p,
+  .sbg[data-status="fail"] .sb-q  { display: none; }
+  .sbg[data-status="fail"] .sb-f  { background: #ef4444; border-color: #ef4444; color: #fff; padding: 0 8px; }
+  .sbg[data-status="fail"] .sb-f span { display: inline; }
+
+  .sbg[data-status="question"] .sb-p,
+  .sbg[data-status="question"] .sb-f { display: none; }
+  .sbg[data-status="question"] .sb-q  { background: #f59e0b; border-color: #f59e0b; color: #fff; padding: 0 8px; }
+  .sbg[data-status="question"] .sb-q span { display: inline; }
 
   .action-cell { display: flex; gap: 6px; }
   .mini-btn { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid #2a3050; background: #1a1f35; color: #8892aa; cursor: pointer; }
@@ -303,7 +319,7 @@
   </div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-auth">
 </tbody>
 </table>
@@ -320,7 +336,7 @@
   </div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-workspaces"></tbody>
 </table>
 </div>
@@ -336,7 +352,7 @@
   </div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-boards"></tbody>
 </table>
 </div>
@@ -352,7 +368,7 @@
   </div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-tasks"></tbody>
 </table>
 </div>
@@ -368,7 +384,7 @@
   </div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-labels"></tbody>
 </table>
 </div>
@@ -379,7 +395,7 @@
   <div class="group-title">💬 Comments — Комментарии</div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-comments"></tbody>
 </table>
 </div>
@@ -390,7 +406,7 @@
   <div class="group-title">☑️ Checklists — Чеклисты</div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-checklists"></tbody>
 </table>
 </div>
@@ -401,7 +417,7 @@
   <div class="group-title">⚙️ Workflows — Рабочие процессы</div>
 </div>
 <table>
-<thead><tr><th width="30"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
+<thead><tr><th width="115"></th><th width="70">ID</th><th width="180">Название</th><th width="110">Метод / Эндпоинт</th><th width="70">Код</th><th width="110">Роль</th><th>UI результат</th><th width="140">Примечания</th></tr></thead>
 <tbody id="tbody-workflows"></tbody>
 </table>
 </div>
@@ -653,14 +669,12 @@ const roleClass = { owner:'role-owner', member:'role-member', viewer:'role-viewe
 
 function renderRow(tc) {
   const s = state[tc.id] || 'todo';
-  const dotClass = { pass:'s-pass', fail:'s-fail', skip:'s-skip', question:'s-question', todo:'s-todo' }[s] || 's-todo';
-  const checkHtml = s === 'pass'
-    ? `<div class="check-btn checked" onclick="cycleStatus('${tc.id}')"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`
-    : s === 'fail'
-    ? `<div class="check-btn failed" onclick="cycleStatus('${tc.id}')"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1L7 7M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`
-    : s === 'question'
-    ? `<div class="check-btn question" onclick="cycleStatus('${tc.id}')"><svg width="8" height="10" viewBox="0 0 8 10" fill="none"><text x="1" y="9" font-size="10" fill="white" font-family="sans-serif">?</text></svg></div>`
-    : `<div class="check-btn" onclick="cycleStatus('${tc.id}')"></div>`;
+
+  const sbHtml = `<div class="sbg" id="sbg-${tc.id}" data-status="${s}">
+    <button class="sb sb-p" onclick="setStatus('${tc.id}','pass')" title="Пройден">✓<span> Пройден</span></button>
+    <button class="sb sb-f" onclick="setStatus('${tc.id}','fail')" title="Не пройден">✗<span> Не пройден</span></button>
+    <button class="sb sb-q" onclick="setStatus('${tc.id}','question')" title="Вопрос">?<span> Вопрос</span></button>
+  </div>`;
 
   const rolesHtml = tc.roles.map(r =>
     `<span class="role-tag ${roleClass[r]}" style="font-size:10px;padding:1px 6px">${roleLabels[r]}</span>`
@@ -669,7 +683,7 @@ function renderRow(tc) {
   const expectClass = `e-${tc.expect}`;
 
   return `<tr data-id="${tc.id}" data-module="${Object.entries(TESTS).find(([k,v])=>v.includes(tc))?.[0]}" data-roles="${tc.roles.join(',')}" data-status="${s}">
-    <td style="white-space:nowrap">${checkHtml}<button class="comment-btn${comments[tc.id] ? ' has-comment' : ''}" onclick="toggleComment('${tc.id}')" title="Комментарий">💬</button></td>
+    <td style="white-space:nowrap;vertical-align:middle">${sbHtml}<button class="comment-btn${comments[tc.id] ? ' has-comment' : ''}" onclick="toggleComment('${tc.id}')" title="Комментарий" style="margin-left:4px">💬</button></td>
     <td class="tc-id">${tc.id}</td>
     <td>
       <div class="tc-name">${tc.name}</div>
@@ -697,28 +711,19 @@ function renderAll() {
   updateStats();
 }
 
-// ─── STATUS CYCLE ────────────────────────────────────────────────────────────
-function cycleStatus(id) {
+// ─── STATUS SET ──────────────────────────────────────────────────────────────
+function setStatus(id, newStatus) {
   const current = state[id] || 'todo';
-  const next = { todo:'pass', pass:'fail', fail:'question', question:'todo' }[current];
+  // clicking the already-active status resets to todo
+  const next = (current === newStatus) ? 'todo' : newStatus;
   state[id] = next;
   saveState();
-  // update row
+  // update button group
+  const sbg = document.getElementById('sbg-' + id);
+  if (sbg) sbg.dataset.status = next;
+  // update row data-status for filters
   const row = document.querySelector(`tr[data-id="${id}"]`);
-  if (row) {
-    row.dataset.status = next;
-    const cell = row.cells[0];
-    const dotClass = { pass:'s-pass', fail:'s-fail', question:'s-question', todo:'s-todo' }[next];
-    if (next === 'pass') {
-      cell.innerHTML = `<div class="check-btn checked" onclick="cycleStatus('${id}')"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`;
-    } else if (next === 'fail') {
-      cell.innerHTML = `<div class="check-btn failed" onclick="cycleStatus('${id}')"><svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1L7 7M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg></div>`;
-    } else if (next === 'question') {
-      cell.innerHTML = `<div class="check-btn question" onclick="cycleStatus('${id}')"><svg width="8" height="10" viewBox="0 0 8 10" fill="none"><text x="1" y="9" font-size="10" fill="white" font-family="sans-serif">?</text></svg></div>`;
-    } else {
-      cell.innerHTML = `<div class="check-btn" onclick="cycleStatus('${id}')"></div>`;
-    }
-  }
+  if (row) row.dataset.status = next;
   updateStats();
 }
 
