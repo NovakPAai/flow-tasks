@@ -153,7 +153,7 @@ export default function WorkspaceDashboardPage() {
   const c = mode === 'light' ? LIGHT : DARK;
   const isDark = mode === 'dark';
 
-  const { workspaces, current, setCurrent, loading: wsLoading, load } = useWorkspaceStore();
+  const { workspaces, current, setCurrent, loading: wsLoading, load, incrementBoardCount } = useWorkspaceStore();
   const [boards, setBoards] = useState<Board[]>([]);
   const [boardsLoading, setBoardsLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -189,6 +189,7 @@ export default function WorkspaceDashboardPage() {
         description: form.description.trim() || undefined,
       });
       setBoards(prev => [...prev, board]);
+      incrementBoardCount(current.id);
       message.success(`Доска "${board.name}" создана`);
       closeModal();
       navigate(`/w/${slug}/boards/${board.id}`);
