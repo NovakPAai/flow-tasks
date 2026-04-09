@@ -9,6 +9,7 @@ interface AuthState {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -28,6 +29,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     const user = await authApi.getMe();
+    set({ user });
+  },
+
+  updateProfile: async (data) => {
+    const user = await authApi.updateProfile(data);
     set({ user });
   },
 

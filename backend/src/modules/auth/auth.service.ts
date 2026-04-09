@@ -4,7 +4,7 @@ import { hashPassword, comparePassword } from '../../shared/utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../shared/utils/jwt.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { setUserSession, deleteUserSession, getCachedJson, setCachedJson } from '../../shared/redis.js';
-import type { RegisterDto, LoginDto } from './auth.dto.js';
+import type { RegisterDto, LoginDto, UpdateProfileDto } from './auth.dto.js';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 15 * 60;
@@ -169,6 +169,28 @@ export async function logout(refreshToken: string) {
   if (stored?.userId) {
     void deleteUserSession(stored.userId);
   }
+}
+
+export async function updateProfile(userId: string, dto: UpdateProfileDto) {
+  if (dto.email) {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing && existing.id !== userId) {
+      throw new AppError(409, 'Email уже используется другим пользователем');
+    }
+    dto = { ...dto, email: normalizedEmail };
+  }
+
+  const data: Record<string, string> = {};
+  if (dto.name !== undefined) data.name = dto.name;
+  if (dto.email !== undefined) data.email = dto.email;
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
+  });
+  return user;
 }
 
 export async function getMe(userId: string) {

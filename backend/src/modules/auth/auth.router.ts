@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate.js';
 import { authenticate } from '../../shared/middleware/auth.js';
-import { registerDto, loginDto, refreshDto } from './auth.dto.js';
+import { registerDto, loginDto, refreshDto, updateProfileDto } from './auth.dto.js';
 import * as authService from './auth.service.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
@@ -49,6 +49,15 @@ router.post('/logout', async (req, res, next) => {
 router.get('/me', authenticate, async (req: AuthRequest, res, next) => {
   try {
     const user = await authService.getMe(req.user!.userId);
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/me', authenticate, validate(updateProfileDto), async (req: AuthRequest, res, next) => {
+  try {
+    const user = await authService.updateProfile(req.user!.userId, req.body);
     res.json(user);
   } catch (err) {
     next(err);

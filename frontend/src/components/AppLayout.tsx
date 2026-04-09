@@ -24,9 +24,10 @@ function GridIcon() {
 }
 
 // ─── User dropdown menu ───────────────────────────────────────────────────────
-function UserMenu({ user, onLogout, onSettings, hasSettings, navBg, border, textPrimary, textMuted, onClose }: {
+function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, navBg, border, textPrimary, textMuted, onClose }: {
   user: { name: string; email?: string };
   onLogout: () => void;
+  onProfile: () => void;
   onSettings: () => void;
   hasSettings: boolean;
   navBg: string; border: string; textPrimary: string; textMuted: string;
@@ -54,6 +55,13 @@ function UserMenu({ user, onLogout, onSettings, hasSettings, navBg, border, text
         )}
       </div>
       <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
+      <button onClick={() => { onProfile(); onClose(); }} style={{
+        background: 'none', border: 'none', borderRadius: 6, color: textMuted,
+        cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
+        fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
+      }}>
+        Профиль
+      </button>
       {hasSettings && (
         <button onClick={() => { onSettings(); onClose(); }} style={{
           background: 'none', border: 'none', borderRadius: 6, color: textMuted,
@@ -303,6 +311,7 @@ export default function AppLayout({ children }: Props) {
             <UserMenu
               user={user}
               onLogout={handleLogout}
+              onProfile={() => navigate('/profile')}
               onSettings={() => current && navigate(`/w/${current.slug}/settings`)}
               hasSettings={!!current}
               navBg={navBg} border={navBorder} textPrimary={wsSelectorText} textMuted={tabIdleText}
