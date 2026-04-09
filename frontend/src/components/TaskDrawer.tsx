@@ -488,7 +488,7 @@ export default function TaskDrawer({
                       <input
                         type="date"
                         value={dueStr}
-                        onChange={(e) => save({ dueDate: e.target.value || undefined })}
+                        onChange={(e) => save({ dueDate: e.target.value ? `${e.target.value}T00:00:00.000Z` : undefined })}
                         disabled={saving}
                         style={{
                           ...selectStyle, width: 'auto',
