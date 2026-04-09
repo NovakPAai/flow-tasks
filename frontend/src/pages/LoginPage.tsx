@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
+import * as authApi from '../api/auth';
 
 // ─── Design tokens (from Paper: artboards 2-0 dark, 3-0 light) ───────────────
 type LoginTheme = Record<string, string>;
@@ -298,21 +299,29 @@ export default function LoginPage() {
   // Existing logic — preserved as-is
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
+  const [emailPrefix, setEmailPrefix] = useState('');
+  const [registrationDomain, setRegistrationDomain] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const { login, register } = useAuthStore();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    authApi.getRegistrationDomain().then(setRegistrationDomain).catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (showRegister) {
-        const msg = await register(email, password, name);
+        const registerEmail = registrationDomain ? `${emailPrefix}@${registrationDomain}` : email;
+        const msg = await register(registerEmail, password, name);
         message.success(msg);
         setShowRegister(false);
         setEmail('');
+        setEmailPrefix('');
         setPassword('');
         setName('');
       } else {
@@ -390,7 +399,33 @@ export default function LoginPage() {
             <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 6 }}>
               Email
             </div>
-            <InputField type="email" value={email} onChange={setEmail} placeholder="ivan@company.ru" autoComplete="email" icon="email" C={C}/>
+            {showRegister && registrationDomain ? (
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                backgroundColor: C.inputBg, border: `1px solid ${C.inputBorder}`,
+                borderRadius: 8, overflow: 'hidden',
+              }}>
+                <input
+                  value={emailPrefix}
+                  onChange={e => setEmailPrefix(e.target.value)}
+                  placeholder="ivan.petrov"
+                  autoComplete="email"
+                  style={{
+                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                    padding: '11px 14px', fontFamily: '"Inter", system-ui, sans-serif',
+                    fontSize: 14, color: C.inputText,
+                  }}
+                />
+                <span style={{
+                  padding: '11px 14px 11px 0', fontFamily: '"Inter", system-ui, sans-serif',
+                  fontSize: 14, color: C.inputIcon, whiteSpace: 'nowrap', userSelect: 'none',
+                }}>
+                  @{registrationDomain}
+                </span>
+              </div>
+            ) : (
+              <InputField type="email" value={email} onChange={setEmail} placeholder="ivan@company.ru" autoComplete="email" icon="email" C={C}/>
+            )}
           </div>
 
           {/* Password */}
