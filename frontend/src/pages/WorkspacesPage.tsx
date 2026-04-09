@@ -118,9 +118,9 @@ function WorkspaceCard({ ws, idx, onClick, C, isDark }: {
         boxShadow: hovered
           ? `${C.cardShadow}, 0 0 0 1px ${isDark ? '#2A3352' : '#D1CBF0'}`
           : C.cardShadow,
-        boxSizing: 'border-box', cursor: 'pointer', flexShrink: 0,
+        boxSizing: 'border-box', cursor: 'pointer',
         overflow: 'clip', paddingBlock: 24, paddingInline: 24,
-        position: 'relative', width: 380,
+        position: 'relative', width: '100%',
         transition: 'box-shadow 0.15s',
       }}
     >
@@ -432,13 +432,13 @@ export default function WorkspacesPage() {
 
       {/* Cards grid */}
       {loading ? (
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
           {[0, 1].map(i => (
-            <div key={i} style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, flexShrink: 0, height: 200, opacity: 0.4, width: 380 }}/>
+            <div key={i} style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, height: 200, opacity: 0.4 }}/>
           ))}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
           {workspaces.map((ws: Workspace, idx: number) => (
             <WorkspaceCard key={ws.id} ws={ws} idx={idx} C={C} isDark={mode !== 'light'} onClick={() => navigate(`/w/${ws.slug}`)}/>
           ))}
