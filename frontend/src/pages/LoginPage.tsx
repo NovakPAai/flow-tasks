@@ -381,7 +381,7 @@ export default function LoginPage() {
               <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 6 }}>
                 Имя
               </div>
-              <InputField type="text" value={name} onChange={setName} placeholder="Петров Иван" autoComplete="name" icon="email" C={C}/>
+              <InputField type="text" value={name} onChange={setName} placeholder="Иван Петров" autoComplete="name" icon="email" C={C}/>
             </div>
           )}
 
