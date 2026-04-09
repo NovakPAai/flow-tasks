@@ -1,6 +1,7 @@
 import supertest from 'supertest';
 import { createApp } from '../app.js';
 import { prisma } from '../prisma/client.js';
+import { hashPassword } from '../shared/utils/password.js';
 
 export const app = createApp();
 export const api = supertest(app);
@@ -15,12 +16,27 @@ export function slug() {
   return `ws-${Date.now()}-${++_counter}`;
 }
 
+/**
+ * Creates a test user directly via Prisma (bypasses the approval-based registration flow)
+ * and returns real JWT tokens via the login endpoint.
+ */
 export async function registerUser(overrides: { email?: string; name?: string; password?: string } = {}) {
   const email = overrides.email ?? `${uid()}@test.com`;
   const name  = overrides.name  ?? `User ${uid()}`;
   const password = overrides.password ?? 'Password1';
-  const res = await api.post('/api/auth/register').send({ email, name, password });
-  return { email, name, password, token: res.body.accessToken as string, userId: res.body.user?.id as string };
+  const passwordHash = await hashPassword(password);
+
+  const user = await prisma.user.create({ data: { email, name, password: passwordHash } });
+
+  const loginRes = await api.post('/api/auth/login').send({ email, password });
+  return {
+    email,
+    name,
+    password,
+    token: loginRes.body.accessToken as string,
+    refreshToken: loginRes.body.refreshToken as string,
+    userId: user.id,
+  };
 }
 
 export async function loginUser(email: string, password: string) {
