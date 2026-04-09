@@ -143,6 +143,30 @@ function BoardCard({ board, onClick, c, isDark }: {
   );
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const RU_TO_EN: Record<string, string> = {
+  а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'j',к:'k',
+  л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',
+  ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya',
+};
+
+function nameToPrefix(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '';
+  let result: string;
+  if (words.length === 1) {
+    // single word — take first 4 transliterated chars
+    result = words[0].toLowerCase().slice(0, 6).split('').map(c => RU_TO_EN[c] ?? c).join('');
+  } else {
+    // multiple words — first transliterated letter of each word
+    result = words.map(w => {
+      const ch = w[0]?.toLowerCase() ?? '';
+      return RU_TO_EN[ch] ?? ch;
+    }).join('');
+  }
+  return result.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 type FormState = { name: string; prefix: string; description: string };
 
@@ -159,6 +183,7 @@ export default function WorkspaceDashboardPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>({ name: '', prefix: '', description: '' });
+  const [prefixTouched, setPrefixTouched] = useState(false);
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
 
@@ -201,7 +226,7 @@ export default function WorkspaceDashboardPage() {
     }
   };
 
-  const closeModal = () => { setCreateOpen(false); setForm({ name: '', prefix: '', description: '' }); };
+  const closeModal = () => { setCreateOpen(false); setForm({ name: '', prefix: '', description: '' }); setPrefixTouched(false); };
 
   // ── Spinner util ─────────────────────────────────────────────────────────────
   const Spinner = ({ size = 32 }: { size?: number }) => (
@@ -381,23 +406,33 @@ export default function WorkspaceDashboardPage() {
           >
             <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 700, color: c.title, margin: 0 }}>Новая доска</h2>
 
-            {([
-              { key: 'name', label: 'Название', placeholder: 'Frontend, Backend, Design...' },
-              { key: 'prefix', label: 'Префикс задач', placeholder: 'DEV, OPS, FRONT...' },
-            ] as const).map(field => (
-              <div key={field.key} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: c.lbl }}>
-                  {field.label} <span style={{ color: '#4F6EF7' }}>*</span>
-                </label>
-                <input
-                  value={form[field.key]}
-                  onChange={e => setForm(f => ({ ...f, [field.key]: field.key === 'prefix' ? e.target.value.toUpperCase() : e.target.value }))}
-                  placeholder={field.placeholder}
-                  maxLength={field.key === 'prefix' ? 8 : 100}
-                  style={{ background: c.inpBg, border: `1px solid ${c.inpBorder}`, borderRadius: 8, padding: '10px 14px', fontFamily: '"Inter",system-ui,sans-serif', fontSize: 14, color: c.inpText, outline: 'none', textTransform: field.key === 'prefix' ? 'uppercase' : 'none' }}
-                />
-              </div>
-            ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: c.lbl }}>
+                Название <span style={{ color: '#4F6EF7' }}>*</span>
+              </label>
+              <input
+                value={form.name}
+                onChange={e => {
+                  const newName = e.target.value;
+                  setForm(f => ({ ...f, name: newName, prefix: prefixTouched ? f.prefix : nameToPrefix(newName) }));
+                }}
+                placeholder="Frontend, Backend, Design..."
+                maxLength={100}
+                style={{ background: c.inpBg, border: `1px solid ${c.inpBorder}`, borderRadius: 8, padding: '10px 14px', fontFamily: '"Inter",system-ui,sans-serif', fontSize: 14, color: c.inpText, outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: c.lbl }}>
+                Префикс задач <span style={{ color: '#4F6EF7' }}>*</span>
+              </label>
+              <input
+                value={form.prefix}
+                onChange={e => { setPrefixTouched(true); setForm(f => ({ ...f, prefix: e.target.value.toUpperCase() })); }}
+                placeholder="DEV, OPS, FRONT..."
+                maxLength={8}
+                style={{ background: c.inpBg, border: `1px solid ${c.inpBorder}`, borderRadius: 8, padding: '10px 14px', fontFamily: '"Inter",system-ui,sans-serif', fontSize: 14, color: c.inpText, outline: 'none', textTransform: 'uppercase' }}
+              />
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: c.lbl }}>Описание</label>

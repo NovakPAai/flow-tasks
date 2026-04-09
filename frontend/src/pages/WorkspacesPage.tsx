@@ -389,7 +389,7 @@ export default function WorkspacesPage() {
   }, [workspaces]);
 
   const nameParts = user?.name?.split(' ') ?? [];
-  const firstName = (nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0])?.toUpperCase() ?? 'ПОЛЬЗОВАТЕЛЬ';
+  const firstName = nameParts[0]?.toUpperCase() ?? 'ПОЛЬЗОВАТЕЛЬ';
 
   const handleCreate = async (name: string, slug: string, description?: string) => {
     try {

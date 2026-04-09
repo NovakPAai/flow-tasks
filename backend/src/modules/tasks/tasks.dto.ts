@@ -1,23 +1,23 @@
 import { z } from 'zod';
 
 export const createTaskDto = z.object({
-  title: z.string().min(1).max(500),
+  title: z.string().min(1, 'Название задачи обязательно').max(500, 'Название не должно превышать 500 символов'),
   description: z.string().optional(),
-  statusId: z.string().uuid().optional(),   // defaults to first status in board workflow
-  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
-  dueDate: z.string().datetime().optional(),
-  startDate: z.string().datetime().optional(),
-  assigneeId: z.string().uuid().optional(),
-  parentId: z.string().uuid().optional(),
+  statusId: z.string().uuid('Некорректный ID статуса').optional(),
+  priority: z.enum(['HIGH', 'MEDIUM', 'LOW'], { message: 'Приоритет должен быть HIGH, MEDIUM или LOW' }).optional(),
+  dueDate: z.string().datetime({ message: 'Введите корректную дату срока' }).optional(),
+  startDate: z.string().datetime({ message: 'Введите корректную дату начала' }).optional(),
+  assigneeId: z.string().uuid('Некорректный ID исполнителя').optional(),
+  parentId: z.string().uuid('Некорректный ID родительской задачи').optional(),
 });
 
 export const updateTaskDto = z.object({
-  title: z.string().min(1).max(500).optional(),
+  title: z.string().min(1, 'Название задачи обязательно').max(500, 'Название не должно превышать 500 символов').optional(),
   description: z.string().optional(),
-  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).nullable().optional(),
-  dueDate: z.string().datetime().nullable().optional(),
-  startDate: z.string().datetime().nullable().optional(),
-  assigneeId: z.string().uuid().nullable().optional(),
+  priority: z.enum(['HIGH', 'MEDIUM', 'LOW'], { message: 'Приоритет должен быть HIGH, MEDIUM или LOW' }).nullable().optional(),
+  dueDate: z.string().datetime({ message: 'Введите корректную дату срока' }).nullable().optional(),
+  startDate: z.string().datetime({ message: 'Введите корректную дату начала' }).nullable().optional(),
+  assigneeId: z.string().uuid('Некорректный ID исполнителя').nullable().optional(),
 });
 
 export const moveTaskDto = z.object({

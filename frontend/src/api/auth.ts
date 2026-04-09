@@ -24,3 +24,8 @@ export async function updateProfile(data: { name?: string; email?: string }): Pr
 export async function logout(refreshToken: string): Promise<void> {
   await api.post('/auth/logout', { refreshToken });
 }
+
+export async function getRegistrationDomain(): Promise<string> {
+  const { data } = await api.get<{ domain: string }>('/auth/registration-domain');
+  return data.domain;
+}

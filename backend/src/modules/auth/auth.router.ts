@@ -3,9 +3,14 @@ import { validate } from '../../shared/middleware/validate.js';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { registerDto, loginDto, refreshDto, updateProfileDto } from './auth.dto.js';
 import * as authService from './auth.service.js';
+import { config } from '../../config.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
 const router = Router();
+
+router.get('/registration-domain', (_req, res) => {
+  res.json({ domain: config.REGISTRATION_DOMAIN });
+});
 
 router.post('/register', validate(registerDto), async (req, res, next) => {
   try {

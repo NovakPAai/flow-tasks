@@ -154,7 +154,10 @@ export default function TaskDrawer({
       const updated = await tasksApi.updateTask(task.id, patch);
       setTask((prev) => prev ? { ...prev, ...updated } : updated);
       onUpdated(updated);
-    } catch { message.error('Ошибка сохранения'); }
+    } catch (err) {
+      const details = (err as { response?: { data?: { details?: { message: string }[] } } })?.response?.data?.details;
+      message.error(details?.map((d) => d.message).join('; ') ?? 'Ошибка сохранения');
+    }
     finally { setSaving(false); }
   };
 
@@ -488,7 +491,7 @@ export default function TaskDrawer({
                       <input
                         type="date"
                         value={dueStr}
-                        onChange={(e) => save({ dueDate: e.target.value || undefined })}
+                        onChange={(e) => save({ dueDate: e.target.value ? `${e.target.value}T00:00:00.000Z` : undefined })}
                         disabled={saving}
                         style={{
                           ...selectStyle, width: 'auto',
