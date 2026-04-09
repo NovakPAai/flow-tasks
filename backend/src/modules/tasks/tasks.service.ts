@@ -36,13 +36,21 @@ async function getTaskWithAccess(taskId: string, userId: string) {
 // ─── Issue key generation ─────────────────────────────────────────────────────
 
 async function generateIssueKey(boardId: string): Promise<{ issueKey: string; issueNumber: number }> {
-  const board = await prisma.board.update({
-    where: { id: boardId },
-    data: { nextNumber: { increment: 1 } },
-    select: { prefix: true, nextNumber: true },
-  });
-  const issueNumber = board.nextNumber - 1;
-  return { issueKey: `${board.prefix}-${issueNumber}`, issueNumber };
+  // Retry loop: if another process already used this issueKey (P2002 unique violation),
+  // skip forward by incrementing nextNumber again rather than returning a 500.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const board = await prisma.board.update({
+      where: { id: boardId },
+      data: { nextNumber: { increment: 1 } },
+      select: { prefix: true, nextNumber: true },
+    });
+    const issueNumber = board.nextNumber - 1;
+    const issueKey = `${board.prefix}-${issueNumber}`;
+    // Check if this key is already taken (can happen in tests or after data migration)
+    const existing = await prisma.task.findUnique({ where: { issueKey }, select: { id: true } });
+    if (!existing) return { issueKey, issueNumber };
+  }
+  throw new AppError(500, 'Could not generate unique issue key after 10 attempts');
 }
 
 // ─── Materialized path helpers ────────────────────────────────────────────────
