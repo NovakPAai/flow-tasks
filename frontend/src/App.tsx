@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
+import { useThemeStore } from './store/theme.store';
 import AppLayout from './components/AppLayout';
 import OnboardingProvider from './components/OnboardingProvider';
 import LoginPage from './pages/LoginPage';
@@ -15,10 +16,11 @@ import WorkspaceSettingsPage from './pages/WorkspaceSettingsPage';
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
+  const mode = useThemeStore((s) => s.mode);
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#03050F' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: mode === 'light' ? '#F5F3FF' : '#03050F' }}>
         <Spin size="large" />
       </div>
     );
@@ -34,14 +36,16 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   const loadUser = useAuthStore((s) => s.loadUser);
   const user = useAuthStore((s) => s.user);
+  const mode = useThemeStore((s) => s.mode);
+  const isDark = mode !== 'light';
 
   useEffect(() => { loadUser(); }, [loadUser]);
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.darkAlgorithm,
-        token: {
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: isDark ? {
           colorPrimary: '#4F6EF7',
           colorBgContainer: '#0F1320',
           colorBgElevated: '#161C30',
@@ -49,6 +53,16 @@ export default function App() {
           colorText: '#E2E8F8',
           colorTextSecondary: '#8B95B0',
           colorBorder: '#1E2640',
+          fontFamily: 'Inter, sans-serif',
+          borderRadius: 8,
+        } : {
+          colorPrimary: '#4F6EF7',
+          colorBgContainer: '#FDFCFF',
+          colorBgElevated: '#FFFFFF',
+          colorBgBase: '#F5F3FF',
+          colorText: '#1A1A2E',
+          colorTextSecondary: '#6B7194',
+          colorBorder: '#E8E5F0',
           fontFamily: 'Inter, sans-serif',
           borderRadius: 8,
         },
