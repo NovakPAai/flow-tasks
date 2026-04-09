@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { message } from 'antd';
+import { message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
@@ -400,7 +400,14 @@ export default function LoginPage() {
                 Пароль
               </div>
               {!showRegister && (
-                <div style={{ color: C.accent, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, lineHeight: '16px', cursor: 'pointer' }}>
+                <div
+                  onClick={() => Modal.info({
+                    title: 'Сброс пароля',
+                    content: 'Для сброса пароля обратитесь к администратору системы.',
+                    okText: 'Понятно',
+                  })}
+                  style={{ color: C.accent, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, lineHeight: '16px', cursor: 'pointer' }}
+                >
                   Забыли пароль?
                 </div>
               )}
