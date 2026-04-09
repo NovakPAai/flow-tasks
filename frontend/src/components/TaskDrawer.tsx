@@ -154,7 +154,10 @@ export default function TaskDrawer({
       const updated = await tasksApi.updateTask(task.id, patch);
       setTask((prev) => prev ? { ...prev, ...updated } : updated);
       onUpdated(updated);
-    } catch { message.error('Ошибка сохранения'); }
+    } catch (err) {
+      const details = (err as { response?: { data?: { details?: { message: string }[] } } })?.response?.data?.details;
+      message.error(details?.map((d) => d.message).join('; ') ?? 'Ошибка сохранения');
+    }
     finally { setSaving(false); }
   };
 
