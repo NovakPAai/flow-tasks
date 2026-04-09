@@ -12,6 +12,8 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:5174'),
   REDIS_URL: z.string().optional(),
   REDIS_CACHE_TTL_SECONDS: z.coerce.number().min(1).max(3600).default(30),
+  SUPERADMIN_EMAIL: z.string().email().default('novak.pavel@flowtask.dev'),
+  REGISTRATION_DOMAIN: z.string().default('flowtask.dev'),
 });
 
 export const config = envSchema.parse(process.env);

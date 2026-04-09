@@ -4,6 +4,7 @@ import { hashPassword, comparePassword } from '../../shared/utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../shared/utils/jwt.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { setUserSession, deleteUserSession, getCachedJson, setCachedJson } from '../../shared/redis.js';
+import { config } from '../../config.js';
 import type { RegisterDto, LoginDto, UpdateProfileDto } from './auth.dto.js';
 
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -38,34 +39,36 @@ function generateRefreshExpiry(): Date {
 }
 
 export async function register(dto: RegisterDto) {
-  const email = dto.email.trim().toLowerCase();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const localPart = dto.email.trim().toLowerCase().split('@')[0];
+  const email = `${localPart}@${config.REGISTRATION_DOMAIN}`;
+
+  const [existingUser, existingRequest] = await Promise.all([
+    prisma.user.findUnique({ where: { email } }),
+    prisma.registrationRequest.findUnique({ where: { email } }),
+  ]);
+
+  if (existingUser) {
     throw new AppError(409, 'Email уже зарегистрирован');
+  }
+  if (existingRequest && existingRequest.status === 'PENDING') {
+    throw new AppError(409, 'Заявка с этим email уже ожидает рассмотрения');
   }
 
   const passwordHash = await hashPassword(dto.password);
-  const user = await prisma.user.create({
-    data: { email, password: passwordHash, name: dto.name },
-    select: { id: true, email: true, name: true },
-  });
 
-  const tokenPayload = { userId: user.id, email: user.email };
-  const accessToken = signAccessToken(tokenPayload);
-  const refreshToken = signRefreshToken(tokenPayload);
+  if (existingRequest) {
+    // Повторная заявка после отклонения — обновляем
+    await prisma.registrationRequest.update({
+      where: { email },
+      data: { password: passwordHash, name: dto.name, status: 'PENDING', reviewedBy: null, reviewedAt: null },
+    });
+  } else {
+    await prisma.registrationRequest.create({
+      data: { email, password: passwordHash, name: dto.name },
+    });
+  }
 
-  await prisma.refreshToken.create({
-    data: {
-      token: crypto.createHash('sha256').update(refreshToken).digest('hex'),
-      userId: user.id,
-      expiresAt: generateRefreshExpiry(),
-    },
-  });
-
-  const nowIso = new Date().toISOString();
-  void setUserSession(user.id, { email: user.email, createdAt: nowIso, lastSeenAt: nowIso });
-
-  return { user, accessToken, refreshToken };
+  return { message: 'Заявка на регистрацию отправлена. Ожидайте подтверждения администратора.' };
 }
 
 export async function login(dto: LoginDto) {
@@ -199,5 +202,5 @@ export async function getMe(userId: string) {
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
   });
   if (!user) throw new AppError(404, 'Пользователь не найден');
-  return user;
+  return { ...user, isSuperadmin: user.email === config.SUPERADMIN_EMAIL };
 }

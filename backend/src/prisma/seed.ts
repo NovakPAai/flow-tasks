@@ -9,6 +9,12 @@ async function main() {
   const password = await hashPassword('Password1');
 
   // ─── Users ────────────────────────────────────────────────────────────────
+  const superadmin = await prisma.user.upsert({
+    where: { email: 'novak.pavel@flowtask.dev' },
+    update: {},
+    create: { email: 'novak.pavel@flowtask.dev', password, name: 'Pavel Novak' },
+  });
+
   const admin = await prisma.user.upsert({
     where: { email: 'admin@flowtask.dev' },
     update: {},
@@ -20,6 +26,15 @@ async function main() {
     update: {},
     create: { email: 'user@flowtask.dev', password, name: 'Dev User' },
   });
+
+  // ─── Sample registration request ─────────────────────────────────────────
+  await prisma.registrationRequest.upsert({
+    where: { email: 'petr.petrov@flowtask.dev' },
+    update: {},
+    create: { email: 'petr.petrov@flowtask.dev', password, name: 'Пётр Петров', status: 'PENDING' },
+  });
+
+  void superadmin;
 
   // ─── Workspace ────────────────────────────────────────────────────────────
   const existingWs = await prisma.workspace.findUnique({ where: { slug: 'demo' } });

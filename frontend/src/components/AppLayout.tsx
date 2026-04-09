@@ -24,12 +24,14 @@ function GridIcon() {
 }
 
 // ─── User dropdown menu ───────────────────────────────────────────────────────
-function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, navBg, border, textPrimary, textMuted, onClose }: {
+function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminUsers, isSuperadmin, navBg, border, textPrimary, textMuted, onClose }: {
   user: { name: string; email?: string };
   onLogout: () => void;
   onProfile: () => void;
   onSettings: () => void;
   hasSettings: boolean;
+  onAdminUsers: () => void;
+  isSuperadmin: boolean;
   navBg: string; border: string; textPrimary: string; textMuted: string;
   onClose: () => void;
 }) {
@@ -62,6 +64,15 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, navBg, b
       }}>
         Профиль
       </button>
+      {isSuperadmin && (
+        <button onClick={() => { onAdminUsers(); onClose(); }} style={{
+          background: 'none', border: 'none', borderRadius: 6, color: '#4F6EF7',
+          cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
+          fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%', fontWeight: 500,
+        }}>
+          Пользователи
+        </button>
+      )}
       {hasSettings && (
         <button onClick={() => { onSettings(); onClose(); }} style={{
           background: 'none', border: 'none', borderRadius: 6, color: textMuted,
@@ -314,6 +325,8 @@ export default function AppLayout({ children }: Props) {
               onProfile={() => navigate('/profile')}
               onSettings={() => current && navigate(`/w/${current.slug}/settings`)}
               hasSettings={!!current}
+              onAdminUsers={() => navigate('/admin/users')}
+              isSuperadmin={!!user.isSuperadmin}
               navBg={navBg} border={navBorder} textPrimary={wsSelectorText} textMuted={tabIdleText}
               onClose={() => setUserMenuOpen(false)}
             />

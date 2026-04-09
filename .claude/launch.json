@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "backend"],
       "port": 3101
+    },
+    {
+      "name": "test-plan",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "5199", "/Users/pavelnovak/flow-tasks/docs"],
+      "port": 5199
     }
   ]
 }

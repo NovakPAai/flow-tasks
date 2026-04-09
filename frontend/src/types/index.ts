@@ -7,6 +7,30 @@ export interface User {
   avatar?: string;
   loginCount?: number;
   createdAt?: string;
+  isSuperadmin?: boolean;
+}
+
+// ─── Admin ─────────────────────────────────────────────────────────────────────
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  loginCount: number;
+  lastLoginAt?: string;
+  createdAt: string;
+}
+
+export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface RegistrationRequest {
+  id: string;
+  email: string;
+  name: string;
+  status: RegistrationStatus;
+  createdAt: string;
+  reviewedAt?: string;
 }
 
 export interface AuthResponse {

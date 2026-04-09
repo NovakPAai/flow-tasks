@@ -15,6 +15,7 @@ import tasksRouter, { boardTasksRouter, myTasksRouter } from './modules/tasks/ta
 import labelsRouter, { workspaceLabelsRouter, taskLabelsRouter } from './modules/labels/labels.router.js';
 import commentsRouter, { taskCommentsRouter } from './modules/comments/comments.router.js';
 import checklistsRouter, { taskChecklistsRouter, checklistItemsRouter } from './modules/checklists/checklists.router.js';
+import adminRouter from './modules/admin/admin.router.js';
 
 export function createApp() {
   const app = express();
@@ -53,6 +54,7 @@ export function createApp() {
   app.use('/api/tasks/:tid/checklists', taskChecklistsRouter);
   app.use('/api/checklists', checklistsRouter);
   app.use('/api/checklist-items', checklistItemsRouter);
+  app.use('/api/admin', adminRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);
