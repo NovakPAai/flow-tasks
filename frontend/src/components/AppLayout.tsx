@@ -311,6 +311,7 @@ export default function AppLayout({ children }: Props) {
         {/* Avatar */}
         <div style={{ position: 'relative' }}>
           <div
+            data-testid="user-avatar"
             onClick={e => { e.stopPropagation(); setUserMenuOpen(v => !v); setWsMenuOpen(false); }}
             style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: '50%', cursor: 'pointer', display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}
           >

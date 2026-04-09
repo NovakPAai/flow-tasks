@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { api, uid, slug, auth, registerUser, createWorkspace, cleanupTestData } from './helpers.js';
+import { api, slug, auth, registerUser, createWorkspace, cleanupTestData } from './helpers.js';
 
 describe('Workspaces', () => {
   let ownerToken: string;
