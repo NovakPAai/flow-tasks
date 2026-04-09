@@ -54,11 +54,25 @@ export async function listMyWorkspaces(userId: string) {
     orderBy: { createdAt: 'asc' },
   });
 
+  const workspaceIds = memberships.map((m) => m.workspaceId);
+  let taskCountMap = new Map<string, number>();
+  if (workspaceIds.length > 0) {
+    const rows = await prisma.$queryRaw<{ workspaceId: string; task_count: bigint }[]>`
+      SELECT b."workspaceId", COUNT(t.id) AS task_count
+      FROM boards b
+      LEFT JOIN tasks t ON t."boardId" = b.id
+      WHERE b."workspaceId" = ANY(${workspaceIds})
+      GROUP BY b."workspaceId"
+    `;
+    taskCountMap = new Map(rows.map((r) => [r.workspaceId, Number(r.task_count)]));
+  }
+
   return memberships.map((m) => ({
     ...m.workspace,
     role: m.role,
     memberCount: m.workspace._count.members,
     boardCount: m.workspace._count.boards,
+    taskCount: taskCountMap.get(m.workspaceId) ?? 0,
   }));
 }
 

@@ -104,7 +104,7 @@ function WorkspaceCard({ ws, idx, onClick, C, isDark }: {
   const visibleAvatars = members.slice(0, 3);
   const extraCount = Math.max(0, (ws.memberCount ?? members.length) - 3);
   const boardCount = ws.boardCount ?? ws.boards?.length ?? 0;
-  const taskCount = 0; // no task count in API yet
+  const taskCount = ws.taskCount ?? 0;
 
   return (
     <div

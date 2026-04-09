@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { afterAll } from 'vitest';
 import { prisma } from '../prisma/client.js';
 

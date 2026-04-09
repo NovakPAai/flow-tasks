@@ -60,7 +60,7 @@ async function main() {
   });
 
   // ─── Labels ───────────────────────────────────────────────────────────────
-  const [bugLabel, featureLabel, docsLabel] = await Promise.all([
+  const [_bugLabel, featureLabel, docsLabel] = await Promise.all([
     prisma.label.create({ data: { workspaceId: workspace.id, name: 'bug', color: '#EF4444' } }),
     prisma.label.create({ data: { workspaceId: workspace.id, name: 'feature', color: '#4F6EF7' } }),
     prisma.label.create({ data: { workspaceId: workspace.id, name: 'docs', color: '#10B981' } }),

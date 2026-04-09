@@ -75,6 +75,7 @@ export interface Workspace {
   role?: WorkspaceRole;
   memberCount?: number;
   boardCount?: number;
+  taskCount?: number;
   members?: WorkspaceMember[];
   workflows?: Workflow[];
   boards?: Board[];

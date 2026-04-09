@@ -418,6 +418,7 @@ export default function WorkspaceDashboardPage() {
                 Отмена
               </button>
               <button
+                data-testid="create-board-submit"
                 onClick={onCreateBoard}
                 disabled={creating || !form.name.trim() || !form.prefix.trim()}
                 style={{
