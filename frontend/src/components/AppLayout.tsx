@@ -122,7 +122,7 @@ export default function AppLayout({ children }: Props) {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { workspaces, current, load, setCurrent } = useWorkspaceStore();
-  const { mode } = useThemeStore();
+  const { mode, toggle } = useThemeStore();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
@@ -257,6 +257,37 @@ export default function AppLayout({ children }: Props) {
         )}
 
         <div style={{ flex: 1 }}/>
+
+        {/* Theme toggle */}
+        <button
+          onClick={toggle}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          style={{
+            alignItems: 'center', background: 'none', border: 'none', borderRadius: 8,
+            color: tabIdleText, cursor: 'pointer', display: 'flex', flexShrink: 0,
+            height: 32, justifyContent: 'center', padding: 0, width: 32,
+          }}
+        >
+          {isDark ? (
+            /* Sun icon — switch to light */
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.3"/>
+              <line x1="8" y1="1" x2="8" y2="2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="8" y1="13.5" x2="8" y2="15" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="1" y1="8" x2="2.5" y2="8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="13.5" y1="8" x2="15" y2="8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="2.929" y1="2.929" x2="3.99" y2="3.99" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="12.01" y1="12.01" x2="13.071" y2="13.071" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="13.071" y1="2.929" x2="12.01" y2="3.99" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <line x1="3.99" y1="12.01" x2="2.929" y2="13.071" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            /* Moon icon — switch to dark */
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
 
         {/* Avatar */}
         <div style={{ position: 'relative' }}>
