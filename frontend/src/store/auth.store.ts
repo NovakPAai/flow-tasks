@@ -6,7 +6,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<string>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
@@ -25,11 +25,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   register: async (email, password, name) => {
-    const { accessToken, refreshToken } = await authApi.register(email, password, name);
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    const user = await authApi.getMe();
-    set({ user });
+    const { message } = await authApi.register(email, password, name);
+    return message;
   },
 
   updateProfile: async (data) => {

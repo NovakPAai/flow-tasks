@@ -308,9 +308,17 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (showRegister) await register(email, password, name);
-      else await login(email, password);
-      navigate('/');
+      if (showRegister) {
+        const msg = await register(email, password, name);
+        message.success(msg);
+        setShowRegister(false);
+        setEmail('');
+        setPassword('');
+        setName('');
+      } else {
+        await login(email, password);
+        navigate('/');
+      }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } } };
       message.error(error.response?.data?.error || (showRegister ? 'Ошибка регистрации' : 'Неверный email или пароль'));

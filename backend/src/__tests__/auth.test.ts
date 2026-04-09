@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { api, uid, cleanupTestData, auth } from './helpers.js';
+import { api, uid, registerUser, cleanupTestData, auth } from './helpers.js';
 
 describe('Auth', () => {
   afterAll(cleanupTestData);
@@ -7,14 +7,12 @@ describe('Auth', () => {
   const email = () => `${uid()}@test.com`;
 
   describe('POST /api/auth/register', () => {
-    it('registers a new user and returns tokens', async () => {
+    it('creates a registration request and returns a message', async () => {
       const res = await api.post('/api/auth/register').send({
         email: email(), name: 'Alice', password: 'Password1',
       });
-      expect(res.status).toBe(201);
-      expect(res.body.accessToken).toBeDefined();
-      expect(res.body.refreshToken).toBeDefined();
-      expect(res.body.user.email).toBeDefined();
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBeDefined();
     });
 
     it('rejects duplicate email with 409', async () => {
@@ -39,13 +37,15 @@ describe('Auth', () => {
 
   describe('POST /api/auth/login', () => {
     let testEmail: string;
+    let testPassword: string;
     beforeAll(async () => {
-      testEmail = email();
-      await api.post('/api/auth/register').send({ email: testEmail, name: 'Bob', password: 'Password1' });
+      const user = await registerUser();
+      testEmail = user.email;
+      testPassword = user.password;
     });
 
     it('returns tokens for valid credentials', async () => {
-      const res = await api.post('/api/auth/login').send({ email: testEmail, password: 'Password1' });
+      const res = await api.post('/api/auth/login').send({ email: testEmail, password: testPassword });
       expect(res.status).toBe(200);
       expect(res.body.accessToken).toBeDefined();
     });
@@ -63,11 +63,8 @@ describe('Auth', () => {
 
   describe('POST /api/auth/refresh', () => {
     it('issues new access token using refresh token', async () => {
-      const reg = await api.post('/api/auth/register').send({
-        email: email(), name: 'Carol', password: 'Password1',
-      });
-      const { refreshToken } = reg.body;
-      const res = await api.post('/api/auth/refresh').send({ refreshToken });
+      const user = await registerUser();
+      const res = await api.post('/api/auth/refresh').send({ refreshToken: user.refreshToken });
       expect(res.status).toBe(200);
       expect(res.body.accessToken).toBeDefined();
     });
@@ -81,10 +78,8 @@ describe('Auth', () => {
   describe('GET /api/auth/me', () => {
     let token: string;
     beforeAll(async () => {
-      const res = await api.post('/api/auth/register').send({
-        email: email(), name: 'Dave', password: 'Password1',
-      });
-      token = res.body.accessToken;
+      const user = await registerUser();
+      token = user.token;
     });
 
     it('returns current user profile', async () => {
@@ -107,10 +102,8 @@ describe('Auth', () => {
 
   describe('POST /api/auth/logout', () => {
     it('revokes refresh token', async () => {
-      const reg = await api.post('/api/auth/register').send({
-        email: email(), name: 'Eve', password: 'Password1',
-      });
-      const { refreshToken } = reg.body;
+      const user = await registerUser();
+      const { refreshToken } = user;
       const logout = await api.post('/api/auth/logout').send({ refreshToken });
       expect(logout.status).toBe(200);
 

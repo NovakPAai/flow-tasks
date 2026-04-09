@@ -29,6 +29,7 @@ model User {
   comments             Comment[]
   taskHistories        TaskHistory[]
   workspaceEvents      WorkspaceEvent[]
+  reviewedRegistrations RegistrationRequest[] @relation("RegistrationReviewer")
 
   @@map("users")
 }
@@ -43,6 +44,30 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+}
+
+// ─── Registration Requests ───────────────────────────────────────────────────
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model RegistrationRequest {
+  id         String             @id @default(uuid())
+  email      String             @unique
+  password   String
+  name       String
+  status     RegistrationStatus @default(PENDING)
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  reviewer User? @relation("RegistrationReviewer", fields: [reviewedBy], references: [id])
+
+  @@map("registration_requests")
 }
 
 // ─── Workspaces ──────────────────────────────────────────────────────────────
