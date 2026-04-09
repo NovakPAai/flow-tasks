@@ -74,14 +74,14 @@ describe('Tasks — edge cases', () => {
 
   // ── Status validation ────────────────────────────────────────────────────────
 
-  it('rejects task creation with statusId from a different board', async () => {
-    const otherBoard = await createBoard(ownerToken, workspaceId);
-    const otherDetail = await api.get(`/api/boards/${otherBoard.id}`).set(auth(ownerToken));
-    const foreignStatusId = otherDetail.body.workflow.statuses[0].id;
+  it('rejects task creation with non-existent statusId', async () => {
+    // Boards in the same workspace share the same workflow, so a "foreign board" status
+    // would actually be valid. Test the validation directly with a non-existent UUID.
+    const nonExistentStatusId = '00000000-0000-0000-0000-000000000000';
 
     const res = await api.post(`/api/boards/${boardId}/tasks`)
       .set(auth(ownerToken))
-      .send({ title: 'Wrong status', statusId: foreignStatusId });
+      .send({ title: 'Wrong status', statusId: nonExistentStatusId });
     expect(res.status).toBe(400);
   });
 
@@ -115,7 +115,7 @@ describe('Tasks — edge cases', () => {
   it('subtree returns all descendants in depth order', async () => {
     const root = await createTask(ownerToken, boardId);
     const c1   = await createTask(ownerToken, boardId, { parentId: root.id });
-    const c2   = await createTask(ownerToken, boardId, { parentId: root.id });
+    const _c2  = await createTask(ownerToken, boardId, { parentId: root.id });
     await createTask(ownerToken, boardId, { parentId: c1.id });
 
     const res = await api.get(`/api/tasks/${root.id}/subtree`).set(auth(ownerToken));
@@ -142,15 +142,14 @@ describe('Tasks — edge cases', () => {
 
   // ── Reorder validation ────────────────────────────────────────────────────────
 
-  it('reorder rejects statusId not in this board', async () => {
+  it('reorder rejects non-existent statusId', async () => {
+    // Boards in same workspace share a workflow; use a non-existent UUID to test validation.
     const t = await createTask(ownerToken, boardId);
-    const otherBoard = await createBoard(ownerToken, workspaceId);
-    const otherDetail = await api.get(`/api/boards/${otherBoard.id}`).set(auth(ownerToken));
-    const foreignStatus = otherDetail.body.workflow.statuses[0].id;
+    const nonExistentStatus = '00000000-0000-0000-0000-000000000000';
 
     const res = await api.patch(`/api/boards/${boardId}/tasks/reorder`)
       .set(auth(ownerToken))
-      .send({ updates: [{ id: t.id, statusId: foreignStatus, orderIndex: 0 }] });
+      .send({ updates: [{ id: t.id, statusId: nonExistentStatus, orderIndex: 0 }] });
     expect(res.status).toBe(400);
   });
 

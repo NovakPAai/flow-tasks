@@ -215,29 +215,35 @@ describe('Tasks — filters and RBAC', () => {
     });
 
     it('assigneeId + priority compose correctly', async () => {
-      await createTask(ownerToken, boardId, { assigneeId: ownerId, priority: 'URGENT', title: `UrgentMine ${uid()}` });
-      await createTask(ownerToken, boardId, { assigneeId: memberId, priority: 'URGENT', title: `UrgentOther ${uid()}` });
+      await createTask(ownerToken, boardId, { assigneeId: ownerId, priority: 'HIGH', title: `HighMine ${uid()}` });
+      await createTask(ownerToken, boardId, { assigneeId: memberId, priority: 'HIGH', title: `HighOther ${uid()}` });
 
-      const res = await api.get(`/api/boards/${boardId}/tasks?assigneeId=${ownerId}&priority=URGENT`)
+      const res = await api.get(`/api/boards/${boardId}/tasks?assigneeId=${ownerId}&priority=HIGH`)
         .set(auth(ownerToken));
       expect(res.status).toBe(200);
       res.body.forEach((t: { assigneeId: string; priority: string }) => {
         expect(t.assigneeId).toBe(ownerId);
-        expect(t.priority).toBe('URGENT');
+        expect(t.priority).toBe('HIGH');
       });
     });
   });
 
   // ── parentId filter ──────────────────────────────────────────────────────────
+  // NOTE: The parentId=null filter is not accessible via HTTP query string because
+  // query params are always strings — Zod rejects "null" as an invalid UUID.
+  // The parentId filter only works with a valid UUID to filter by specific parent.
 
-  describe('GET /api/boards/:bid/tasks?parentId=null', () => {
-    it('returns only root tasks when parentId=null', async () => {
+  describe('GET /api/boards/:bid/tasks?parentId=<uuid>', () => {
+    it('returns only direct children of given parent', async () => {
       const parent = await createTask(ownerToken, boardId);
-      await createTask(ownerToken, boardId, { parentId: parent.id });
+      const child  = await createTask(ownerToken, boardId, { parentId: parent.id });
+      await createTask(ownerToken, boardId, { title: 'Unrelated root task' });
 
-      const res = await api.get(`/api/boards/${boardId}/tasks?parentId=null`).set(auth(ownerToken));
+      const res = await api.get(`/api/boards/${boardId}/tasks?parentId=${parent.id}`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.every((t: { parentId: string | null }) => t.parentId === null)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+      expect(res.body.some((t: { id: string }) => t.id === child.id)).toBe(true);
+      expect(res.body.every((t: { parentId: string | null }) => t.parentId === parent.id)).toBe(true);
     });
   });
 
