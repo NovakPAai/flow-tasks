@@ -364,7 +364,7 @@ export default function BoardPage() {
                     <div
                       key={status.id}
                       style={{
-                        width: 290, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 0,
+                        flex: '1 1 0', minWidth: 260, maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 0,
                         opacity: draggingFromStatusId && !isDropAllowed ? 0.4 : 1,
                         transition: 'opacity 0.15s',
                       }}

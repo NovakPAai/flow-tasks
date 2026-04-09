@@ -92,7 +92,7 @@ function BoardCard({ board, onClick, c, isDark }: {
     <div
       onClick={onClick}
       style={{
-        display: 'flex', flexDirection: 'column', width: 416,
+        display: 'flex', flexDirection: 'column', width: '100%',
         background: c.cardBg, border: `1px solid ${c.cardBorder}`,
         borderRadius: 14, padding: '22px 24px', cursor: 'pointer',
         boxShadow: isDark ? 'none' : '0 2px 8px rgba(79,110,247,0.06)',
@@ -358,7 +358,7 @@ export default function WorkspaceDashboardPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 20 }}>
             {boards.map(board => (
               <BoardCard
                 key={board.id} board={board} c={c} isDark={isDark}
