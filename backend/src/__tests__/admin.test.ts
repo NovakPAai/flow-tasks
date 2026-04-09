@@ -29,6 +29,7 @@ describe('Admin', () => {
   });
 
   afterAll(async () => {
+    await prisma.registrationRequest.deleteMany({ where: { email: { contains: '@test.com' } } });
     await cleanupTestData();
     // Clean up superadmin if it was created just for tests
     await prisma.user.deleteMany({ where: { email: config.SUPERADMIN_EMAIL } });
@@ -74,17 +75,17 @@ describe('Admin', () => {
 
   describe('GET /api/admin/registration-requests', () => {
     it('returns registration request list for superadmin', async () => {
-      // Create a registration request first
-      const reqEmail = `${uid()}`;
-      await api.post('/api/auth/register').send({
-        email: reqEmail,
-        name: 'Pending User',
-        password: 'Password1',
+      // Create a registration request directly via Prisma (bypasses domain transformation)
+      const reqEmail = `${uid()}@test.com`;
+      const passwordHash = await hashPassword('Password1');
+      await prisma.registrationRequest.create({
+        data: { email: reqEmail, name: 'Pending User', password: passwordHash },
       });
 
       const res = await api.get('/api/admin/registration-requests').set(auth(superToken));
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.some((r: { email: string }) => r.email === reqEmail)).toBe(true);
     });
   });
 
@@ -92,15 +93,14 @@ describe('Admin', () => {
 
   describe('PATCH /api/admin/registration-requests/:id (approve)', () => {
     it('approves a pending request and creates a user', async () => {
-      const reqEmail = `${uid()}`;
-      await api.post('/api/auth/register').send({
-        email: reqEmail,
-        name: 'Future User',
-        password: 'Password1',
+      const reqEmail = `${uid()}@test.com`;
+      const passwordHash = await hashPassword('Password1');
+      await prisma.registrationRequest.create({
+        data: { email: reqEmail, name: 'Future User', password: passwordHash },
       });
 
       const listRes = await api.get('/api/admin/registration-requests').set(auth(superToken));
-      const pending = listRes.body.find((r: { email: string; status: string }) => r.status === 'PENDING');
+      const pending = listRes.body.find((r: { email: string; status: string }) => r.email === reqEmail && r.status === 'PENDING');
       expect(pending).toBeDefined();
 
       const approveRes = await api
@@ -118,15 +118,14 @@ describe('Admin', () => {
 
   describe('PATCH /api/admin/registration-requests/:id (reject)', () => {
     it('rejects a pending request and sets status to REJECTED', async () => {
-      const reqEmail = `${uid()}`;
-      await api.post('/api/auth/register').send({
-        email: reqEmail,
-        name: 'Rejected User',
-        password: 'Password1',
+      const reqEmail = `${uid()}@test.com`;
+      const passwordHash = await hashPassword('Password1');
+      await prisma.registrationRequest.create({
+        data: { email: reqEmail, name: 'Rejected User', password: passwordHash },
       });
 
       const listRes = await api.get('/api/admin/registration-requests').set(auth(superToken));
-      const pending = listRes.body.find((r: { email: string; status: string }) => r.status === 'PENDING');
+      const pending = listRes.body.find((r: { email: string; status: string }) => r.email === reqEmail && r.status === 'PENDING');
       expect(pending).toBeDefined();
 
       const rejectRes = await api
