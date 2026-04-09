@@ -16,6 +16,11 @@ export async function getMe(): Promise<User> {
   return data;
 }
 
+export async function updateProfile(data: { name?: string; email?: string }): Promise<User> {
+  const { data: user } = await api.patch<User>('/auth/me', data);
+  return user;
+}
+
 export async function logout(refreshToken: string): Promise<void> {
   await api.post('/auth/logout', { refreshToken });
 }

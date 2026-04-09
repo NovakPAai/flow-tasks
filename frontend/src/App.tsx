@@ -12,6 +12,7 @@ import WorkspaceDashboardPage from './pages/WorkspaceDashboardPage';
 import BoardPage from './pages/BoardPage';
 import MyTasksPage from './pages/MyTasksPage';
 import WorkspaceSettingsPage from './pages/WorkspaceSettingsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/w/:slug/boards/:boardId" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
           <Route path="/w/:slug/settings" element={<PrivateRoute><WorkspaceSettingsPage /></PrivateRoute>} />
           <Route path="/my-tasks" element={<PrivateRoute><MyTasksPage /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           {/* Legacy — kept for now */}
           <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />
         </Routes>
