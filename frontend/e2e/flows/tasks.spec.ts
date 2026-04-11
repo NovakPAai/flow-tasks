@@ -96,8 +96,9 @@ test.describe('Создание задач (Kanban)', () => {
     const input = page.getByPlaceholder('Название задачи...');
     await input.fill(`Key Task ${uid()}`);
     await input.press('Enter');
-    // Ищем любой текст вида БУКВЫ-ЦИФРЫ (например TSK-1)
-    await expect(page.locator('text=/[A-Z]+-\\d+/').first()).toBeVisible({ timeout: 8000 });
+    // Ищем issueKey вида PREFIX-N; prefix может содержать цифры (base36 uid → toUpperCase)
+    // Поэтому [A-Z0-9]+ вместо [A-Z]+
+    await expect(page.locator('text=/[A-Z][A-Z0-9]*-\\d+/').first()).toBeVisible({ timeout: 8000 });
   });
 
   test('клик по карточке открывает TaskDrawer', async ({ page }) => {
@@ -108,7 +109,8 @@ test.describe('Создание задач (Kanban)', () => {
     await page.getByPlaceholder('Название задачи...').press('Enter');
     await expect(page.getByText(taskTitle)).toBeVisible({ timeout: 8000 });
 
-    await page.getByText(taskTitle).first().click();
+    // force: true — DnD обёртка (role=button) перехватывает pointer events
+    await page.getByText(taskTitle).first().click({ force: true });
     // Drawer открывается — ищем заголовок "Детали"
     await expect(page.getByText('Детали')).toBeVisible({ timeout: 5000 });
   });

@@ -41,8 +41,9 @@ test.describe('Доски', () => {
     }
 
     await page.getByRole('button', { name: 'Создать' }).last().click();
-    // После создания переходим на страницу доски — имя доски должно быть видно
-    await expect(page.getByText(boardName)).toBeVisible({ timeout: 10_000 });
+    // После создания navigate → /w/${slug}/boards/${id} — ждём URL сначала
+    await page.waitForURL(/\/boards\//, { timeout: 10_000 });
+    await expect(page.getByText(boardName)).toBeVisible({ timeout: 5000 });
   });
 
   test('навигация на доску — открывает канбан', async ({ page }) => {

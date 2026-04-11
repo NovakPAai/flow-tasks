@@ -119,7 +119,8 @@ test.describe('FilterBar — фильтрация задач', () => {
       }
     }
     // Независимо от того видны ли фильтры — страница не упала
-    await expect(page.getByText('Быстрое добавление...')).toBeVisible();
+    // .first() т.к. каждая колонка имеет кнопку "Быстрое добавление..." (strict mode)
+    await expect(page.getByText('Быстрое добавление...').first()).toBeVisible();
   });
 
   test('чип "Эта неделя" отображается', async ({ page }) => {
