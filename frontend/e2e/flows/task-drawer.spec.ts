@@ -29,7 +29,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     await page.reload();
     await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
-    await page.getByText(task.title).first().click();
+    // force: true т.к. DnD обёртка (@hello-pangea/dnd) перехватывает pointer events
+    await page.getByText(task.title).first().click({ force: true });
     await expect(page.getByText('Детали')).toBeVisible({ timeout: 5000 });
     return task;
   }
@@ -52,8 +53,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
   test('закрытие drawer кнопкой X', async ({ page }) => {
     await openDrawer(page, `Close X ${uid()}`);
-    // Кнопка закрытия — svg path "M2 2L12 12M12 2L2 12"
-    await page.locator('button[title]').filter({ hasText: '' }).last().click();
+    // Кнопка закрытия — svg path "M2 2L12 12M12 2L2 12" (без title атрибута!)
+    await page.locator('button').filter({ has: page.locator('svg path[d*="M2 2L12 12"]') }).click();
     await expect(page.getByText('Детали')).not.toBeVisible({ timeout: 5000 });
   });
 
@@ -326,7 +327,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     const task2 = await createTask(token, boardId, `Label Target ${uid()}`, firstStatusId);
     await page.reload();
     await page.waitForLoadState('networkidle');
-    await page.getByText(task2.title).first().click();
+    await page.getByText(task2.title).first().click({ force: true });
     await expect(page.getByText('Детали')).toBeVisible({ timeout: 5000 });
 
     await page.getByText('Метки').click();

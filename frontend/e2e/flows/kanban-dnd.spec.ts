@@ -84,7 +84,7 @@ test.describe('Kanban drag-and-drop', () => {
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const sourceSelector = `text="${task.title}"`;
-    const targetSelector = `[data-rbd-droppable-id="${statuses[1].id}"]`;
+    const targetSelector = `[data-rfd-droppable-id="${statuses[1].id}"]`;
 
     await expect(page.locator(targetSelector)).toBeVisible();
     await dndDrag(page, sourceSelector, targetSelector);
@@ -107,7 +107,7 @@ test.describe('Kanban drag-and-drop', () => {
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const sourceSelector = `text="${task.title}"`;
-    const targetSelector = `[data-rbd-droppable-id="${statuses[2].id}"]`;
+    const targetSelector = `[data-rfd-droppable-id="${statuses[2].id}"]`;
 
     await dndDrag(page, sourceSelector, targetSelector);
     await page.waitForTimeout(1000);
@@ -136,7 +136,7 @@ test.describe('Kanban drag-and-drop', () => {
     await expect(page.getByText(task1.title)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(task2.title)).toBeVisible({ timeout: 10_000 });
 
-    const col = page.locator(`[data-rbd-droppable-id="${statuses[0].id}"]`);
+    const col = page.locator(`[data-rfd-droppable-id="${statuses[0].id}"]`);
 
     // Drag task2 above task1
     await dndDrag(page, `text="${task2.title}"`, `text="${task1.title}"`);
@@ -169,7 +169,7 @@ test.describe('Kanban drag-and-drop', () => {
     await page.mouse.move(cardBox.x + cardBox.width / 2 + 20, cardBox.y + cardBox.height / 2 + 20);
 
     // Во время drag droppable контейнеры должны быть видны
-    await expect(page.locator('[data-rbd-droppable-id]').first()).toBeVisible();
+    await expect(page.locator('[data-rfd-droppable-id]').first()).toBeVisible();
 
     await page.mouse.up();
   });

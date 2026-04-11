@@ -73,7 +73,7 @@ test.describe('FilterBar — фильтрация задач', () => {
   });
 
   test('чип "Просрочено" активируется и меняет стиль', async ({ page }) => {
-    const overdueBtn = page.getByRole('button', { name: '⚠ Просрочено' });
+    const overdueBtn = page.getByRole('button', { name: 'Просрочено' });
     await overdueBtn.click();
     // Кнопка должна быть активна (background изменился на красноватый)
     await expect(overdueBtn).toBeVisible();

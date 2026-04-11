@@ -35,8 +35,8 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
   });
 
   test('по умолчанию открывается Kanban', async ({ page }) => {
-    // В Kanban виде есть droppable-контейнеры
-    await expect(page.locator('[data-rbd-droppable-id]').first()).toBeVisible();
+    // В Kanban виде есть droppable-контейнеры (@hello-pangea/dnd использует data-rfd-*)
+    await expect(page.locator('[data-rfd-droppable-id]').first()).toBeVisible();
   });
 
   test('переключение в List вид', async ({ page }) => {
@@ -46,7 +46,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
     const listBtn = viewSwitcher.locator('button').nth(1);
     await listBtn.click();
     // В list view нет DnD — есть таблица или список
-    await expect(page.locator('[data-rbd-droppable-id]')).not.toBeVisible({ timeout: 3000 });
+    await expect(page.locator('[data-rfd-droppable-id]')).not.toBeVisible({ timeout: 3000 });
     // Должны быть задачи в виде списка
     if (firstStatusId) {
       await expect(page.getByText('View Task', { exact: false }).first()).toBeVisible({ timeout: 5000 });
@@ -67,7 +67,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
     await viewSwitcher.locator('button').nth(2).click(); // Calendar
     await page.waitForTimeout(300);
     await viewSwitcher.locator('button').nth(0).click(); // Kanban
-    await expect(page.locator('[data-rbd-droppable-id]').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-rfd-droppable-id]').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('переключение List → Kanban', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
     await viewSwitcher.locator('button').nth(1).click(); // List
     await page.waitForTimeout(300);
     await viewSwitcher.locator('button').nth(0).click(); // Kanban
-    await expect(page.locator('[data-rbd-droppable-id]').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-rfd-droppable-id]').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('задачи отображаются в List виде', async ({ page }) => {
