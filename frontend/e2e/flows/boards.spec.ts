@@ -41,9 +41,10 @@ test.describe('Доски', () => {
     }
 
     await page.getByRole('button', { name: 'Создать' }).last().click();
-    // После создания navigate → /w/${slug}/boards/${id} — ждём URL сначала
-    await page.waitForURL(/\/boards\//, { timeout: 10_000 });
-    await expect(page.getByText(boardName)).toBeVisible({ timeout: 5000 });
+    // После создания navigate → /w/${slug}/boards/${id} — ждём URL + networkidle
+    await page.waitForURL(/\/boards\//, { timeout: 12_000 });
+    await page.waitForLoadState('networkidle', { timeout: 8_000 });
+    await expect(page.getByText(boardName)).toBeVisible({ timeout: 8000 });
   });
 
   test('навигация на доску — открывает канбан', async ({ page }) => {

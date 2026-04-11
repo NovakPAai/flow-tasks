@@ -245,8 +245,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     // Кнопка удаления чеклиста
     await page.locator('button[title="Удалить чеклист"]').first().click();
     await expect(page.getByText('Удалить?')).toBeVisible({ timeout: 3000 });
-    // Scope к popconfirm чтобы избежать strict mode violation (8 элементов 'Да' на странице)
-    await page.locator('.ant-popconfirm').last().getByRole('button', { name: 'Да' }).click();
+    // Inline подтверждение (не AntD Popconfirm) — ищем кнопку 'Да' рядом со span 'Удалить?'
+    await page.locator('span').filter({ hasText: 'Удалить?' }).locator('xpath=..').getByRole('button', { name: 'Да' }).click();
     await expect(page.getByText('Delete Me CL')).not.toBeVisible({ timeout: 5000 });
   });
 
@@ -279,8 +279,9 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
     // Кнопка редактирования (pencil icon)
     await page.locator('button[title="Изменить"]').first().click();
-    // textarea[autofocus] → React не всегда рендерит HTML атрибут; берём последний visible textarea
-    const editArea = page.locator('textarea:visible').last();
+    // Редактируемая textarea появляется ВНУТРИ коммента (до add-comment box в DOM)
+    // → берём первую видимую textarea, не последнюю
+    const editArea = page.locator('textarea:visible').first();
     await expect(editArea).toBeVisible({ timeout: 3000 });
     await editArea.fill('Изменённый комментарий');
     await page.getByRole('button', { name: '✓ Сохранить' }).click();
@@ -297,8 +298,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
     await page.locator('button[title="Удалить"]').first().click();
     await expect(page.getByText('Удалить?')).toBeVisible({ timeout: 3000 });
-    // Scope к popconfirm чтобы избежать strict mode violation
-    await page.locator('.ant-popconfirm').last().getByRole('button', { name: 'Да' }).click();
+    // Inline подтверждение — Да рядом с span 'Удалить?'
+    await page.locator('span').filter({ hasText: 'Удалить?' }).locator('xpath=..').getByRole('button', { name: 'Да' }).click();
     await expect(page.getByText('Удалить этот')).not.toBeVisible({ timeout: 5000 });
   });
 
@@ -306,7 +307,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
   test('открытие пикера меток', async ({ page }) => {
     await openDrawer(page, `Labels Task ${uid()}`);
-    await page.getByText('Метки', { exact: true }).click();
+    // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
+    await page.getByRole('button', { name: 'Метки' }).click();
     // Dropdown открылся
     await expect(page.getByText('Метки пространства')).toBeVisible({ timeout: 3000 });
   });
@@ -314,7 +316,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   test('создание новой метки', async ({ page }) => {
     const labelName = `Label ${uid()}`;
     await openDrawer(page, `New Label Task ${uid()}`);
-    await page.getByText('Метки', { exact: true }).click();
+    // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
+    await page.getByRole('button', { name: 'Метки' }).click();
     await expect(page.getByText('Создать метку')).toBeVisible({ timeout: 3000 });
     await page.getByText('Создать метку').click();
     await page.getByPlaceholder('Название метки').fill(labelName);
@@ -327,7 +330,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     // Сначала создаём метку в первом drawer
     const labelName = `Assign Label ${uid()}`;
     const task1 = await openDrawer(page, `Label Source ${uid()}`);
-    await page.getByText('Метки', { exact: true }).click();
+    // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
+    await page.getByRole('button', { name: 'Метки' }).click();
     await page.getByText('Создать метку').click();
     await page.getByPlaceholder('Название метки').fill(labelName);
     await page.getByRole('button', { name: 'Создать' }).click();
@@ -341,7 +345,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     await page.locator(`[data-rfd-draggable-id="${task2.id}"] > div`).first().dispatchEvent('click');
     await expect(page.getByText('Детали')).toBeVisible({ timeout: 5000 });
 
-    await page.getByText('Метки', { exact: true }).click();
+    // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
+    await page.getByRole('button', { name: 'Метки' }).click();
     await page.getByText(labelName).click();
     // Метка назначена — закрываем dropdown и проверяем
     await page.keyboard.press('Escape');
@@ -354,10 +359,10 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
   test('удаление задачи через кнопку в drawer', async ({ page }) => {
     const task = await openDrawer(page, `Delete Task ${uid()}`);
+    // Регистрируем обработчик ПЕРЕД кликом (dialog fires синхронно при click)
+    page.once('dialog', d => d.accept());
     // Кнопка удаления — trash icon в хедере drawer
     await page.locator('button[title="Удалить задачу"]').click();
-    // Появляется confirm() браузера
-    page.once('dialog', d => d.accept());
     // .first() избегает strict mode violation если заголовок задачи видim в нескольких местах
     await expect(page.getByText(task.title).first()).not.toBeVisible({ timeout: 8000 });
   });

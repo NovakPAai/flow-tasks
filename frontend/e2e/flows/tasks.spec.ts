@@ -109,8 +109,8 @@ test.describe('Создание задач (Kanban)', () => {
     await page.getByPlaceholder('Название задачи...').press('Enter');
     await expect(page.getByText(taskTitle)).toBeVisible({ timeout: 8000 });
 
-    // force: true — DnD обёртка (role=button) перехватывает pointer events
-    await page.getByText(taskTitle).first().click({ force: true });
+    // dispatchEvent на TaskCard inner div — не имеем task.id, фильтруем DnD wrapper по тексту
+    await page.locator('[data-rfd-draggable-id]').filter({ hasText: taskTitle }).locator('> div').first().dispatchEvent('click');
     // Drawer открывается — ищем заголовок "Детали"
     await expect(page.getByText('Детали')).toBeVisible({ timeout: 5000 });
   });
