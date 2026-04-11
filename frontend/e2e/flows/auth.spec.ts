@@ -52,16 +52,26 @@ test.describe('Аутентификация', () => {
   });
 
   test('регистрация нового пользователя', async ({ page }) => {
-    const email = `test+${uid()}@example.com`;
     await page.goto('/login');
     await page.getByText('Зарегистрироваться').last().click();
     await expect(page.getByText('Регистрация')).toBeVisible();
     await page.locator('input[autocomplete="name"]').fill('Тест Юзер');
-    await page.locator('input[type="email"]').fill(email);
+    // Поле email в режиме регистрации — либо full email (type="email"), либо prefix-only
+    // input[autocomplete="email"] работает в обоих случаях
+    const emailInput = page.locator('input[autocomplete="email"]');
+    await expect(emailInput).toBeVisible({ timeout: 3000 });
+    // Если рядом есть @flowtask.dev суффикс — поле prefix-only, иначе — полный email
+    const domainSpan = page.locator('form span').filter({ hasText: /^@[a-z]+\.[a-z]+$/ });
+    const hasDomain = await domainSpan.isVisible();
+    if (hasDomain) {
+      // Вводим только локальную часть (домен добавляется автоматически)
+      await emailInput.fill(`testuser${uid()}`);
+    } else {
+      await emailInput.fill(`test+${uid()}@example.com`);
+    }
     await page.locator('input[type="password"]').fill(PASSWORD);
     await page.locator('button[type="submit"]').click();
     // Backend создаёт PENDING заявку → frontend переключается обратно на логин
-    // NOTE: требует актуального Prisma client (npx prisma generate в backend)
     await expect(page.getByText('Регистрация')).not.toBeVisible({ timeout: 8000 });
     await expect(page.getByText('Добро пожаловать')).toBeVisible({ timeout: 3000 });
   });

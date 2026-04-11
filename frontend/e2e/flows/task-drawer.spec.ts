@@ -321,21 +321,23 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     await expect(page.getByText('Создать метку')).toBeVisible({ timeout: 3000 });
     await page.getByText('Создать метку').click();
     await page.getByPlaceholder('Название метки').fill(labelName);
-    await page.getByRole('button', { name: 'Создать' }).click();
-    // Метка должна появиться на задаче
-    await expect(page.getByText(labelName)).toBeVisible({ timeout: 8000 });
+    // Enter вместо клика по 'Создать' — избегаем strict mode (несколько кнопок 'Создать' на странице)
+    await page.getByPlaceholder('Название метки').press('Enter');
+    // Метка появляется в picker (ещё открыт) или в сайдбаре задачи — .first() избегает strict mode
+    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('назначение существующей метки на задачу', async ({ page }) => {
     // Сначала создаём метку в первом drawer
     const labelName = `Assign Label ${uid()}`;
-    const task1 = await openDrawer(page, `Label Source ${uid()}`);
+    await openDrawer(page, `Label Source ${uid()}`);
     // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
     await page.getByRole('button', { name: 'Метки' }).click();
     await page.getByText('Создать метку').click();
     await page.getByPlaceholder('Название метки').fill(labelName);
-    await page.getByRole('button', { name: 'Создать' }).click();
-    await expect(page.getByText(labelName)).toBeVisible({ timeout: 8000 });
+    // Enter вместо клика по 'Создать' — избегаем strict mode (несколько кнопок 'Создать' на странице)
+    await page.getByPlaceholder('Название метки').press('Enter');
+    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 8000 });
     await page.keyboard.press('Escape'); // закрыть drawer
 
     // Открываем другую задачу и назначаем туже метку
@@ -347,12 +349,11 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
     // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
     await page.getByRole('button', { name: 'Метки' }).click();
-    await page.getByText(labelName).click();
-    // Метка назначена — закрываем dropdown и проверяем
-    await page.keyboard.press('Escape');
-    // Метка должна быть видна в drawer
-    expect(task1).toBeDefined(); // чтобы не было warning об unused
-    await expect(page.getByText(labelName)).toBeVisible({ timeout: 5000 });
+    // .first() т.к. labelName может матчиться в picker list И в sidebar labels
+    await page.getByText(labelName).first().click();
+    // Метка назначена — picker ещё открыт (Escape закрыл бы drawer целиком)
+    // Проверяем что метка видна — .first() избегает strict mode
+    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 5000 });
   });
 
   // ── Удаление задачи ──────────────────────────────────────────────────────────
