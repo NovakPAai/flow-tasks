@@ -242,6 +242,29 @@ export async function removeMember(workspaceId: string, requesterId: string, tar
   });
 }
 
+// ─── Member Search ───────────────────────────────────────────────────────────
+
+export async function searchMembers(workspaceId: string, query: string) {
+  const q = query.trim().toLowerCase();
+  const members = await prisma.workspaceMember.findMany({
+    where: { workspaceId },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, avatar: true },
+      },
+    },
+  });
+
+  if (!q) return members.map(m => m.user);
+
+  return members
+    .filter(m =>
+      m.user.name.toLowerCase().includes(q) ||
+      m.user.email.toLowerCase().includes(q),
+    )
+    .map(m => m.user);
+}
+
 // ─── Workspace History ────────────────────────────────────────────────────────
 
 export async function getWorkspaceHistory(workspaceId: string, userId: string) {

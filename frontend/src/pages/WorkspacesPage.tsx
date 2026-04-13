@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
+import { formatApiError } from '../utils/apiError';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
@@ -388,8 +389,7 @@ export default function WorkspacesPage() {
       .catch(() => {});
   }, [workspaces]);
 
-  const nameParts = user?.name?.split(' ') ?? [];
-  const firstName = nameParts[0]?.toUpperCase() ?? 'ПОЛЬЗОВАТЕЛЬ';
+  const firstName = ((user as { firstName?: string; name?: string })?.firstName ?? user?.name?.split(' ')[0] ?? 'ПОЛЬЗОВАТЕЛЬ').toUpperCase();
 
   const handleCreate = async (name: string, slug: string, description?: string) => {
     try {
@@ -397,8 +397,8 @@ export default function WorkspacesPage() {
       message.success(`Workspace "${ws.name}" создан`);
       setModalOpen(false);
       navigate(`/w/${ws.slug}`);
-    } catch {
-      message.error('Не удалось создать workspace');
+    } catch (e) {
+      message.error(formatApiError(e));
     }
   };
 

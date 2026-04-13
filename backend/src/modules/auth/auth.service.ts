@@ -202,5 +202,49 @@ export async function getMe(userId: string) {
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
   });
   if (!user) throw new AppError(404, 'Пользователь не найден');
-  return { ...user, isSuperadmin: user.email === config.SUPERADMIN_EMAIL };
+  const firstName = user.name.split(' ')[0] ?? user.name;
+  return { ...user, firstName, isSuperadmin: user.email === config.SUPERADMIN_EMAIL };
+}
+
+export async function requestPasswordReset(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  // Always return success to prevent email enumeration
+  if (!user) {
+    return { message: 'Если аккаунт с таким email существует, вы получите ссылку для сброса пароля.' };
+  }
+
+  // Delete existing tokens for user
+  await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await prisma.passwordResetToken.create({
+    data: { userId: user.id, token, expiresAt },
+  });
+
+  const resetUrl = `${config.CORS_ORIGIN}/reset-password?token=${token}`;
+  console.info(`[PASSWORD RESET] Reset link for ${normalizedEmail}: ${resetUrl}`);
+
+  return { message: 'Если аккаунт с таким email существует, вы получите ссылку для сброса пароля.' };
+}
+
+export async function resetPassword(token: string, password: string) {
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+
+  if (!resetToken || resetToken.usedAt !== null || resetToken.expiresAt < new Date()) {
+    throw new AppError(400, 'Ссылка для сброса пароля недействительна или истекла');
+  }
+
+  const passwordHash = await hashPassword(password);
+
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: resetToken.userId }, data: { password: passwordHash } }),
+    prisma.passwordResetToken.update({ where: { token }, data: { usedAt: new Date() } }),
+    prisma.refreshToken.deleteMany({ where: { userId: resetToken.userId } }),
+  ]);
+
+  return { message: 'Пароль успешно изменён. Войдите с новым паролем.' };
 }

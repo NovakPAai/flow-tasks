@@ -16,6 +16,7 @@ import labelsRouter, { workspaceLabelsRouter, taskLabelsRouter } from './modules
 import commentsRouter, { taskCommentsRouter } from './modules/comments/comments.router.js';
 import checklistsRouter, { taskChecklistsRouter, checklistItemsRouter } from './modules/checklists/checklists.router.js';
 import adminRouter from './modules/admin/admin.router.js';
+import feedbackRouter from './modules/feedback/feedback.router.js';
 
 export function createApp() {
   const app = express();
@@ -55,6 +56,7 @@ export function createApp() {
   app.use('/api/checklists', checklistsRouter);
   app.use('/api/checklist-items', checklistItemsRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/feedback', feedbackRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);

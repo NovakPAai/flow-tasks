@@ -4,6 +4,7 @@ import { message } from 'antd';
 import { useAuthStore } from '../store/auth.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
+import FeedbackModal from './FeedbackModal';
 
 interface Props { children: React.ReactNode }
 
@@ -145,6 +146,7 @@ export default function AppLayout({ children }: Props) {
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // ── Design tokens ──────────────────────────────────────────────────────────
   const isDark = mode !== 'light';
@@ -308,6 +310,24 @@ export default function AppLayout({ children }: Props) {
           )}
         </button>
 
+        {/* Feedback button */}
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          style={{
+            background: 'transparent',
+            border: `1px solid ${tabIdleText}`,
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 12,
+            padding: '4px 10px',
+            opacity: 0.7,
+            color: tabIdleText,
+            fontFamily: '"Inter", system-ui, sans-serif',
+          }}
+        >
+          Обратная связь
+        </button>
+
         {/* Avatar */}
         <div style={{ position: 'relative' }}>
           <div
@@ -339,6 +359,8 @@ export default function AppLayout({ children }: Props) {
       <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'auto' }}>
         {children}
       </div>
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }

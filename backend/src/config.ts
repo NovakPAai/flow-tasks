@@ -14,6 +14,9 @@ const envSchema = z.object({
   REDIS_CACHE_TTL_SECONDS: z.coerce.number().min(1).max(3600).default(30),
   SUPERADMIN_EMAIL: z.string().email().default('novak.pavel@flowtask.dev'),
   REGISTRATION_DOMAIN: z.string().default('flowtask.dev'),
+  GITHUB_ISSUES_TOKEN: z.string().optional(),
+  GITHUB_REPO_OWNER: z.string().default('NovakPAai'),
+  GITHUB_REPO_NAME: z.string().default('flow-tasks'),
 });
 
 export const config = envSchema.parse(process.env);
