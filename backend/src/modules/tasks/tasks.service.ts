@@ -112,6 +112,7 @@ export async function listTasks(boardId: string, userId: string, filters: TaskFi
   return prisma.task.findMany({
     where,
     orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
+    omit: { assigneeId: true },
     include: {
       assignee: { select: { id: true, name: true, avatar: true } },
       status: { select: { id: true, name: true, color: true, category: true } },
@@ -172,6 +173,7 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
       depth,
       orderIndex,
     },
+    omit: { assigneeId: true },
     include: {
       assignee: { select: { id: true, name: true, avatar: true } },
       status: { select: { id: true, name: true, color: true, category: true } },
@@ -187,6 +189,7 @@ export async function getTask(taskId: string, userId: string) {
 
   return prisma.task.findUniqueOrThrow({
     where: { id: taskId },
+    omit: { assigneeId: true },
     include: {
       status: true,
       assignee: { select: { id: true, name: true, email: true, avatar: true } },
@@ -194,6 +197,7 @@ export async function getTask(taskId: string, userId: string) {
       parent: { select: { id: true, title: true, issueKey: true } },
       children: {
         orderBy: { orderIndex: 'asc' },
+        omit: { assigneeId: true },
         include: {
           assignee: { select: { id: true, name: true, avatar: true } },
           status: { select: { id: true, name: true, color: true, category: true } },
@@ -227,6 +231,7 @@ export async function getSubtree(taskId: string, userId: string) {
       path: { startsWith: `${task.path}${taskId}/` },
     },
     orderBy: [{ depth: 'asc' }, { orderIndex: 'asc' }],
+    omit: { assigneeId: true },
     include: {
       assignee: { select: { id: true, name: true, avatar: true } },
       status: { select: { id: true, name: true, color: true, category: true } },
@@ -280,6 +285,7 @@ export async function updateTask(taskId: string, userId: string, dto: UpdateTask
     prisma.task.update({
       where: { id: taskId },
       data,
+      omit: { assigneeId: true },
       include: {
         status: true,
         assignee: { select: { id: true, name: true, avatar: true } },
@@ -325,6 +331,7 @@ export async function moveTask(taskId: string, userId: string, toStatusId: strin
     prisma.task.update({
       where: { id: taskId },
       data: { statusId: toStatusId, orderIndex },
+      omit: { assigneeId: true },
       include: {
         status: true,
         assignee: { select: { id: true, name: true, avatar: true } },

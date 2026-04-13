@@ -124,7 +124,7 @@ describe('Tasks — filters and RBAC', () => {
       const res = await api.get(`/api/boards/${boardId}/tasks?assigneeId=${ownerId}`).set(auth(ownerToken));
       expect(res.status).toBe(200);
       expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body.every((t: { assigneeId: string | null }) => t.assigneeId === ownerId)).toBe(true);
+      expect(res.body.every((t: { assignee: { id: string } | null }) => t.assignee?.id === ownerId)).toBe(true);
     });
   });
 
@@ -221,8 +221,8 @@ describe('Tasks — filters and RBAC', () => {
       const res = await api.get(`/api/boards/${boardId}/tasks?assigneeId=${ownerId}&priority=HIGH`)
         .set(auth(ownerToken));
       expect(res.status).toBe(200);
-      res.body.forEach((t: { assigneeId: string; priority: string }) => {
-        expect(t.assigneeId).toBe(ownerId);
+      res.body.forEach((t: { assignee: { id: string } | null; priority: string }) => {
+        expect(t.assignee?.id).toBe(ownerId);
         expect(t.priority).toBe('HIGH');
       });
     });
