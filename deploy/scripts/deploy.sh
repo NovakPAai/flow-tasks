@@ -22,15 +22,11 @@ if command -v pg_dump &>/dev/null; then
   fi
 fi
 
-# Pull latest code
+# Pull latest code — fresh clone every deploy to avoid stale ownership issues
 echo "→ Pulling code..."
-if [[ ! -d "$REPO_DIR/.git" ]]; then
-  git clone git@github.com:NovakPAai/flow-tasks.git "$REPO_DIR"
-fi
-# Fix ownership if repo was created by a different user
-chown -R "$(whoami):$(whoami)" "$REPO_DIR" 2>/dev/null || true
+rm -rf "$REPO_DIR"
+git clone https://github.com/NovakPAai/flow-tasks.git "$REPO_DIR"
 cd "$REPO_DIR"
-git fetch origin
 git reset --hard "${GIT_SHA:-origin/main}"
 
 # Build backend
