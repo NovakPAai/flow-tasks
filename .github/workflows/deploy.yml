@@ -113,11 +113,9 @@ jobs:
               node_modules/.bin/prisma migrate deploy --schema=src/prisma/schema.prisma
 
             echo '→ Restarting PM2...'
-            if pm2 describe flowtask-api > /dev/null 2>&1; then
-              pm2 reload \$APP_DIR/ecosystem.config.js --env production
-            else
-              pm2 start \$APP_DIR/ecosystem.config.js --env production
-            fi
+            pm2 stop flowtask-api 2>/dev/null || true
+            pm2 delete flowtask-api 2>/dev/null || true
+            pm2 start \$APP_DIR/ecosystem.config.js --env production
             pm2 save
 
             echo '→ Health check...'
