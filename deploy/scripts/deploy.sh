@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # FlowTask deploy script — runs on the server
-# Usage: ./deploy.sh [git-sha]
+# Usage: bash -s -- [git-sha] (piped via stdin from GitHub Actions)
 set -euo pipefail
 
 APP_DIR="/opt/flowtask"
-REPO_DIR="/opt/flowtask-repo"
-LOG_DIR="/var/log/flowtask"
+WORK_DIR="/tmp/flowtask-deploy-$(date +%Y%m%d_%H%M%S)"
 BACKUP_DIR="/opt/flowtask-backups"
 GIT_SHA="${1:-HEAD}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -22,21 +21,20 @@ if command -v pg_dump &>/dev/null; then
   fi
 fi
 
-# Pull latest code — fresh clone every deploy to avoid stale ownership issues
-echo "→ Pulling code..."
-rm -rf "$REPO_DIR"
-git clone https://github.com/NovakPAai/flow-tasks.git "$REPO_DIR"
-cd "$REPO_DIR"
-git reset --hard "${GIT_SHA:-origin/main}"
+# Clone into /tmp — world-writable, no permission issues
+echo "→ Cloning code..."
+git clone https://github.com/NovakPAai/flow-tasks.git "$WORK_DIR"
+cd "$WORK_DIR"
+git reset --hard "${GIT_SHA}"
 
 # Build backend
 echo "→ Building backend..."
-cd "$REPO_DIR/backend"
+cd "$WORK_DIR/backend"
 npm ci --prefer-offline
 
-# .env lives in APP_DIR — symlink into repo so dotenv/config finds it
+# .env lives in APP_DIR — symlink into work dir so dotenv/config finds it
 [[ -f "$APP_DIR/backend/.env" ]] || { echo "ERROR: $APP_DIR/backend/.env missing. Create it first."; exit 1; }
-ln -sf "$APP_DIR/backend/.env" "$REPO_DIR/backend/.env"
+ln -sf "$APP_DIR/backend/.env" "$WORK_DIR/backend/.env"
 
 # Generate Prisma client + build
 DATABASE_URL=$(grep DATABASE_URL "$APP_DIR/backend/.env" | cut -d= -f2-)
@@ -50,18 +48,34 @@ npx prisma migrate deploy --schema=src/prisma/schema.prisma
 
 # Build frontend
 echo "→ Building frontend..."
-cd "$REPO_DIR/frontend"
+cd "$WORK_DIR/frontend"
 npm ci --prefer-offline
 npm run build
+mkdir -p "$APP_DIR/frontend/dist"
 rsync -a --delete dist/ "$APP_DIR/frontend/dist/"
+
+# Swap the live backend code — atomic replace
+echo "→ Swapping backend code..."
+mkdir -p "$APP_DIR/backend"
+rsync -a --delete \
+  --exclude='.env' \
+  --exclude='node_modules' \
+  "$WORK_DIR/backend/dist/" "$APP_DIR/backend/dist/"
+rsync -a --delete \
+  --exclude='.env' \
+  "$WORK_DIR/backend/node_modules/" "$APP_DIR/backend/node_modules/"
+cp "$WORK_DIR/deploy/ecosystem.config.js" "$APP_DIR/ecosystem.config.js"
+
+# Update ecosystem cwd to APP_DIR
+sed -i "s|/opt/flowtask-repo/backend|$APP_DIR/backend|g" "$APP_DIR/ecosystem.config.js"
 
 # Restart backend
 echo "→ Restarting PM2..."
-cd "$REPO_DIR/backend"
+cd "$APP_DIR/backend"
 if pm2 describe flowtask-api &>/dev/null; then
-  pm2 reload "$REPO_DIR/deploy/ecosystem.config.js" --env production
+  pm2 reload "$APP_DIR/ecosystem.config.js" --env production
 else
-  pm2 start "$REPO_DIR/deploy/ecosystem.config.js" --env production
+  pm2 start "$APP_DIR/ecosystem.config.js" --env production
 fi
 pm2 save
 
@@ -75,5 +89,8 @@ for i in $(seq 1 12); do
   [[ $i -eq 12 ]] && { echo "✗ Health check failed after 60s"; pm2 logs flowtask-api --lines 30; exit 1; }
   sleep 5
 done
+
+# Cleanup
+rm -rf "$WORK_DIR"
 
 echo "=== Deploy complete ==="
