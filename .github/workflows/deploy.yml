@@ -31,7 +31,7 @@ jobs:
         run: |
           ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
             "DATABASE_URL='${{ secrets.DATABASE_URL }}' \
-             bash /opt/flowtask-repo/deploy/scripts/deploy.sh ${{ github.sha }}"
+             bash -s -- ${{ github.sha }}" < deploy/scripts/deploy.sh
 
       - name: Notify on failure
         if: failure()
