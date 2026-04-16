@@ -48,6 +48,24 @@ jobs:
           npm ci
           npm run build
 
+      - name: Diagnose server permissions
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            echo '--- whoami ---'
+            whoami
+            echo '--- /opt/flowtask ownership ---'
+            ls -la /opt/ | grep flowtask || echo 'dir missing'
+            ls -la /opt/flowtask/ 2>/dev/null | head -10 || echo 'empty or missing'
+            ls -la /opt/flowtask/frontend/dist/ 2>/dev/null | head -5 || echo 'no dist'
+            echo '--- lsattr ---'
+            lsattr -d /opt/flowtask/frontend/dist/assets 2>/dev/null || echo 'lsattr n/a'
+            echo '--- sudo available ---'
+            sudo -n true 2>&1 && echo 'sudo OK' || echo 'no sudo'
+          "
+
       - name: Deploy to server
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
