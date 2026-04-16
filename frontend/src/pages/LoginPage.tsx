@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { message, Modal } from 'antd';
+import { message, Modal, Form, Input, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
 import * as authApi from '../api/auth';
+import api from '../api/client';
 
 // ─── Design tokens (from Paper: artboards 2-0 dark, 3-0 light) ───────────────
 type LoginTheme = Record<string, string>;
@@ -304,6 +305,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showRegister, setShowRegister] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotDone, setForgotDone] = useState(false);
   const { login, register } = useAuthStore();
   const navigate = useNavigate();
 
@@ -436,11 +441,7 @@ export default function LoginPage() {
               </div>
               {!showRegister && (
                 <div
-                  onClick={() => Modal.info({
-                    title: 'Сброс пароля',
-                    content: 'Для сброса пароля обратитесь к администратору системы.',
-                    okText: 'Понятно',
-                  })}
+                  onClick={() => { setForgotOpen(true); setForgotDone(false); setForgotEmail(email || emailPrefix ? `${emailPrefix}@${registrationDomain}` : ''); }}
                   style={{ color: C.accent, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, lineHeight: '16px', cursor: 'pointer' }}
                 >
                   Забыли пароль?
@@ -492,6 +493,46 @@ export default function LoginPage() {
 
       {/* ── Right orbital panel ── */}
       {mode === 'light' ? <LightPanel/> : <DarkPanel/>}
+
+      {/* ── Forgot password modal ── */}
+      <Modal
+        open={forgotOpen}
+        onCancel={() => setForgotOpen(false)}
+        footer={null}
+        title="Сброс пароля"
+        width={400}
+      >
+        {forgotDone ? (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <div style={{ fontSize: 14, color: '#52c41a', marginBottom: 8 }}>✓ Ссылка отправлена</div>
+            <div style={{ fontSize: 13, color: '#666' }}>
+              Если аккаунт с таким email существует, вы получите ссылку для сброса пароля в консоли сервера (dev) или на почту (prod).
+            </div>
+          </div>
+        ) : (
+          <Form layout="vertical" onFinish={async (values: { email: string }) => {
+            setForgotLoading(true);
+            try {
+              await api.post('/auth/forgot-password', { email: values.email });
+              setForgotDone(true);
+            } catch {
+              message.error('Не удалось отправить запрос. Попробуйте позже.');
+            } finally {
+              setForgotLoading(false);
+            }
+          }}>
+            <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Введите email' }, { type: 'email', message: 'Некорректный email' }]}
+              initialValue={forgotEmail}>
+              <Input placeholder="your@email.com" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button type="primary" htmlType="submit" loading={forgotLoading} block>
+                Отправить ссылку
+              </Button>
+            </Form.Item>
+          </Form>
+        )}
+      </Modal>
     </div>
   );
 }

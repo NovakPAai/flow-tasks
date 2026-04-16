@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate.js';
 import { authenticate } from '../../shared/middleware/auth.js';
-import { registerDto, loginDto, refreshDto, updateProfileDto } from './auth.dto.js';
+import { registerDto, loginDto, refreshDto, updateProfileDto, forgotPasswordDto, resetPasswordDto } from './auth.dto.js';
 import * as authService from './auth.service.js';
 import { config } from '../../config.js';
 import type { AuthRequest } from '../../shared/types/index.js';
@@ -64,6 +64,24 @@ router.patch('/me', authenticate, validate(updateProfileDto), async (req: AuthRe
   try {
     const user = await authService.updateProfile(req.user!.userId, req.body);
     res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/forgot-password', validate(forgotPasswordDto), async (req, res, next) => {
+  try {
+    const result = await authService.requestPasswordReset(req.body.email);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/reset-password', validate(resetPasswordDto), async (req, res, next) => {
+  try {
+    const result = await authService.resetPassword(req.body.token, req.body.password);
+    res.json(result);
   } catch (err) {
     next(err);
   }

@@ -45,6 +45,16 @@ router.delete('/:id', async (req: AuthRequest, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.get('/:id/members/search', async (req: AuthRequest, res, next) => {
+  try {
+    const q = (req.query.q as string) ?? '';
+    const users = await ws.searchMembers(String(req.params.id), q);
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id/members', async (req: AuthRequest, res, next) => {
   try {
     res.json(await ws.listMembers(String(req.params.id), req.user!.userId));

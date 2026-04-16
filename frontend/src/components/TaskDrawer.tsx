@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { message } from 'antd';
+import { message, Select } from 'antd';
+import { formatApiError } from '../utils/apiError';
 import { useThemeStore } from '../store/theme.store';
 import type { Task, WorkflowStatus, WorkspaceMember, Label, TaskLabel, Comment, Checklist } from '../types';
 import * as tasksApi from '../api/tasks';
@@ -155,8 +156,7 @@ export default function TaskDrawer({
       setTask((prev) => prev ? { ...prev, ...updated } : updated);
       onUpdated(updated);
     } catch (err) {
-      const details = (err as { response?: { data?: { details?: { message: string }[] } } })?.response?.data?.details;
-      message.error(details?.map((d) => d.message).join('; ') ?? 'Ошибка сохранения');
+      message.error(formatApiError(err));
     }
     finally { setSaving(false); }
   };
@@ -456,17 +456,21 @@ export default function TaskDrawer({
                     <span style={{ width: 80, fontSize: 12, color: c.label, flexShrink: 0 }}>Исполнитель</span>
                     <div style={{ flex: 1 }}>
                       {members.length > 0 ? (
-                        <select
-                          value={task.assigneeId ?? ''}
-                          onChange={(e) => save({ assigneeId: e.target.value || undefined })}
+                        <Select
+                          value={task.assigneeId ?? null}
+                          onChange={(val: string | null) => save({ assigneeId: val ?? undefined })}
                           disabled={saving}
-                          style={{ ...selectStyle }}
-                        >
-                          <option value="">Не назначен</option>
-                          {members.map((m) => (
-                            <option key={m.userId} value={m.userId}>{m.user.name}</option>
-                          ))}
-                        </select>
+                          showSearch
+                          allowClear
+                          placeholder="Не назначен"
+                          optionFilterProp="label"
+                          style={{ width: '100%' }}
+                          size="small"
+                          options={members.map((m) => ({
+                            value: m.userId,
+                            label: m.user.name,
+                          }))}
+                        />
                       ) : assignee ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Avatar name={assignee.name} size={20} />
@@ -491,7 +495,10 @@ export default function TaskDrawer({
                       <input
                         type="date"
                         value={dueStr}
-                        onChange={(e) => save({ dueDate: e.target.value ? `${e.target.value}T00:00:00.000Z` : undefined })}
+                        onChange={(e) => {
+                          const patch = { dueDate: e.target.value ? `${e.target.value}T00:00:00.000Z` : null } as Parameters<typeof tasksApi.updateTask>[1];
+                          save(patch);
+                        }}
                         disabled={saving}
                         style={{
                           ...selectStyle, width: 'auto',
