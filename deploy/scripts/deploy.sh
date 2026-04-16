@@ -27,6 +27,8 @@ echo "→ Pulling code..."
 if [[ ! -d "$REPO_DIR/.git" ]]; then
   git clone git@github.com:NovakPAai/flow-tasks.git "$REPO_DIR"
 fi
+# Fix ownership if repo was created by a different user
+chown -R "$(whoami):$(whoami)" "$REPO_DIR" 2>/dev/null || true
 cd "$REPO_DIR"
 git fetch origin
 git reset --hard "${GIT_SHA:-origin/main}"
