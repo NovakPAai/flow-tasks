@@ -76,8 +76,8 @@ jobs:
 
           # Wipe and recreate dist dirs to clear any root-owned files from previous deploys
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
-            rm -rf $APP_DIR/frontend/dist && mkdir -p $APP_DIR/frontend/dist
-            rm -rf $APP_DIR/backend/dist  && mkdir -p $APP_DIR/backend/dist
+            sudo rm -rf $APP_DIR/frontend/dist && sudo mkdir -p $APP_DIR/frontend/dist && sudo chown \$(whoami):\$(whoami) $APP_DIR/frontend/dist
+            sudo rm -rf $APP_DIR/backend/dist  && sudo mkdir -p $APP_DIR/backend/dist  && sudo chown \$(whoami):\$(whoami) $APP_DIR/backend/dist
             mkdir -p $APP_DIR/backend/src/prisma
           "
 
