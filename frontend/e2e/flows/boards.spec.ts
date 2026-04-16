@@ -32,17 +32,26 @@ test.describe('Доски', () => {
     // Модалка — поле "Название" имеет placeholder "Frontend, Backend, Design..."
     const nameInput = page.getByPlaceholder(/Frontend|Backend|Design/i).first();
     await expect(nameInput).toBeVisible({ timeout: 5000 });
-    await nameInput.fill(boardName);
+    // pressSequentially вместо fill — гарантирует что React-контролируемый input
+    // получает каждое нажатие клавиши и state обновляется корректно
+    await nameInput.click();
+    await nameInput.pressSequentially(boardName, { delay: 20 });
 
     // Поле prefix — placeholder "DEV, OPS, FRONT..."
     const prefixInput = page.getByPlaceholder(/DEV|OPS|FRONT/i).first();
     if (await prefixInput.isVisible()) {
-      await prefixInput.fill(`TB${uid().slice(0,3).toUpperCase()}`);
+      const prefix = `TB${uid().slice(0,3).toUpperCase()}`;
+      await prefixInput.click();
+      await prefixInput.pressSequentially(prefix, { delay: 20 });
     }
 
     await page.getByRole('button', { name: 'Создать' }).last().click();
-    // После создания переходим на страницу доски — имя доски должно быть видно
-    await expect(page.getByText(boardName)).toBeVisible({ timeout: 10_000 });
+    // После создания navigate → /w/${slug}/boards/${id} — ждём URL + networkidle
+    await page.waitForURL(/\/boards\//, { timeout: 12_000 });
+    await page.waitForLoadState('networkidle', { timeout: 8_000 });
+    // Доска создана — проверяем что мы на правильной доске (имя в h1) и канбан загружен
+    await expect(page.getByText(boardName)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 8000 });
   });
 
   test('навигация на доску — открывает канбан', async ({ page }) => {
