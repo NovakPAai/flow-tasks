@@ -54,24 +54,28 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           APP_DIR="/opt/flowtask"
+          RSYNC="rsync -az --no-perms --no-group"
 
-          # Ensure target dirs exist
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p $APP_DIR/backend/dist $APP_DIR/frontend/dist $APP_DIR/backend/src/prisma"
+          # Ensure target dirs exist and fix ownership
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            mkdir -p $APP_DIR/backend/dist $APP_DIR/frontend/dist $APP_DIR/backend/src/prisma
+            chown -R \$(whoami):\$(whoami) $APP_DIR || true
+          "
 
           # Sync built backend
-          rsync -az --delete backend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/dist/"
+          $RSYNC --delete backend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/dist/"
 
           # Sync backend node_modules
-          rsync -az --delete backend/node_modules/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/node_modules/"
+          $RSYNC --delete backend/node_modules/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/node_modules/"
 
           # Sync Prisma schema + migrations (needed for migrate deploy)
-          rsync -az backend/src/prisma/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/src/prisma/"
+          $RSYNC backend/src/prisma/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/src/prisma/"
 
           # Sync built frontend
-          rsync -az --delete frontend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/frontend/dist/"
+          $RSYNC --delete frontend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/frontend/dist/"
 
           # Sync ecosystem config
-          rsync -az deploy/ecosystem.config.js "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/ecosystem.config.js"
+          $RSYNC deploy/ecosystem.config.js "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/ecosystem.config.js"
 
       - name: Run migrations + restart
         env:
