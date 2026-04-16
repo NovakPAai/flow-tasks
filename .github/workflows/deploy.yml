@@ -74,14 +74,15 @@ jobs:
           APP_DIR="/opt/flowtask"
           RSYNC="rsync -az --no-perms --no-group"
 
-          # Ensure target dirs exist and fix ownership
+          # Wipe and recreate dist dirs to clear any root-owned files from previous deploys
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
-            mkdir -p $APP_DIR/backend/dist $APP_DIR/frontend/dist $APP_DIR/backend/src/prisma
-            chown -R \$(whoami):\$(whoami) $APP_DIR || true
+            rm -rf $APP_DIR/frontend/dist && mkdir -p $APP_DIR/frontend/dist
+            rm -rf $APP_DIR/backend/dist  && mkdir -p $APP_DIR/backend/dist
+            mkdir -p $APP_DIR/backend/src/prisma
           "
 
           # Sync built backend
-          $RSYNC --delete backend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/dist/"
+          $RSYNC backend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/dist/"
 
           # Sync backend node_modules
           $RSYNC --delete backend/node_modules/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/node_modules/"
@@ -90,7 +91,7 @@ jobs:
           $RSYNC backend/src/prisma/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/backend/src/prisma/"
 
           # Sync built frontend
-          $RSYNC --delete frontend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/frontend/dist/"
+          $RSYNC frontend/dist/ "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/frontend/dist/"
 
           # Sync ecosystem config
           $RSYNC deploy/ecosystem.config.js "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/ecosystem.config.js"
