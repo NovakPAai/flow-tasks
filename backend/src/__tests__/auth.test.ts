@@ -64,13 +64,13 @@ describe('Auth', () => {
   describe('POST /api/auth/refresh', () => {
     it('issues new access token using refresh token', async () => {
       const user = await registerUser();
-      const res = await api.post('/api/auth/refresh').send({ refreshToken: user.refreshToken });
+      const res = await api.post('/api/auth/refresh').set('Cookie', user.cookie);
       expect(res.status).toBe(200);
       expect(res.body.accessToken).toBeDefined();
     });
 
-    it('rejects invalid refresh token with 401', async () => {
-      const res = await api.post('/api/auth/refresh').send({ refreshToken: 'bad-token' });
+    it('rejects request with no refresh token cookie with 401', async () => {
+      const res = await api.post('/api/auth/refresh');
       expect(res.status).toBe(401);
     });
   });
@@ -101,14 +101,13 @@ describe('Auth', () => {
   });
 
   describe('POST /api/auth/logout', () => {
-    it('revokes refresh token', async () => {
+    it('revokes refresh token cookie', async () => {
       const user = await registerUser();
-      const { refreshToken } = user;
-      const logout = await api.post('/api/auth/logout').send({ refreshToken });
+      const logout = await api.post('/api/auth/logout').set('Cookie', user.cookie);
       expect(logout.status).toBe(200);
 
-      // Token should no longer be usable
-      const refresh = await api.post('/api/auth/refresh').send({ refreshToken });
+      // Cookie token should no longer be usable
+      const refresh = await api.post('/api/auth/refresh').set('Cookie', user.cookie);
       expect(refresh.status).toBe(401);
     });
   });
