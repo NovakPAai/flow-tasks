@@ -20,6 +20,7 @@ export interface AdminUser {
   loginCount: number;
   lastLoginAt?: string;
   createdAt: string;
+  isSuperadmin: boolean;
 }
 
 export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';

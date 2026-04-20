@@ -146,6 +146,7 @@ export default function AdminUsersPage() {
 
   // Review action
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.isSuperadmin) {
@@ -196,6 +197,20 @@ export default function AdminUsersPage() {
       message.error(e.response?.data?.error || 'Ошибка создания пользователя');
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleToggleSuperadmin(u: AdminUser) {
+    if (u.id === user?.id) { message.warning('Нельзя изменить свою роль'); return; }
+    setTogglingId(u.id);
+    try {
+      const updated = await adminApi.setUserSuperadmin(u.id, !u.isSuperadmin);
+      setUsers(prev => prev.map(p => p.id === updated.id ? { ...p, isSuperadmin: updated.isSuperadmin } : p));
+      message.success(updated.isSuperadmin ? `${u.name} назначен суперадминистратором` : `${u.name} снят с роли суперадминистратора`);
+    } catch {
+      message.error('Ошибка изменения роли');
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -265,7 +280,7 @@ export default function AdminUsersPage() {
               <>
                 {/* Header row */}
                 <div style={{
-                  display: 'grid', gridTemplateColumns: '1fr 220px 80px 110px 110px',
+                  display: 'grid', gridTemplateColumns: '1fr 200px 70px 110px 110px 130px',
                   padding: '10px 20px', borderBottom: `1px solid ${C.border}`,
                   fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '0.06em', textTransform: 'uppercase',
                 }}>
@@ -274,10 +289,11 @@ export default function AdminUsersPage() {
                   <span>Входов</span>
                   <span>Последний вход</span>
                   <span>Создан</span>
+                  <span>Роль</span>
                 </div>
                 {users.map((u, i) => (
                   <div key={u.id} style={{
-                    display: 'grid', gridTemplateColumns: '1fr 220px 80px 110px 110px',
+                    display: 'grid', gridTemplateColumns: '1fr 200px 70px 110px 110px 130px',
                     padding: '12px 20px', alignItems: 'center',
                     borderBottom: i < users.length - 1 ? `1px solid ${C.border}` : 'none',
                     transition: 'background .1s',
@@ -295,6 +311,27 @@ export default function AdminUsersPage() {
                     <span style={{ fontSize: 13, color: C.text }}>{u.loginCount}</span>
                     <span style={{ fontSize: 12, color: C.muted }}>{formatDate(u.lastLoginAt)}</span>
                     <span style={{ fontSize: 12, color: C.muted }}>{formatDate(u.createdAt)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {u.isSuperadmin && (
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(79,110,247,0.12)', color: '#4F6EF7' }}>
+                          Суперадмин
+                        </span>
+                      )}
+                      {u.id !== user?.id && (
+                        <button
+                          onClick={() => handleToggleSuperadmin(u)}
+                          disabled={togglingId === u.id}
+                          style={{
+                            fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
+                            background: 'transparent', border: `1px solid ${u.isSuperadmin ? 'rgba(239,68,68,0.35)' : 'rgba(79,110,247,0.35)'}`,
+                            color: u.isSuperadmin ? '#EF4444' : '#4F6EF7', opacity: togglingId === u.id ? 0.5 : 1,
+                            ...font,
+                          }}
+                        >
+                          {u.isSuperadmin ? 'Снять' : 'Назначить'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </>

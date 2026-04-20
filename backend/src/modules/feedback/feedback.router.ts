@@ -10,6 +10,7 @@ const router = Router();
 router.post('/', authenticate, validate(feedbackDto), async (req: AuthRequest, res, next) => {
   try {
     const result = await feedbackService.submitFeedback(req.body, {
+      id: req.user!.userId,
       name: req.user!.name ?? req.user!.email,
       email: req.user!.email,
     });

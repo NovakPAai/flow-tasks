@@ -15,8 +15,19 @@ export async function listUsers() {
       loginCount: true,
       lastLoginAt: true,
       createdAt: true,
+      isSuperadmin: true,
     },
     orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function setUserSuperadmin(userId: string, isSuperadmin: boolean) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AppError(404, 'Пользователь не найден');
+  return prisma.user.update({
+    where: { id: userId },
+    data: { isSuperadmin },
+    select: { id: true, email: true, name: true, isSuperadmin: true },
   });
 }
 
@@ -37,7 +48,7 @@ export async function createUser(dto: CreateUserDto) {
   });
 
   console.info(`[ADMIN] User created: ${user.email} — deliver generated password via secure channel`);
-  return { user };
+  return { user, generatedPassword };
 }
 
 export async function listRegistrationRequests() {

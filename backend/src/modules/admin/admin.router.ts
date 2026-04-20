@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { requireSuperadmin } from '../../shared/middleware/require-superadmin.js';
 import { validate } from '../../shared/middleware/validate.js';
-import { createUserDto, reviewRequestDto } from './admin.dto.js';
+import { createUserDto, reviewRequestDto, updateUserDto } from './admin.dto.js';
 import * as adminService from './admin.service.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
@@ -23,6 +23,15 @@ router.post('/users', validate(createUserDto), async (req, res, next) => {
   try {
     const result = await adminService.createUser(req.body);
     res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/users/:id', validate(updateUserDto), async (req, res, next) => {
+  try {
+    const user = await adminService.setUserSuperadmin(req.params.id as string, req.body.isSuperadmin);
+    res.json(user);
   } catch (err) {
     next(err);
   }
