@@ -187,7 +187,8 @@ describe('Tasks', () => {
       await createTask(ownerToken, boardId, { assigneeId: userId });
       const res = await api.get('/api/my-tasks').set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.tasks)).toBe(true);
+      expect(typeof res.body.total).toBe('number');
     });
   });
 
