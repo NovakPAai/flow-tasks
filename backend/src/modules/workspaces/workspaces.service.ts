@@ -244,7 +244,8 @@ export async function removeMember(workspaceId: string, requesterId: string, tar
 
 // ─── Member Search ───────────────────────────────────────────────────────────
 
-export async function searchMembers(workspaceId: string, query: string) {
+export async function searchMembers(workspaceId: string, callerId: string, query: string) {
+  await assertMember(workspaceId, callerId);
   const q = query.trim().toLowerCase();
   const members = await prisma.workspaceMember.findMany({
     where: { workspaceId },

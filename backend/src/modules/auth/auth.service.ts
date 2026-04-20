@@ -219,20 +219,24 @@ export async function requestPasswordReset(email: string) {
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
 
   const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
   await prisma.passwordResetToken.create({
-    data: { userId: user.id, token, expiresAt },
+    data: { userId: user.id, token: tokenHash, expiresAt },
   });
 
   const resetUrl = `${config.CORS_ORIGIN}/reset-password?token=${token}`;
-  console.info(`[PASSWORD RESET] Reset link for ${normalizedEmail}: ${resetUrl}`);
+  if (config.NODE_ENV === 'development') {
+    console.info(`[PASSWORD RESET] Reset link for ${normalizedEmail}: ${resetUrl}`);
+  }
 
   return { message: 'Если аккаунт с таким email существует, вы получите ссылку для сброса пароля.' };
 }
 
 export async function resetPassword(token: string, password: string) {
-  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token: tokenHash } });
 
   if (!resetToken || resetToken.usedAt !== null || resetToken.expiresAt < new Date()) {
     throw new AppError(400, 'Ссылка для сброса пароля недействительна или истекла');
@@ -242,7 +246,7 @@ export async function resetPassword(token: string, password: string) {
 
   await prisma.$transaction([
     prisma.user.update({ where: { id: resetToken.userId }, data: { password: passwordHash } }),
-    prisma.passwordResetToken.update({ where: { token }, data: { usedAt: new Date() } }),
+    prisma.passwordResetToken.update({ where: { token: tokenHash }, data: { usedAt: new Date() } }),
     prisma.refreshToken.deleteMany({ where: { userId: resetToken.userId } }),
   ]);
 

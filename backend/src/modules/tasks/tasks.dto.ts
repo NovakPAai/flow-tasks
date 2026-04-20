@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { stripHtml } from '../../shared/utils/sanitize.js';
 
 export const createTaskDto = z.object({
-  title: z.string().min(1, 'Название задачи обязательно').max(500, 'Название не должно превышать 500 символов'),
-  description: z.string().optional(),
+  title: stripHtml(z.string().min(1, 'Название задачи обязательно').max(500, 'Название не должно превышать 500 символов')),
+  description: stripHtml(z.string()).optional(),
   statusId: z.string().uuid('Некорректный ID статуса').optional(),
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW'], { message: 'Приоритет должен быть HIGH, MEDIUM или LOW' }).optional(),
   dueDate: z.string().datetime({ message: 'Введите корректную дату срока' }).optional(),
@@ -12,8 +13,8 @@ export const createTaskDto = z.object({
 });
 
 export const updateTaskDto = z.object({
-  title: z.string().min(1, 'Название задачи обязательно').max(500, 'Название не должно превышать 500 символов').optional(),
-  description: z.string().optional(),
+  title: stripHtml(z.string().min(1, 'Название задачи обязательно').max(500, 'Название не должно превышать 500 символов')).optional(),
+  description: stripHtml(z.string()).optional(),
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW'], { message: 'Приоритет должен быть HIGH, MEDIUM или LOW' }).nullable().optional(),
   dueDate: z.string().datetime({ message: 'Введите корректную дату срока' }).nullable().optional(),
   startDate: z.string().datetime({ message: 'Введите корректную дату начала' }).nullable().optional(),

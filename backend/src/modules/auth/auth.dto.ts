@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stripHtml } from '../../shared/utils/sanitize.js';
 
 const passwordSchema = z.string().min(8).max(128)
   .refine((p) => /[A-Z]/.test(p), { message: 'Пароль должен содержать хотя бы одну заглавную букву' })
@@ -7,7 +8,7 @@ const passwordSchema = z.string().min(8).max(128)
 export const registerDto = z.object({
   email: z.string().email(),
   password: passwordSchema,
-  name: z.string().min(1).max(255),
+  name: stripHtml(z.string().min(1).max(255)),
 });
 
 export const loginDto = z.object({
@@ -20,7 +21,7 @@ export const refreshDto = z.object({
 });
 
 export const updateProfileDto = z.object({
-  name: z.string().min(1).max(255).optional(),
+  name: stripHtml(z.string().min(1).max(255)).optional(),
   email: z.string().email().optional(),
 }).refine((d) => d.name !== undefined || d.email !== undefined, {
   message: 'Укажите хотя бы одно поле для обновления',

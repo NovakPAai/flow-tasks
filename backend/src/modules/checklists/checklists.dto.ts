@@ -1,15 +1,16 @@
 import { z } from 'zod';
+import { stripHtml } from '../../shared/utils/sanitize.js';
 
 export const createChecklistDto = z.object({
-  title: z.string().min(1).max(200),
+  title: stripHtml(z.string().min(1).max(200)),
 });
 
 export const createChecklistItemDto = z.object({
-  title: z.string().min(1).max(500),
+  title: stripHtml(z.string().min(1).max(500)),
 });
 
 export const updateChecklistItemDto = z.object({
-  title: z.string().min(1).max(500).optional(),
+  title: stripHtml(z.string().min(1).max(500)).optional(),
   isDone: z.boolean().optional(),
 });
 

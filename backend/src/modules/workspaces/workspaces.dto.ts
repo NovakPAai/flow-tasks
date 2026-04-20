@@ -1,18 +1,19 @@
 import { z } from 'zod';
+import { stripHtml } from '../../shared/utils/sanitize.js';
 
 export const createWorkspaceDto = z.object({
-  name: z.string().min(1).max(100),
+  name: stripHtml(z.string().min(1).max(100)),
   slug: z
     .string()
     .min(2)
     .max(50)
     .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
-  description: z.string().max(500).optional(),
+  description: stripHtml(z.string().max(500)).optional(),
 });
 
 export const updateWorkspaceDto = z.object({
-  name: z.string().min(1).max(100).optional(),
-  description: z.string().max(500).optional(),
+  name: stripHtml(z.string().min(1).max(100)).optional(),
+  description: stripHtml(z.string().max(500)).optional(),
 });
 
 export const addMemberDto = z.object({
