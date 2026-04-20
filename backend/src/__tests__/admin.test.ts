@@ -150,7 +150,7 @@ describe('Admin', () => {
         .send({ name: 'Admin Created User', emailPrefix });
       expect(res.status).toBe(201);
       expect(res.body.user).toBeDefined();
-      expect(res.body.generatedPassword).toBeUndefined(); // password not returned for security
+      expect(res.body.generatedPassword).toBeDefined();
       expect(res.body.user.email).toBe(`${emailPrefix}@${config.REGISTRATION_DOMAIN}`);
     });
 

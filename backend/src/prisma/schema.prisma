@@ -32,6 +32,7 @@ model User {
   taskHistories        TaskHistory[]
   workspaceEvents      WorkspaceEvent[]
   reviewedRegistrations RegistrationRequest[] @relation("RegistrationReviewer")
+  feedbacks             Feedback[]
 
   @@map("users")
 }
@@ -352,6 +353,23 @@ model WorkspaceEvent {
 
   @@index([workspaceId, createdAt])
   @@map("workspace_events")
+}
+
+// ─── Feedback ─────────────────────────────────────────────────────────────────
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // "bug" | "idea"
+  title     String
+  body      String
+  githubUrl String?
+  githubNum Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedbacks")
 }
 
 // ─── Task History ─────────────────────────────────────────────────────────────
