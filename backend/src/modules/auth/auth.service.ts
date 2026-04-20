@@ -11,9 +11,7 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 15 * 60;
 
 async function checkBruteForce(email: string): Promise<void> {
-  if (!await isRedisAvailable()) {
-    throw new AppError(503, 'Сервис временно недоступен. Попробуйте позже.');
-  }
+  if (!await isRedisAvailable()) return; // brute-force protection degraded gracefully
   const key = `auth:fail:${email.toLowerCase()}`;
   const attempts = (await getCachedJson<number>(key)) ?? 0;
   if (attempts >= MAX_LOGIN_ATTEMPTS) {
@@ -22,12 +20,14 @@ async function checkBruteForce(email: string): Promise<void> {
 }
 
 async function recordFailedAttempt(email: string): Promise<void> {
+  if (!await isRedisAvailable()) return;
   const key = `auth:fail:${email.toLowerCase()}`;
   const current = (await getCachedJson<number>(key)) ?? 0;
   await setCachedJson(key, current + 1, LOCKOUT_SECONDS);
 }
 
 async function clearFailedAttempts(email: string): Promise<void> {
+  if (!await isRedisAvailable()) return;
   const key = `auth:fail:${email.toLowerCase()}`;
   await setCachedJson(key, 0, 1);
 }
