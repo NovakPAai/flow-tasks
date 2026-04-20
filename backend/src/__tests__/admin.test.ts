@@ -10,8 +10,8 @@ async function registerSuperadmin() {
   const passwordHash = await hashPassword(password);
   await prisma.user.upsert({
     where: { email: config.SUPERADMIN_EMAIL },
-    update: { password: passwordHash },
-    create: { email: config.SUPERADMIN_EMAIL, name: 'Test Superadmin', password: passwordHash },
+    update: { password: passwordHash, isSuperadmin: true },
+    create: { email: config.SUPERADMIN_EMAIL, name: 'Test Superadmin', password: passwordHash, isSuperadmin: true },
   });
   const loginRes = await api.post('/api/auth/login').send({ email: config.SUPERADMIN_EMAIL, password });
   return loginRes.body.accessToken as string;
@@ -150,7 +150,7 @@ describe('Admin', () => {
         .send({ name: 'Admin Created User', emailPrefix });
       expect(res.status).toBe(201);
       expect(res.body.user).toBeDefined();
-      expect(res.body.generatedPassword).toBeDefined();
+      expect(res.body.generatedPassword).toBeUndefined(); // password not returned for security
       expect(res.body.user.email).toBe(`${emailPrefix}@${config.REGISTRATION_DOMAIN}`);
     });
 

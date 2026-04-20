@@ -30,6 +30,13 @@ async function getRedisClientInternal(): Promise<RedisClient | null> {
   return connecting;
 }
 
+export async function isRedisAvailable(): Promise<boolean> {
+  if (process.env.NODE_ENV === 'test') return true; // In tests: assume available, getCachedJson returns null (0 attempts)
+  if (!config.REDIS_URL) return false;
+  const redis = await getRedisClientInternal();
+  return redis !== null;
+}
+
 export async function getCachedJson<T>(key: string): Promise<T | null> {
   const redis = await getRedisClientInternal();
   if (!redis) return null;

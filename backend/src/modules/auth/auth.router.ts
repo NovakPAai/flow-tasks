@@ -1,10 +1,19 @@
 import { Router } from 'express';
 import { validate } from '../../shared/middleware/validate.js';
 import { authenticate } from '../../shared/middleware/auth.js';
-import { registerDto, loginDto, refreshDto, updateProfileDto, forgotPasswordDto, resetPasswordDto } from './auth.dto.js';
+import { registerDto, loginDto, updateProfileDto, forgotPasswordDto, resetPasswordDto } from './auth.dto.js';
 import * as authService from './auth.service.js';
+import { AppError } from '../../shared/middleware/error-handler.js';
 import { config } from '../../config.js';
 import type { AuthRequest } from '../../shared/types/index.js';
+
+const REFRESH_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: '/',
+};
 
 const router = Router();
 
@@ -23,17 +32,21 @@ router.post('/register', validate(registerDto), async (req, res, next) => {
 
 router.post('/login', validate(loginDto), async (req, res, next) => {
   try {
-    const result = await authService.login(req.body);
-    res.json(result);
+    const { user, accessToken, refreshToken } = await authService.login(req.body);
+    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTS);
+    res.json({ user, accessToken });
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/refresh', validate(refreshDto), async (req, res, next) => {
+router.post('/refresh', async (req, res, next) => {
   try {
-    const result = await authService.refresh(req.body.refreshToken);
-    res.json(result);
+    const token = req.cookies?.refreshToken as string | undefined;
+    if (!token) throw new AppError(401, 'Токен обновления не найден');
+    const { accessToken, refreshToken } = await authService.refresh(token);
+    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTS);
+    res.json({ accessToken });
   } catch (err) {
     next(err);
   }
@@ -41,10 +54,9 @@ router.post('/refresh', validate(refreshDto), async (req, res, next) => {
 
 router.post('/logout', async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
-    if (refreshToken) {
-      await authService.logout(refreshToken);
-    }
+    const token = req.cookies?.refreshToken as string | undefined;
+    if (token) await authService.logout(token);
+    res.clearCookie('refreshToken', { path: '/' });
     res.json({ message: 'Logged out' });
   } catch (err) {
     next(err);

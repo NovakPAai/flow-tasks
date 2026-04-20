@@ -3,22 +3,20 @@ import { prisma } from '../../prisma/client.js';
 import { hashPassword, comparePassword } from '../../shared/utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../shared/utils/jwt.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
-import { setUserSession, deleteUserSession, getCachedJson, setCachedJson } from '../../shared/redis.js';
+import { setUserSession, deleteUserSession, getCachedJson, setCachedJson, isRedisAvailable } from '../../shared/redis.js';
 import { config } from '../../config.js';
 import type { RegisterDto, LoginDto, UpdateProfileDto } from './auth.dto.js';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 15 * 60;
-let bruteForceWarningLogged = false;
 
 async function checkBruteForce(email: string): Promise<void> {
-  const key = `auth:fail:${email.toLowerCase()}`;
-  const attempts = await getCachedJson<number>(key);
-  if (attempts === null && !bruteForceWarningLogged) {
-    bruteForceWarningLogged = true;
-    console.warn('Brute force protection disabled: Redis not available.');
+  if (!await isRedisAvailable()) {
+    throw new AppError(503, 'Сервис временно недоступен. Попробуйте позже.');
   }
-  if (attempts !== null && attempts >= MAX_LOGIN_ATTEMPTS) {
+  const key = `auth:fail:${email.toLowerCase()}`;
+  const attempts = (await getCachedJson<number>(key)) ?? 0;
+  if (attempts >= MAX_LOGIN_ATTEMPTS) {
     throw new AppError(429, 'Слишком много попыток. Попробуйте через 15 минут.');
   }
 }
@@ -199,11 +197,11 @@ export async function updateProfile(userId: string, dto: UpdateProfileDto) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
+    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true, isSuperadmin: true },
   });
   if (!user) throw new AppError(404, 'Пользователь не найден');
   const firstName = user.name.split(' ')[0] ?? user.name;
-  return { ...user, firstName, isSuperadmin: user.email === config.SUPERADMIN_EMAIL };
+  return { ...user, firstName };
 }
 
 export async function requestPasswordReset(email: string) {
@@ -225,8 +223,7 @@ export async function requestPasswordReset(email: string) {
     data: { userId: user.id, token, expiresAt },
   });
 
-  const resetUrl = `${config.CORS_ORIGIN}/reset-password?token=${token}`;
-  console.info(`[PASSWORD RESET] Reset link for ${normalizedEmail}: ${resetUrl}`);
+  // TODO: integrate email provider to send reset link (token stored in DB above)
 
   return { message: 'Если аккаунт с таким email существует, вы получите ссылку для сброса пароля.' };
 }

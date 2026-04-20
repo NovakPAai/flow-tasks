@@ -40,14 +40,14 @@ export const taskFiltersDto = z.object({
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   labelId: z.string().uuid().optional(),
   parentId: z.string().uuid().nullable().optional(),
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),
 });
 
 export const myTasksFiltersDto = z.object({
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   workspaceId: z.string().uuid().optional(),
 });
 

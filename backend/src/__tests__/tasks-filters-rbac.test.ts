@@ -55,34 +55,34 @@ describe('Tasks — filters and RBAC', () => {
   // ── RBAC ────────────────────────────────────────────────────────────────────
 
   describe('RBAC — workspace isolation', () => {
-    it('outsider cannot list tasks from board (403)', async () => {
+    it('outsider cannot list tasks from board (404 — resource hidden)', async () => {
       const res = await api.get(`/api/boards/${boardId}/tasks`).set(auth(outsiderToken));
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
-    it('outsider cannot create a task (403)', async () => {
+    it('outsider cannot create a task (404 — resource hidden)', async () => {
       const res = await api.post(`/api/boards/${boardId}/tasks`)
         .set(auth(outsiderToken)).send({ title: 'Hacker task' });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
-    it('outsider cannot get task detail (403)', async () => {
+    it('outsider cannot get task detail (404 — resource hidden)', async () => {
       const task = await createTask(ownerToken, boardId);
       const res = await api.get(`/api/tasks/${task.id}`).set(auth(outsiderToken));
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
-    it('outsider cannot update a task (403)', async () => {
+    it('outsider cannot update a task (404 — resource hidden)', async () => {
       const task = await createTask(ownerToken, boardId);
       const res = await api.patch(`/api/tasks/${task.id}`)
         .set(auth(outsiderToken)).send({ title: 'Stolen' });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
-    it('outsider cannot delete a task (403)', async () => {
+    it('outsider cannot delete a task (404 — resource hidden)', async () => {
       const task = await createTask(ownerToken, boardId);
       const res = await api.delete(`/api/tasks/${task.id}`).set(auth(outsiderToken));
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it('member CAN list tasks (200)', async () => {
