@@ -105,6 +105,7 @@ export default function BoardPage() {
   const dropOver  = isDark ? '#1C2236' : '#EDE9FE';
   const inpBg     = isDark ? '#0F1320' : '#FDFCFF';
   const inpBorder = isDark ? '#4F6EF7' : '#4F6EF7';
+  const colBg     = isDark ? '#07091A' : '#F7F5FF';
   const viewActive= '#4F6EF7';
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -365,7 +366,7 @@ export default function BoardPage() {
                       key={status.id}
                       style={{
                         flex: '1 1 0', minWidth: 260, display: 'flex', flexDirection: 'column', gap: 0,
-                        background: isDark ? '#07091A' : '#F7F5FF',
+                        background: colBg,
                         border: `1px solid ${border}`,
                         borderRadius: 12,
                         padding: '10px 8px 8px',
@@ -418,7 +419,7 @@ export default function BoardPage() {
                             background: 'transparent', border: `1px dashed ${border}`,
                             borderRadius: 8, padding: '8px 10px',
                             cursor: 'pointer', width: '100%',
-                            marginBottom: 8,
+                            marginBottom: 8, boxSizing: 'border-box',
                           }}
                         >
                           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -437,6 +438,7 @@ export default function BoardPage() {
                             {...provided.droppableProps}
                             style={{
                               flex: 1, minHeight: 80, borderRadius: 10, padding: 4,
+                              overflowY: 'auto',
                               background: snapshot.isDraggingOver ? dropOver : 'transparent',
                               transition: 'background 0.15s',
                             }}
