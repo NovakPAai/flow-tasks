@@ -105,6 +105,7 @@ export default function BoardPage() {
   const dropOver  = isDark ? '#1C2236' : '#EDE9FE';
   const inpBg     = isDark ? '#0F1320' : '#FDFCFF';
   const inpBorder = isDark ? '#4F6EF7' : '#4F6EF7';
+  const colBg     = isDark ? '#07091A' : '#F7F5FF';
   const viewActive= '#4F6EF7';
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -364,13 +365,17 @@ export default function BoardPage() {
                     <div
                       key={status.id}
                       style={{
-                        flex: '1 1 0', minWidth: 260, maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 0,
+                        flex: '1 1 0', minWidth: 260, display: 'flex', flexDirection: 'column', gap: 0,
+                        background: colBg,
+                        border: `1px solid ${border}`,
+                        borderRadius: 12,
+                        padding: '10px 8px 8px',
                         opacity: draggingFromStatusId && !isDropAllowed ? 0.4 : 1,
                         transition: 'opacity 0.15s',
                       }}
                     >
                       {/* Column header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 2px 10px', marginBottom: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 8px' }}>
                         <div style={{ width: 3, height: 18, borderRadius: 2, background: status.color, flexShrink: 0 }} />
                         <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: colText, flex: 1 }}>
                           {status.name}
@@ -389,6 +394,43 @@ export default function BoardPage() {
                         </button>
                       </div>
 
+                      {/* Quick add — above cards */}
+                      {addingTo === status.id ? (
+                        <input
+                          ref={addInputRef}
+                          value={addTitle}
+                          onChange={e => setAddTitle(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') { setAddingTo(null); setAddTitle(''); } }}
+                          onBlur={() => { setAddingTo(null); setAddTitle(''); }}
+                          placeholder="Название задачи..."
+                          style={{
+                            background: inpBg, border: `1px solid ${inpBorder}`,
+                            borderRadius: 8, padding: '8px 10px',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
+                            color: nameColor, outline: 'none', width: '100%',
+                            marginBottom: 8, boxSizing: 'border-box',
+                          }}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            background: 'transparent', border: `1px dashed ${border}`,
+                            borderRadius: 8, padding: '8px 10px',
+                            cursor: 'pointer', width: '100%',
+                            marginBottom: 8, boxSizing: 'border-box',
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M6 1v10M1 6h10" stroke={addText} strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: addText }}>
+                            Быстрое добавление...
+                          </span>
+                        </button>
+                      )}
+
                       <Droppable droppableId={status.id} isDropDisabled={!!draggingFromStatusId && !isDropAllowed}>
                         {(provided, snapshot) => (
                           <div
@@ -396,6 +438,7 @@ export default function BoardPage() {
                             {...provided.droppableProps}
                             style={{
                               flex: 1, minHeight: 80, borderRadius: 10, padding: 4,
+                              overflowY: 'auto',
                               background: snapshot.isDraggingOver ? dropOver : 'transparent',
                               transition: 'background 0.15s',
                             }}
@@ -418,41 +461,6 @@ export default function BoardPage() {
                           </div>
                         )}
                       </Droppable>
-
-                      {/* Quick add */}
-                      {addingTo === status.id ? (
-                        <input
-                          ref={addInputRef}
-                          value={addTitle}
-                          onChange={e => setAddTitle(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') setAddingTo(null); }}
-                          onBlur={() => submitAdd(status.id)}
-                          placeholder="Название задачи..."
-                          style={{
-                            background: inpBg, border: `1px solid ${inpBorder}`,
-                            borderRadius: 8, padding: '8px 10px',
-                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
-                            color: nameColor, outline: 'none', width: '100%',
-                          }}
-                        />
-                      ) : (
-                        <button
-                          onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            background: 'transparent', border: `1px dashed ${border}`,
-                            borderRadius: 8, padding: '8px 10px',
-                            cursor: 'pointer', width: '100%',
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M6 1v10M1 6h10" stroke={addText} strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: addText }}>
-                            Быстрое добавление...
-                          </span>
-                        </button>
-                      )}
                     </div>
                   );
                 })}
