@@ -11,8 +11,8 @@ export interface CreateTaskPayload {
   parentId?: string;
 }
 
-export async function listTasks(boardId: string, params?: Record<string, string>): Promise<Task[]> {
-  const { data } = await api.get<Task[]>(`/boards/${boardId}/tasks`, { params });
+export async function listTasks(boardId: string, params?: Record<string, string>): Promise<{ tasks: Task[]; total: number }> {
+  const { data } = await api.get<{ tasks: Task[]; total: number }>(`/boards/${boardId}/tasks`, { params });
   return data;
 }
 

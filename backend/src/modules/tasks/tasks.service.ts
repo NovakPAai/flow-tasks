@@ -115,18 +115,23 @@ export async function listTasks(boardId: string, userId: string, filters: TaskFi
     where.parentId = filters.parentId;
   }
 
-  return prisma.task.findMany({
-    where,
-    orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
-    take: filters.limit ?? 100,
-    skip: filters.offset ?? 0,
-    omit: { assigneeId: true },
-    include: {
-      assignee: { select: { id: true, name: true, avatar: true } },
-      status: { select: { id: true, name: true, color: true, category: true } },
-      _count: { select: { children: true } },
-    },
-  });
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
+      take: filters.limit ?? 100,
+      skip: filters.offset ?? 0,
+      omit: { assigneeId: true },
+      include: {
+        assignee: { select: { id: true, name: true, avatar: true } },
+        status: { select: { id: true, name: true, color: true, category: true } },
+        _count: { select: { children: true } },
+      },
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  return { tasks, total };
 }
 
 // ─── Create task ──────────────────────────────────────────────────────────────

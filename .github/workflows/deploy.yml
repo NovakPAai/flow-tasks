@@ -102,12 +102,14 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            set -e
             if ! command -v redis-server > /dev/null 2>&1; then
               sudo apt-get update -qq && sudo apt-get install -y redis-server
             fi
             sudo systemctl enable redis-server
-            sudo systemctl start redis-server || true
-            grep -q 'REDIS_URL' /opt/flowtask/backend/.env \
+            sudo systemctl start redis-server
+            redis-cli ping | grep -q PONG || { echo '✗ Redis not responding after start'; exit 1; }
+            grep -qE '^REDIS_URL=' /opt/flowtask/backend/.env \
               || echo 'REDIS_URL=redis://127.0.0.1:6379' >> /opt/flowtask/backend/.env
           "
 
@@ -115,15 +117,14 @@ jobs:
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -e
             APP_DIR=/opt/flowtask
-            export DATABASE_URL='$DATABASE_URL'
 
             echo '→ Running migrations...'
             cd \$APP_DIR/backend
+            set -a && source .env && set +a
             NODE_PATH=\$APP_DIR/backend/node_modules \
               node_modules/.bin/prisma migrate deploy --schema=src/prisma/schema.prisma
 
