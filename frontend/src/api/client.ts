@@ -2,15 +2,26 @@ import axios from 'axios';
 
 const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || '/api';
 
+// Access token lives only in memory — never in localStorage/sessionStorage
+let inMemoryToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  inMemoryToken = token;
+}
+
+export function getAccessToken() {
+  return inMemoryToken;
+}
+
 const api = axios.create({
   baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // send HttpOnly refresh token cookie automatically
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (inMemoryToken) {
+    config.headers.Authorization = `Bearer ${inMemoryToken}`;
   }
   return config;
 });
@@ -21,19 +32,18 @@ api.interceptors.response.use(
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${apiBaseUrl}/auth/refresh`, { refreshToken });
-          localStorage.setItem('accessToken', data.accessToken);
-          localStorage.setItem('refreshToken', data.refreshToken);
-          original.headers.Authorization = `Bearer ${data.accessToken}`;
-          return api(original);
-        } catch {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
-        }
+      try {
+        const { data } = await axios.post<{ accessToken: string }>(
+          `${apiBaseUrl}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
+        inMemoryToken = data.accessToken;
+        original.headers.Authorization = `Bearer ${data.accessToken}`;
+        return api(original);
+      } catch {
+        inMemoryToken = null;
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);

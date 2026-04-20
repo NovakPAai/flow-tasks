@@ -21,8 +21,13 @@ export async function updateProfile(data: { name?: string; email?: string }): Pr
   return user;
 }
 
-export async function logout(refreshToken: string): Promise<void> {
-  await api.post('/auth/logout', { refreshToken });
+export async function logout(): Promise<void> {
+  await api.post('/auth/logout');
+}
+
+export async function refreshToken(): Promise<{ accessToken: string }> {
+  const { data } = await api.post<{ accessToken: string }>('/auth/refresh');
+  return data;
 }
 
 export async function getRegistrationDomain(): Promise<string> {

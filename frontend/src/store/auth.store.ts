@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User } from '../types';
 import * as authApi from '../api/auth';
+import { setAccessToken } from '../api/client';
 
 interface AuthState {
   user: User | null;
@@ -17,9 +18,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
 
   login: async (email, password) => {
-    const { accessToken, refreshToken } = await authApi.login(email, password);
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+    const { accessToken } = await authApi.login(email, password);
+    setAccessToken(accessToken);
     const user = await authApi.getMe();
     set({ user });
   },
@@ -35,27 +35,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      await authApi.logout(refreshToken).catch(() => {});
-    }
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    await authApi.logout().catch(() => {});
+    setAccessToken(null);
     set({ user: null });
   },
 
   loadUser: async () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      set({ loading: false });
-      return;
-    }
     try {
+      // Try to restore session via HttpOnly refresh token cookie
+      const { accessToken } = await authApi.refreshToken();
+      setAccessToken(accessToken);
       const user = await authApi.getMe();
       set({ user, loading: false });
     } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      setAccessToken(null);
       set({ user: null, loading: false });
     }
   },
