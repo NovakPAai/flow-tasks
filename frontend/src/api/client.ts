@@ -30,7 +30,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
+    // config.url holds only the path (not baseURL), so this match is reliable
     const isRefreshEndpoint = original.url?.includes('/auth/refresh');
+    const PUBLIC_PATHS = ['/login', '/register', '/reset-password', '/forgot-password'];
     if (error.response?.status === 401 && !original._retry && !isRefreshEndpoint) {
       original._retry = true;
       try {
@@ -42,11 +44,12 @@ api.interceptors.response.use(
         inMemoryToken = data.accessToken;
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
-      } catch {
+      } catch (refreshError) {
         inMemoryToken = null;
-        if (window.location.pathname !== '/login') {
+        if (!PUBLIC_PATHS.includes(window.location.pathname)) {
           window.location.href = '/login';
         }
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
