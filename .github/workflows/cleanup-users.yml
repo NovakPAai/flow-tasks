@@ -1,0 +1,46 @@
+name: Cleanup Users (one-time)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Delete non-demo users from DB
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Run cleanup on server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            source /opt/flowtask/backend/.env 2>/dev/null || true
+            cd /opt/flowtask/backend
+            node -e \"
+const { PrismaClient } = require('./node_modules/@prisma/client');
+const prisma = new PrismaClient();
+const KEEP = ['novak.pavel@flowtask.dev','user@flowtask.dev','admin@flowtask.dev'];
+async function main() {
+  const all = await prisma.user.findMany({ select: { id: true, email: true, name: true } });
+  const del = all.filter(u => !KEEP.includes(u.email));
+  if (!del.length) { console.log('Nothing to delete'); return; }
+  console.log('Deleting:', del.map(u => u.email).join(', '));
+  const ids = del.map(u => u.id);
+  await prisma.workspace.deleteMany({ where: { creatorId: { in: ids } } });
+  await prisma.user.deleteMany({ where: { id: { in: ids } } });
+  console.log('Done. Deleted:', del.length);
+}
+main().catch(console.error).finally(() => prisma.\\\$disconnect());
+\"
+          "
