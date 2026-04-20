@@ -30,7 +30,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const isRefreshEndpoint = original.url?.includes('/auth/refresh');
+    if (error.response?.status === 401 && !original._retry && !isRefreshEndpoint) {
       original._retry = true;
       try {
         const { data } = await axios.post<{ accessToken: string }>(
@@ -43,7 +44,9 @@ api.interceptors.response.use(
         return api(original);
       } catch {
         inMemoryToken = null;
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
