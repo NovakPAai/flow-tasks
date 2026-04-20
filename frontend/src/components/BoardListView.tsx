@@ -92,7 +92,8 @@ export default function BoardListView({
     setSaving(taskId);
     try {
       const updated = await tasksApi.updateTask(taskId, patch);
-      onTaskUpdated(updated);
+      const existing = tasks.find(t => t.id === taskId);
+      onTaskUpdated(existing ? { ...existing, ...updated } : updated);
     } catch { /* ignore */ }
     finally { setSaving(null); }
   };

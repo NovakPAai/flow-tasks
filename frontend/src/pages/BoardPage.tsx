@@ -217,11 +217,11 @@ export default function BoardPage() {
         const idx = tasks.findIndex(t => t.id === updated.id);
         if (idx !== -1) {
           const arr = [...tasks];
-          arr[idx] = { ...updated, status: arr[idx].status };
+          arr[idx] = { ...arr[idx], ...updated };
           if (updated.statusId !== sid) {
             arr.splice(idx, 1);
             newCols[sid] = arr;
-            newCols[updated.statusId] = [...(newCols[updated.statusId] ?? []), updated];
+            newCols[updated.statusId] = [...(newCols[updated.statusId] ?? []), arr[idx]];
           } else {
             newCols[sid] = arr;
           }

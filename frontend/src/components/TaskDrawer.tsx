@@ -153,8 +153,9 @@ export default function TaskDrawer({
     setSaving(true);
     try {
       const updated = await tasksApi.updateTask(task.id, patch);
-      setTask((prev) => prev ? { ...prev, ...updated } : updated);
-      onUpdated(updated);
+      const merged = { ...task, ...updated };
+      setTask(merged);
+      onUpdated(merged);
     } catch (err) {
       message.error(formatApiError(err));
     }
