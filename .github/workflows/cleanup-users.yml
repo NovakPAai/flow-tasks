@@ -31,4 +31,4 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/flowtask/backend && node cleanup-users.cjs; rm cleanup-users.cjs"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/flowtask/backend && set -a && source .env && set +a && node cleanup-users.cjs; rm cleanup-users.cjs"
