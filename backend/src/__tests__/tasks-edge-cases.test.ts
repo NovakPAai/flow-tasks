@@ -166,7 +166,7 @@ describe('Tasks — edge cases', () => {
 
     const res = await api.get('/api/my-tasks').set(auth(ownerToken));
     expect(res.status).toBe(200);
-    expect(res.body.every((t: { assigneeId: string }) => t.assigneeId === myId)).toBe(true);
+    expect(res.body.tasks.every((t: { assigneeId: string }) => t.assigneeId === myId)).toBe(true);
   });
 
   it('my-tasks duePreset=overdue returns only past-due tasks', async () => {
@@ -182,8 +182,8 @@ describe('Tasks — edge cases', () => {
 
     const res = await api.get('/api/my-tasks?duePreset=overdue').set(auth(ownerToken));
     expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
-    res.body.forEach((t: { dueDate: string }) => {
+    expect(res.body.tasks.length).toBeGreaterThan(0);
+    res.body.tasks.forEach((t: { dueDate: string }) => {
       expect(new Date(t.dueDate).getTime()).toBeLessThan(Date.now());
     });
   });

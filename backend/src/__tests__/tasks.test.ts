@@ -83,21 +83,22 @@ describe('Tasks', () => {
     it('returns task list', async () => {
       const res = await api.get(`/api/boards/${boardId}/tasks`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.tasks)).toBe(true);
+      expect(typeof res.body.total).toBe('number');
     });
 
     it('filters by priority', async () => {
       await createTask(ownerToken, boardId, { priority: 'LOW' });
       const res = await api.get(`/api/boards/${boardId}/tasks?priority=LOW`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.every((t: { priority: string }) => t.priority === 'LOW')).toBe(true);
+      expect(res.body.tasks.every((t: { priority: string }) => t.priority === 'LOW')).toBe(true);
     });
 
     it('filters by search', async () => {
       await createTask(ownerToken, boardId, { title: 'UniqueSearchTerm9999' });
       const res = await api.get(`/api/boards/${boardId}/tasks?search=UniqueSearchTerm9999`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body.tasks.length).toBeGreaterThan(0);
     });
   });
 
