@@ -1,0 +1,34 @@
+name: Create Users (one-time)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create:
+    name: Create pilot users in DB
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Copy create script
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          scp backend/scripts/create-users.cjs "$DEPLOY_USER@$DEPLOY_HOST:/opt/flowtask/backend/create-users.cjs"
+
+      - name: Run on server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/flowtask/backend && set -a && source .env && set +a && node create-users.cjs; rm create-users.cjs"
