@@ -18,6 +18,7 @@ model User {
   keycloakId    String?   @unique
   loginCount    Int       @default(0)
   lastLoginAt   DateTime?
+  isSuperadmin  Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

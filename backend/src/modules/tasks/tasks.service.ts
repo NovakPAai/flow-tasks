@@ -6,30 +6,34 @@ import type { Prisma } from '@prisma/client';
 // ─── Access helpers ───────────────────────────────────────────────────────────
 
 async function getBoardWithAccess(boardId: string, userId: string) {
-  const board = await prisma.board.findUnique({
-    where: { id: boardId },
+  const board = await prisma.board.findFirst({
+    where: {
+      id: boardId,
+      workspace: { members: { some: { userId } } },
+    },
     include: { workflow: { include: { statuses: { orderBy: { position: 'asc' } }, transitions: true } } },
   });
-  if (!board) throw new AppError(404, 'Board not found');
+  if (!board) throw new AppError(404, 'Board not found or access denied');
 
-  const member = await prisma.workspaceMember.findUnique({
+  const member = await prisma.workspaceMember.findUniqueOrThrow({
     where: { workspaceId_userId: { workspaceId: board.workspaceId, userId } },
   });
-  if (!member) throw new AppError(403, 'Access denied');
   return { board, member };
 }
 
 async function getTaskWithAccess(taskId: string, userId: string) {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      board: { workspace: { members: { some: { userId } } } },
+    },
     include: { board: true },
   });
-  if (!task) throw new AppError(404, 'Task not found');
+  if (!task) throw new AppError(404, 'Task not found or access denied');
 
-  const member = await prisma.workspaceMember.findUnique({
+  const member = await prisma.workspaceMember.findUniqueOrThrow({
     where: { workspaceId_userId: { workspaceId: task.board.workspaceId, userId } },
   });
-  if (!member) throw new AppError(403, 'Access denied');
   return { task, member };
 }
 
@@ -363,11 +367,10 @@ export async function getTaskHistory(taskId: string, userId: string) {
 export async function deleteTask(taskId: string, userId: string) {
   const { task } = await getTaskWithAccess(taskId, userId);
 
-  // Cascade delete all descendants via path prefix
-  await prisma.task.deleteMany({
-    where: { path: { startsWith: `${task.path}${taskId}/` } },
-  });
-  await prisma.task.delete({ where: { id: taskId } });
+  await prisma.$transaction([
+    prisma.task.deleteMany({ where: { path: { startsWith: `${task.path}${taskId}/` } } }),
+    prisma.task.delete({ where: { id: taskId } }),
+  ]);
 }
 
 // ─── My Tasks (cross-workspace) ───────────────────────────────────────────────

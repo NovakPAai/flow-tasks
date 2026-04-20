@@ -36,7 +36,8 @@ export async function createUser(dto: CreateUserDto) {
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
   });
 
-  return { user, generatedPassword };
+  console.info(`[ADMIN] User created: ${user.email} — deliver generated password via secure channel`);
+  return { user };
 }
 
 export async function listRegistrationRequests() {
