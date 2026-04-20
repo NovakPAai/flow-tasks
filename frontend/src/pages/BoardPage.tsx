@@ -400,8 +400,8 @@ export default function BoardPage() {
                           ref={addInputRef}
                           value={addTitle}
                           onChange={e => setAddTitle(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') setAddingTo(null); }}
-                          onBlur={() => submitAdd(status.id)}
+                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') { setAddingTo(null); setAddTitle(''); } }}
+                          onBlur={() => { setAddingTo(null); setAddTitle(''); }}
                           placeholder="Название задачи..."
                           style={{
                             background: inpBg, border: `1px solid ${inpBorder}`,
