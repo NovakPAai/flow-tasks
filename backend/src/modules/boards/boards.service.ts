@@ -73,6 +73,7 @@ export async function getBoard(boardId: string, userId: string) {
       tasks: {
         where: { parentId: null }, // root tasks only
         orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
+        take: 100,
         include: {
           assignee: { select: { id: true, name: true, avatar: true } },
           _count: { select: { children: true } },

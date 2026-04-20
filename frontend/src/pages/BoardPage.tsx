@@ -120,6 +120,9 @@ export default function BoardPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
+  const [columnOffsets, setColumnOffsets] = useState<Record<string, number>>({});
+  const [columnTotals, setColumnTotals] = useState<Record<string, number>>({});
+  const [loadingMoreCols, setLoadingMoreCols] = useState<Set<string>>(new Set());
   const addInputRef = useRef<HTMLInputElement | null>(null);
 
   const statuses = board?.workflow.statuses ?? [];
@@ -130,7 +133,23 @@ export default function BoardPage() {
     try {
       const b = await boardsApi.getBoard(boardId);
       setBoard(b);
-      setColumns(groupByStatus(b.tasks ?? [], b.workflow.statuses));
+      const cols = groupByStatus(b.tasks ?? [], b.workflow.statuses);
+      setColumns(cols);
+      setColumnOffsets(Object.fromEntries(
+        b.workflow.statuses.map(s => [s.id, cols[s.id]?.length ?? 0])
+      ));
+      // For columns that hit the 100-task cap, fetch real totals so the load-more button is shown
+      const fullCols = b.workflow.statuses.filter(s => (cols[s.id]?.length ?? 0) >= 100);
+      if (fullCols.length > 0) {
+        const totals = await Promise.all(
+          fullCols.map(s =>
+            tasksApi.listTasks(boardId, { statusId: s.id, rootOnly: 'true', limit: '1', offset: '0' })
+              .then(r => [s.id, r.total] as const)
+              .catch(() => [s.id, 100] as const)
+          )
+        );
+        setColumnTotals(Object.fromEntries(totals));
+      }
     } catch { message.error('Не удалось загрузить доску'); }
     finally { setLoading(false); }
   }, [boardId]);
@@ -198,6 +217,20 @@ export default function BoardPage() {
     }
   };
 
+  // ── Load more (column pagination) ────────────────────────────────────────
+  const loadMoreColumn = async (statusId: string) => {
+    if (!boardId || loadingMoreCols.has(statusId)) return;
+    const offset = columnOffsets[statusId] ?? 0;
+    setLoadingMoreCols(prev => new Set(prev).add(statusId));
+    try {
+      const { tasks: more, total } = await tasksApi.listTasks(boardId, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), ...more] }));
+      setColumnOffsets(prev => ({ ...prev, [statusId]: offset + more.length }));
+      setColumnTotals(prev => ({ ...prev, [statusId]: total }));
+    } catch { message.error('Не удалось загрузить задачи'); }
+    finally { setLoadingMoreCols(prev => { const s = new Set(prev); s.delete(statusId); return s; }); }
+  };
+
   // ── Quick add ─────────────────────────────────────────────────────────────
   const submitAdd = async (statusId: string) => {
     if (!addTitle.trim()) { setAddingTo(null); return; }
@@ -217,11 +250,12 @@ export default function BoardPage() {
         const idx = tasks.findIndex(t => t.id === updated.id);
         if (idx !== -1) {
           const arr = [...tasks];
-          arr[idx] = { ...arr[idx], ...updated };
+          const mergedTask = { ...arr[idx], ...updated };
+          arr[idx] = mergedTask;
           if (updated.statusId !== sid) {
             arr.splice(idx, 1);
             newCols[sid] = arr;
-            newCols[updated.statusId] = [...(newCols[updated.statusId] ?? []), arr[idx]];
+            newCols[updated.statusId] = [...(newCols[updated.statusId] ?? []), mergedTask];
           } else {
             newCols[sid] = arr;
           }
@@ -245,6 +279,10 @@ export default function BoardPage() {
   // ── Filtered data ─────────────────────────────────────────────────────────
   const allTasks = useMemo(() => columnsToList(columns), [columns]);
   const filteredTasks = useMemo(() => applyFilters(allTasks, filters), [allTasks, filters]);
+  const hasMoreTasks = useMemo(
+    () => Object.entries(columnTotals).some(([sid, total]) => (columns[sid]?.length ?? 0) < total),
+    [columnTotals, columns],
+  );
   const filteredColumns = useMemo(() => {
     const ids = new Set(filteredTasks.map(t => t.id));
     const result: Columns = {};
@@ -297,7 +335,7 @@ export default function BoardPage() {
           {board.name}
         </h1>
         <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: cntText, background: cntBg, borderRadius: 6, padding: '2px 8px', flexShrink: 0 }}>
-          {allTasks.length} задач
+          {allTasks.length}{hasMoreTasks ? '+' : ''} задач
         </span>
 
         <div style={{ flex: 1 }} />
@@ -461,6 +499,22 @@ export default function BoardPage() {
                           </div>
                         )}
                       </Droppable>
+                      {/* Load more button — shown when server has more tasks than loaded */}
+                      {columnTotals[status.id] !== undefined && (columns[status.id]?.length ?? 0) < columnTotals[status.id] && (
+                        <button
+                          onClick={() => loadMoreColumn(status.id)}
+                          disabled={loadingMoreCols.has(status.id)}
+                          style={{
+                            marginTop: 4, width: '100%', background: 'transparent',
+                            border: `1px dashed ${border}`, borderRadius: 8,
+                            padding: '6px 10px', cursor: 'pointer',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+                            color: addText, opacity: loadingMoreCols.has(status.id) ? 0.5 : 1,
+                          }}
+                        >
+                          {loadingMoreCols.has(status.id) ? 'Загрузка...' : `Загрузить ещё (${columnTotals[status.id] - (columns[status.id]?.length ?? 0)})`}
+                        </button>
+                      )}
                     </div>
                   );
                 })}

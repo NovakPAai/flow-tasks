@@ -110,7 +110,7 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get(`/api/boards/${boardId}/tasks?statusId=${s0}`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.every((t: { statusId: string }) => t.statusId === s0)).toBe(true);
+      expect(res.body.tasks.every((t: { statusId: string }) => t.statusId === s0)).toBe(true);
     });
   });
 
@@ -123,8 +123,8 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get(`/api/boards/${boardId}/tasks?assigneeId=${ownerId}`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body.every((t: { assignee: { id: string } | null }) => t.assignee?.id === ownerId)).toBe(true);
+      expect(res.body.tasks.length).toBeGreaterThan(0);
+      expect(res.body.tasks.every((t: { assignee: { id: string } | null }) => t.assignee?.id === ownerId)).toBe(true);
     });
   });
 
@@ -140,10 +140,10 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get(`/api/boards/${boardId}/tasks?labelId=${labelId}`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body.tasks.length).toBeGreaterThan(0);
       // Every returned task should have this label
       const allHaveLabel = await Promise.all(
-        res.body.map(async (t: { id: string }) => {
+        res.body.tasks.map(async (t: { id: string }) => {
           const detail = await api.get(`/api/tasks/${t.id}`).set(auth(ownerToken));
           return detail.body.labels.some((l: { labelId: string }) => l.labelId === labelId);
         })
@@ -161,8 +161,8 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get(`/api/boards/${boardId}/tasks?duePreset=overdue`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      res.body.forEach((t: { dueDate: string }) => {
+      expect(res.body.tasks.length).toBeGreaterThan(0);
+      res.body.tasks.forEach((t: { dueDate: string }) => {
         expect(new Date(t.dueDate).getTime()).toBeLessThan(Date.now());
       });
     });
@@ -172,8 +172,8 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get(`/api/boards/${boardId}/tasks?duePreset=no_date`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      res.body.forEach((t: { dueDate: string | null }) => {
+      expect(res.body.tasks.length).toBeGreaterThan(0);
+      res.body.tasks.forEach((t: { dueDate: string | null }) => {
         expect(t.dueDate).toBeNull();
       });
     });
@@ -188,7 +188,7 @@ describe('Tasks — filters and RBAC', () => {
       // All returned tasks should be due today (not tomorrow, not yesterday)
       const todayStart = new Date(today); todayStart.setHours(0, 0, 0, 0);
       const todayEnd   = new Date(today); todayEnd.setHours(23, 59, 59, 999);
-      res.body.forEach((t: { dueDate: string }) => {
+      res.body.tasks.forEach((t: { dueDate: string }) => {
         const due = new Date(t.dueDate).getTime();
         expect(due).toBeGreaterThanOrEqual(todayStart.getTime());
         expect(due).toBeLessThanOrEqual(todayEnd.getTime());
@@ -208,8 +208,8 @@ describe('Tasks — filters and RBAC', () => {
       const res = await api.get(`/api/boards/${boardId}/tasks?priority=HIGH&search=${uniqueTitle}`)
         .set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThanOrEqual(1);
-      expect(res.body.every((t: { priority: string; title: string }) =>
+      expect(res.body.tasks.length).toBeGreaterThanOrEqual(1);
+      expect(res.body.tasks.every((t: { priority: string; title: string }) =>
         t.priority === 'HIGH' && t.title.includes(uniqueTitle)
       )).toBe(true);
     });
@@ -221,7 +221,7 @@ describe('Tasks — filters and RBAC', () => {
       const res = await api.get(`/api/boards/${boardId}/tasks?assigneeId=${ownerId}&priority=HIGH`)
         .set(auth(ownerToken));
       expect(res.status).toBe(200);
-      res.body.forEach((t: { assignee: { id: string } | null; priority: string }) => {
+      res.body.tasks.forEach((t: { assignee: { id: string } | null; priority: string }) => {
         expect(t.assignee?.id).toBe(ownerId);
         expect(t.priority).toBe('HIGH');
       });
@@ -241,9 +241,9 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get(`/api/boards/${boardId}/tasks?parentId=${parent.id}`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThanOrEqual(1);
-      expect(res.body.some((t: { id: string }) => t.id === child.id)).toBe(true);
-      expect(res.body.every((t: { parentId: string | null }) => t.parentId === parent.id)).toBe(true);
+      expect(res.body.tasks.length).toBeGreaterThanOrEqual(1);
+      expect(res.body.tasks.some((t: { id: string }) => t.id === child.id)).toBe(true);
+      expect(res.body.tasks.every((t: { parentId: string | null }) => t.parentId === parent.id)).toBe(true);
     });
   });
 
@@ -262,7 +262,7 @@ describe('Tasks — filters and RBAC', () => {
       expect(res.status).toBe(200);
       const now = Date.now();
       const weekEnd = now + 7 * 24 * 60 * 60 * 1000;
-      res.body.forEach((t: { dueDate: string }) => {
+      res.body.tasks.forEach((t: { dueDate: string }) => {
         const due = new Date(t.dueDate).getTime();
         expect(due).toBeGreaterThanOrEqual(now - 86400000); // allow 1-day tolerance
         expect(due).toBeLessThan(weekEnd);
@@ -279,7 +279,7 @@ describe('Tasks — filters and RBAC', () => {
 
       const res = await api.get('/api/my-tasks?duePreset=next_week').set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body.tasks.length).toBeGreaterThan(0);
     });
 
     it('returns 401 without token', async () => {

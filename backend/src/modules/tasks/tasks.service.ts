@@ -107,23 +107,31 @@ export async function listTasks(boardId: string, userId: string, filters: TaskFi
   };
 
   // parentId filter: null = root tasks only, undefined = all, uuid = specific parent
-  if (filters.parentId === null) {
+  if (filters.rootOnly) {
+    where.parentId = null;
+  } else if (filters.parentId === null) {
     where.parentId = null;
   } else if (filters.parentId) {
     where.parentId = filters.parentId;
   }
 
-  return prisma.task.findMany({
-    where,
-    orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
-    take: 500,
-    omit: { assigneeId: true },
-    include: {
-      assignee: { select: { id: true, name: true, avatar: true } },
-      status: { select: { id: true, name: true, color: true, category: true } },
-      _count: { select: { children: true } },
-    },
-  });
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
+      take: filters.limit ?? 100,
+      skip: filters.offset ?? 0,
+      omit: { assigneeId: true },
+      include: {
+        assignee: { select: { id: true, name: true, avatar: true } },
+        status: { select: { id: true, name: true, color: true, category: true } },
+        _count: { select: { children: true } },
+      },
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  return { tasks, total };
 }
 
 // ─── Create task ──────────────────────────────────────────────────────────────
@@ -384,7 +392,7 @@ export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
   });
   const workspaceIds = memberships.map((m) => m.workspaceId);
 
-  if (workspaceIds.length === 0) return [];
+  if (workspaceIds.length === 0) return { tasks: [], total: 0 };
 
   // Filter by specific workspace if requested
   const filteredWorkspaceIds = filters.workspaceId
@@ -399,21 +407,27 @@ export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
     ...buildDueDateFilter(filters.duePreset),
   };
 
-  return prisma.task.findMany({
-    where,
-    orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
-    take: 500,
-    include: {
-      status: { select: { id: true, name: true, color: true, category: true } },
-      board: {
-        select: {
-          id: true, name: true, prefix: true,
-          workspace: { select: { id: true, name: true, slug: true } },
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+      take: filters.limit ?? 100,
+      skip: filters.offset ?? 0,
+      include: {
+        status: { select: { id: true, name: true, color: true, category: true } },
+        board: {
+          select: {
+            id: true, name: true, prefix: true,
+            workspace: { select: { id: true, name: true, slug: true } },
+          },
         },
+        _count: { select: { children: true } },
       },
-      _count: { select: { children: true } },
-    },
-  });
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  return { tasks, total };
 }
 
 // ─── DnD reorder ──────────────────────────────────────────────────────────────
