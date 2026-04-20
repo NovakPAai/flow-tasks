@@ -201,7 +201,9 @@ export async function getMe(userId: string) {
   });
   if (!user) throw new AppError(404, 'Пользователь не найден');
   const firstName = user.name.split(' ')[0] ?? user.name;
-  return { ...user, firstName };
+  // SUPERADMIN_EMAIL always has superadmin access even if DB flag not set
+  const isSuperadmin = user.isSuperadmin || user.email === config.SUPERADMIN_EMAIL;
+  return { ...user, isSuperadmin, firstName };
 }
 
 export async function requestPasswordReset(email: string) {

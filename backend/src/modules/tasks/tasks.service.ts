@@ -116,6 +116,7 @@ export async function listTasks(boardId: string, userId: string, filters: TaskFi
   return prisma.task.findMany({
     where,
     orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
+    take: 500,
     omit: { assigneeId: true },
     include: {
       assignee: { select: { id: true, name: true, avatar: true } },
@@ -401,6 +402,7 @@ export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
   return prisma.task.findMany({
     where,
     orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+    take: 500,
     include: {
       status: { select: { id: true, name: true, color: true, category: true } },
       board: {
