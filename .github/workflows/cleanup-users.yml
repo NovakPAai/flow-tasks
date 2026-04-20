@@ -24,11 +24,11 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          scp backend/scripts/cleanup-users.js "$DEPLOY_USER@$DEPLOY_HOST:/opt/flowtask/backend/cleanup-users.js"
+          scp backend/scripts/cleanup-users.cjs "$DEPLOY_USER@$DEPLOY_HOST:/opt/flowtask/backend/cleanup-users.cjs"
 
       - name: Run cleanup on server
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/flowtask/backend && node cleanup-users.js; rm cleanup-users.js"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/flowtask/backend && node cleanup-users.cjs; rm cleanup-users.cjs"
