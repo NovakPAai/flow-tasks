@@ -8,6 +8,7 @@ const USERS = [
   { name: 'Андрей Бурилов',      emailPrefix: 'andrey.burilov' },
   { name: 'Алексей Яковенко',    emailPrefix: 'alexei.yakovenko' },
   { name: 'Екатерина Толкачева', emailPrefix: 'ekaterina.tolkacheva' },
+  { name: 'Дмитрий Пузырев',     emailPrefix: 'dmitry.puzirev' },
 ];
 
 const DOMAIN = 'flowtask.dev';
