@@ -96,6 +96,21 @@ jobs:
           # Sync ecosystem config
           $RSYNC deploy/ecosystem.config.js "$DEPLOY_USER@$DEPLOY_HOST:$APP_DIR/ecosystem.config.js"
 
+      - name: Ensure Redis is running
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "
+            if ! command -v redis-server > /dev/null 2>&1; then
+              sudo apt-get update -qq && sudo apt-get install -y redis-server
+            fi
+            sudo systemctl enable redis-server
+            sudo systemctl start redis-server || true
+            grep -q 'REDIS_URL' /opt/flowtask/backend/.env \
+              || echo 'REDIS_URL=redis://127.0.0.1:6379' >> /opt/flowtask/backend/.env
+          "
+
       - name: Run migrations + restart
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}

@@ -77,7 +77,9 @@ export async function listMyTasks(params?: {
   duePreset?: string;
   search?: string;
   workspaceId?: string;
-}): Promise<MyTask[]> {
-  const { data } = await api.get<MyTask[]>('/my-tasks', { params });
+  limit?: number;
+  offset?: number;
+}): Promise<{ tasks: MyTask[]; total: number }> {
+  const { data } = await api.get<{ tasks: MyTask[]; total: number }>('/my-tasks', { params });
   return data;
 }

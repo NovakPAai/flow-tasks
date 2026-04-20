@@ -40,8 +40,11 @@ export const taskFiltersDto = z.object({
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
   labelId: z.string().uuid().optional(),
   parentId: z.string().uuid().nullable().optional(),
+  rootOnly: z.enum(['true', 'false']).transform(v => v === 'true').optional(),
   search: z.string().max(200).optional(),
   duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100).optional(),
+  offset: z.coerce.number().int().min(0).default(0).optional(),
 });
 
 export const myTasksFiltersDto = z.object({
@@ -49,6 +52,8 @@ export const myTasksFiltersDto = z.object({
   duePreset: z.enum(['today', 'this_week', 'next_week', 'overdue', 'no_date']).optional(),
   search: z.string().max(200).optional(),
   workspaceId: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100).optional(),
+  offset: z.coerce.number().int().min(0).default(0).optional(),
 });
 
 export type CreateTaskDto = z.infer<typeof createTaskDto>;

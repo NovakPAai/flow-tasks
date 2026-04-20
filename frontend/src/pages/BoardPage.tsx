@@ -120,6 +120,8 @@ export default function BoardPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
+  const [columnOffsets, setColumnOffsets] = useState<Record<string, number>>({});
+  const [loadingMoreCol, setLoadingMoreCol] = useState<string | null>(null);
   const addInputRef = useRef<HTMLInputElement | null>(null);
 
   const statuses = board?.workflow.statuses ?? [];
@@ -196,6 +198,19 @@ export default function BoardPage() {
       message.error('Не удалось сохранить порядок');
       loadBoard();
     }
+  };
+
+  // ── Load more (column pagination) ────────────────────────────────────────
+  const loadMoreColumn = async (statusId: string) => {
+    if (!boardId || loadingMoreCol) return;
+    const offset = columnOffsets[statusId] ?? 100;
+    setLoadingMoreCol(statusId);
+    try {
+      const more = await tasksApi.listTasks(boardId, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), ...more] }));
+      setColumnOffsets(prev => ({ ...prev, [statusId]: offset + more.length }));
+    } catch { message.error('Не удалось загрузить задачи'); }
+    finally { setLoadingMoreCol(null); }
   };
 
   // ── Quick add ─────────────────────────────────────────────────────────────
@@ -461,6 +476,22 @@ export default function BoardPage() {
                           </div>
                         )}
                       </Droppable>
+                      {/* Load more button — shown when column loaded exactly 100/200/... tasks */}
+                      {(columns[status.id]?.length ?? 0) > 0 && (columns[status.id]?.length ?? 0) % 100 === 0 && (
+                        <button
+                          onClick={() => loadMoreColumn(status.id)}
+                          disabled={loadingMoreCol === status.id}
+                          style={{
+                            marginTop: 4, width: '100%', background: 'transparent',
+                            border: `1px dashed ${border}`, borderRadius: 8,
+                            padding: '6px 10px', cursor: 'pointer',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+                            color: addText, opacity: loadingMoreCol === status.id ? 0.5 : 1,
+                          }}
+                        >
+                          {loadingMoreCol === status.id ? 'Загрузка...' : 'Загрузить ещё'}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
