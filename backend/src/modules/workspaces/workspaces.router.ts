@@ -37,7 +37,7 @@ router.delete('/:id', authHandler(async (req, res) => {
 
 router.get('/:id/members/search', authHandler(async (req, res) => {
   const q = (req.query.q as string) ?? '';
-  const users = await ws.searchMembers(String(req.params.id), q);
+  const users = await ws.searchMembers(String(req.params.id), req.user!.userId, q);
   res.json(users);
 }));
 
