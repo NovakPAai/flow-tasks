@@ -1,0 +1,34 @@
+name: Cleanup Users (one-time)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Delete non-demo users from DB
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Copy cleanup script
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          scp backend/scripts/cleanup-users.cjs "$DEPLOY_USER@$DEPLOY_HOST:/opt/flowtask/backend/cleanup-users.cjs"
+
+      - name: Run cleanup on server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/flowtask/backend && set -a && source .env && set +a && node cleanup-users.cjs; rm cleanup-users.cjs"

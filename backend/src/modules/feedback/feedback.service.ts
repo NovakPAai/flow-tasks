@@ -1,8 +1,10 @@
 import { config } from '../../config.js';
+import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import type { FeedbackDto } from './feedback.dto.js';
 
 interface FeedbackUser {
+  id: string;
   name: string;
   email: string;
 }
@@ -36,5 +38,10 @@ export async function submitFeedback(dto: FeedbackDto, user: FeedbackUser) {
   }
 
   const issue = await response.json() as { html_url: string; number: number };
+
+  await prisma.feedback.create({
+    data: { userId: user.id, type: dto.type, title: dto.title, body: dto.body, githubUrl: issue.html_url, githubNum: issue.number },
+  });
+
   return { url: issue.html_url, number: issue.number };
 }

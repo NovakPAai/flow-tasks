@@ -6,30 +6,34 @@ import type { Prisma } from '@prisma/client';
 // ─── Access helpers ───────────────────────────────────────────────────────────
 
 async function getBoardWithAccess(boardId: string, userId: string) {
-  const board = await prisma.board.findUnique({
-    where: { id: boardId },
+  const board = await prisma.board.findFirst({
+    where: {
+      id: boardId,
+      workspace: { members: { some: { userId } } },
+    },
     include: { workflow: { include: { statuses: { orderBy: { position: 'asc' } }, transitions: true } } },
   });
-  if (!board) throw new AppError(404, 'Board not found');
+  if (!board) throw new AppError(404, 'Board not found or access denied');
 
-  const member = await prisma.workspaceMember.findUnique({
+  const member = await prisma.workspaceMember.findUniqueOrThrow({
     where: { workspaceId_userId: { workspaceId: board.workspaceId, userId } },
   });
-  if (!member) throw new AppError(403, 'Access denied');
   return { board, member };
 }
 
 async function getTaskWithAccess(taskId: string, userId: string) {
-  const task = await prisma.task.findUnique({
-    where: { id: taskId },
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      board: { workspace: { members: { some: { userId } } } },
+    },
     include: { board: true },
   });
-  if (!task) throw new AppError(404, 'Task not found');
+  if (!task) throw new AppError(404, 'Task not found or access denied');
 
-  const member = await prisma.workspaceMember.findUnique({
+  const member = await prisma.workspaceMember.findUniqueOrThrow({
     where: { workspaceId_userId: { workspaceId: task.board.workspaceId, userId } },
   });
-  if (!member) throw new AppError(403, 'Access denied');
   return { task, member };
 }
 
@@ -103,22 +107,31 @@ export async function listTasks(boardId: string, userId: string, filters: TaskFi
   };
 
   // parentId filter: null = root tasks only, undefined = all, uuid = specific parent
-  if (filters.parentId === null) {
+  if (filters.rootOnly) {
+    where.parentId = null;
+  } else if (filters.parentId === null) {
     where.parentId = null;
   } else if (filters.parentId) {
     where.parentId = filters.parentId;
   }
 
-  return prisma.task.findMany({
-    where,
-    orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
-    omit: { assigneeId: true },
-    include: {
-      assignee: { select: { id: true, name: true, avatar: true } },
-      status: { select: { id: true, name: true, color: true, category: true } },
-      _count: { select: { children: true } },
-    },
-  });
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
+      take: filters.limit ?? 100,
+      skip: filters.offset ?? 0,
+      omit: { assigneeId: true },
+      include: {
+        assignee: { select: { id: true, name: true, avatar: true } },
+        status: { select: { id: true, name: true, color: true, category: true } },
+        _count: { select: { children: true } },
+      },
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  return { tasks, total };
 }
 
 // ─── Create task ──────────────────────────────────────────────────────────────
@@ -363,11 +376,10 @@ export async function getTaskHistory(taskId: string, userId: string) {
 export async function deleteTask(taskId: string, userId: string) {
   const { task } = await getTaskWithAccess(taskId, userId);
 
-  // Cascade delete all descendants via path prefix
-  await prisma.task.deleteMany({
-    where: { path: { startsWith: `${task.path}${taskId}/` } },
-  });
-  await prisma.task.delete({ where: { id: taskId } });
+  await prisma.$transaction([
+    prisma.task.deleteMany({ where: { path: { startsWith: `${task.path}${taskId}/` } } }),
+    prisma.task.delete({ where: { id: taskId } }),
+  ]);
 }
 
 // ─── My Tasks (cross-workspace) ───────────────────────────────────────────────
@@ -380,7 +392,7 @@ export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
   });
   const workspaceIds = memberships.map((m) => m.workspaceId);
 
-  if (workspaceIds.length === 0) return [];
+  if (workspaceIds.length === 0) return { tasks: [], total: 0 };
 
   // Filter by specific workspace if requested
   const filteredWorkspaceIds = filters.workspaceId
@@ -395,20 +407,27 @@ export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
     ...buildDueDateFilter(filters.duePreset),
   };
 
-  return prisma.task.findMany({
-    where,
-    orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
-    include: {
-      status: { select: { id: true, name: true, color: true, category: true } },
-      board: {
-        select: {
-          id: true, name: true, prefix: true,
-          workspace: { select: { id: true, name: true, slug: true } },
+  const [tasks, total] = await prisma.$transaction([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
+      take: filters.limit ?? 100,
+      skip: filters.offset ?? 0,
+      include: {
+        status: { select: { id: true, name: true, color: true, category: true } },
+        board: {
+          select: {
+            id: true, name: true, prefix: true,
+            workspace: { select: { id: true, name: true, slug: true } },
+          },
         },
+        _count: { select: { children: true } },
       },
-      _count: { select: { children: true } },
-    },
-  });
+    }),
+    prisma.task.count({ where }),
+  ]);
+
+  return { tasks, total };
 }
 
 // ─── DnD reorder ──────────────────────────────────────────────────────────────

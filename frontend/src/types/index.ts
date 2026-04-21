@@ -20,6 +20,7 @@ export interface AdminUser {
   loginCount: number;
   lastLoginAt?: string;
   createdAt: string;
+  isSuperadmin: boolean;
 }
 
 export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -36,7 +37,6 @@ export interface RegistrationRequest {
 export interface AuthResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
 }
 
 // ─── Workspaces ───────────────────────────────────────────────────────────────

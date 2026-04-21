@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
 import { errorHandler } from './shared/middleware/error-handler.js';
 import authRouter from './modules/auth/auth.router.js';
@@ -27,6 +28,7 @@ export function createApp() {
   const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5174';
   app.use(cors({ origin: corsOrigin.split(',').map((o) => o.trim()), credentials: true }));
   app.use(express.json());
+  app.use(cookieParser());
 
   // Health check
   app.get('/api/health', (_req, res) => {

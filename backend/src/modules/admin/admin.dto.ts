@@ -10,5 +10,10 @@ export const reviewRequestDto = z.object({
   action: z.enum(['approve', 'reject']),
 });
 
+export const updateUserDto = z.object({
+  isSuperadmin: z.boolean(),
+});
+
 export type CreateUserDto = z.infer<typeof createUserDto>;
 export type ReviewRequestDto = z.infer<typeof reviewRequestDto>;
+export type UpdateUserDto = z.infer<typeof updateUserDto>;

@@ -105,6 +105,7 @@ export default function BoardPage() {
   const dropOver  = isDark ? '#1C2236' : '#EDE9FE';
   const inpBg     = isDark ? '#0F1320' : '#FDFCFF';
   const inpBorder = isDark ? '#4F6EF7' : '#4F6EF7';
+  const colBg     = isDark ? '#07091A' : '#F7F5FF';
   const viewActive= '#4F6EF7';
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -119,6 +120,9 @@ export default function BoardPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
+  const [columnOffsets, setColumnOffsets] = useState<Record<string, number>>({});
+  const [columnTotals, setColumnTotals] = useState<Record<string, number>>({});
+  const [loadingMoreCols, setLoadingMoreCols] = useState<Set<string>>(new Set());
   const addInputRef = useRef<HTMLInputElement | null>(null);
 
   const statuses = board?.workflow.statuses ?? [];
@@ -129,7 +133,23 @@ export default function BoardPage() {
     try {
       const b = await boardsApi.getBoard(boardId);
       setBoard(b);
-      setColumns(groupByStatus(b.tasks ?? [], b.workflow.statuses));
+      const cols = groupByStatus(b.tasks ?? [], b.workflow.statuses);
+      setColumns(cols);
+      setColumnOffsets(Object.fromEntries(
+        b.workflow.statuses.map(s => [s.id, cols[s.id]?.length ?? 0])
+      ));
+      // For columns that hit the 100-task cap, fetch real totals so the load-more button is shown
+      const fullCols = b.workflow.statuses.filter(s => (cols[s.id]?.length ?? 0) >= 100);
+      if (fullCols.length > 0) {
+        const totals = await Promise.all(
+          fullCols.map(s =>
+            tasksApi.listTasks(boardId, { statusId: s.id, rootOnly: 'true', limit: '1', offset: '0' })
+              .then(r => [s.id, r.total] as const)
+              .catch(() => [s.id, 100] as const)
+          )
+        );
+        setColumnTotals(Object.fromEntries(totals));
+      }
     } catch { message.error('Не удалось загрузить доску'); }
     finally { setLoading(false); }
   }, [boardId]);
@@ -197,6 +217,20 @@ export default function BoardPage() {
     }
   };
 
+  // ── Load more (column pagination) ────────────────────────────────────────
+  const loadMoreColumn = async (statusId: string) => {
+    if (!boardId || loadingMoreCols.has(statusId)) return;
+    const offset = columnOffsets[statusId] ?? 0;
+    setLoadingMoreCols(prev => new Set(prev).add(statusId));
+    try {
+      const { tasks: more, total } = await tasksApi.listTasks(boardId, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), ...more] }));
+      setColumnOffsets(prev => ({ ...prev, [statusId]: offset + more.length }));
+      setColumnTotals(prev => ({ ...prev, [statusId]: total }));
+    } catch { message.error('Не удалось загрузить задачи'); }
+    finally { setLoadingMoreCols(prev => { const s = new Set(prev); s.delete(statusId); return s; }); }
+  };
+
   // ── Quick add ─────────────────────────────────────────────────────────────
   const submitAdd = async (statusId: string) => {
     if (!addTitle.trim()) { setAddingTo(null); return; }
@@ -216,11 +250,12 @@ export default function BoardPage() {
         const idx = tasks.findIndex(t => t.id === updated.id);
         if (idx !== -1) {
           const arr = [...tasks];
-          arr[idx] = { ...updated, status: arr[idx].status };
+          const mergedTask = { ...arr[idx], ...updated };
+          arr[idx] = mergedTask;
           if (updated.statusId !== sid) {
             arr.splice(idx, 1);
             newCols[sid] = arr;
-            newCols[updated.statusId] = [...(newCols[updated.statusId] ?? []), updated];
+            newCols[updated.statusId] = [...(newCols[updated.statusId] ?? []), mergedTask];
           } else {
             newCols[sid] = arr;
           }
@@ -244,6 +279,10 @@ export default function BoardPage() {
   // ── Filtered data ─────────────────────────────────────────────────────────
   const allTasks = useMemo(() => columnsToList(columns), [columns]);
   const filteredTasks = useMemo(() => applyFilters(allTasks, filters), [allTasks, filters]);
+  const hasMoreTasks = useMemo(
+    () => Object.entries(columnTotals).some(([sid, total]) => (columns[sid]?.length ?? 0) < total),
+    [columnTotals, columns],
+  );
   const filteredColumns = useMemo(() => {
     const ids = new Set(filteredTasks.map(t => t.id));
     const result: Columns = {};
@@ -296,7 +335,7 @@ export default function BoardPage() {
           {board.name}
         </h1>
         <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: cntText, background: cntBg, borderRadius: 6, padding: '2px 8px', flexShrink: 0 }}>
-          {allTasks.length} задач
+          {allTasks.length}{hasMoreTasks ? '+' : ''} задач
         </span>
 
         <div style={{ flex: 1 }} />
@@ -364,13 +403,17 @@ export default function BoardPage() {
                     <div
                       key={status.id}
                       style={{
-                        flex: '1 1 0', minWidth: 260, maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 0,
+                        flex: '1 1 0', minWidth: 260, display: 'flex', flexDirection: 'column', gap: 0,
+                        background: colBg,
+                        border: `1px solid ${border}`,
+                        borderRadius: 12,
+                        padding: '10px 8px 8px',
                         opacity: draggingFromStatusId && !isDropAllowed ? 0.4 : 1,
                         transition: 'opacity 0.15s',
                       }}
                     >
                       {/* Column header */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 2px 10px', marginBottom: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 8px' }}>
                         <div style={{ width: 3, height: 18, borderRadius: 2, background: status.color, flexShrink: 0 }} />
                         <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: colText, flex: 1 }}>
                           {status.name}
@@ -389,6 +432,43 @@ export default function BoardPage() {
                         </button>
                       </div>
 
+                      {/* Quick add — above cards */}
+                      {addingTo === status.id ? (
+                        <input
+                          ref={addInputRef}
+                          value={addTitle}
+                          onChange={e => setAddTitle(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') { setAddingTo(null); setAddTitle(''); } }}
+                          onBlur={() => { setAddingTo(null); setAddTitle(''); }}
+                          placeholder="Название задачи..."
+                          style={{
+                            background: inpBg, border: `1px solid ${inpBorder}`,
+                            borderRadius: 8, padding: '8px 10px',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
+                            color: nameColor, outline: 'none', width: '100%',
+                            marginBottom: 8, boxSizing: 'border-box',
+                          }}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            background: 'transparent', border: `1px dashed ${border}`,
+                            borderRadius: 8, padding: '8px 10px',
+                            cursor: 'pointer', width: '100%',
+                            marginBottom: 8, boxSizing: 'border-box',
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M6 1v10M1 6h10" stroke={addText} strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: addText }}>
+                            Быстрое добавление...
+                          </span>
+                        </button>
+                      )}
+
                       <Droppable droppableId={status.id} isDropDisabled={!!draggingFromStatusId && !isDropAllowed}>
                         {(provided, snapshot) => (
                           <div
@@ -396,6 +476,7 @@ export default function BoardPage() {
                             {...provided.droppableProps}
                             style={{
                               flex: 1, minHeight: 80, borderRadius: 10, padding: 4,
+                              overflowY: 'auto',
                               background: snapshot.isDraggingOver ? dropOver : 'transparent',
                               transition: 'background 0.15s',
                             }}
@@ -418,39 +499,20 @@ export default function BoardPage() {
                           </div>
                         )}
                       </Droppable>
-
-                      {/* Quick add */}
-                      {addingTo === status.id ? (
-                        <input
-                          ref={addInputRef}
-                          value={addTitle}
-                          onChange={e => setAddTitle(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') submitAdd(status.id); if (e.key === 'Escape') setAddingTo(null); }}
-                          onBlur={() => submitAdd(status.id)}
-                          placeholder="Название задачи..."
-                          style={{
-                            background: inpBg, border: `1px solid ${inpBorder}`,
-                            borderRadius: 8, padding: '8px 10px',
-                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
-                            color: nameColor, outline: 'none', width: '100%',
-                          }}
-                        />
-                      ) : (
+                      {/* Load more button — shown when server has more tasks than loaded */}
+                      {columnTotals[status.id] !== undefined && (columns[status.id]?.length ?? 0) < columnTotals[status.id] && (
                         <button
-                          onClick={() => { setAddingTo(status.id); setAddTitle(''); }}
+                          onClick={() => loadMoreColumn(status.id)}
+                          disabled={loadingMoreCols.has(status.id)}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            background: 'transparent', border: `1px dashed ${border}`,
-                            borderRadius: 8, padding: '8px 10px',
-                            cursor: 'pointer', width: '100%',
+                            marginTop: 4, width: '100%', background: 'transparent',
+                            border: `1px dashed ${border}`, borderRadius: 8,
+                            padding: '6px 10px', cursor: 'pointer',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+                            color: addText, opacity: loadingMoreCols.has(status.id) ? 0.5 : 1,
                           }}
                         >
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M6 1v10M1 6h10" stroke={addText} strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: addText }}>
-                            Быстрое добавление...
-                          </span>
+                          {loadingMoreCols.has(status.id) ? 'Загрузка...' : `Загрузить ещё (${columnTotals[status.id] - (columns[status.id]?.length ?? 0)})`}
                         </button>
                       )}
                     </div>

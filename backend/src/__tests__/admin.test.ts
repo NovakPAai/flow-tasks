@@ -10,8 +10,8 @@ async function registerSuperadmin() {
   const passwordHash = await hashPassword(password);
   await prisma.user.upsert({
     where: { email: config.SUPERADMIN_EMAIL },
-    update: { password: passwordHash },
-    create: { email: config.SUPERADMIN_EMAIL, name: 'Test Superadmin', password: passwordHash },
+    update: { password: passwordHash, isSuperadmin: true },
+    create: { email: config.SUPERADMIN_EMAIL, name: 'Test Superadmin', password: passwordHash, isSuperadmin: true },
   });
   const loginRes = await api.post('/api/auth/login').send({ email: config.SUPERADMIN_EMAIL, password });
   return loginRes.body.accessToken as string;

@@ -29,12 +29,14 @@ export async function registerUser(overrides: { email?: string; name?: string; p
   const user = await prisma.user.create({ data: { email, name, password: passwordHash } });
 
   const loginRes = await api.post('/api/auth/login').send({ email, password });
+  const rawCookies = loginRes.headers['set-cookie'];
+  const cookie = Array.isArray(rawCookies) ? rawCookies.join('; ') : (rawCookies ?? '');
   return {
     email,
     name,
     password,
     token: loginRes.body.accessToken as string,
-    refreshToken: loginRes.body.refreshToken as string,
+    cookie, // HttpOnly refresh token cookie for use in subsequent requests
     userId: user.id,
   };
 }

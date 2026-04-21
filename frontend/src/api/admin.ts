@@ -19,3 +19,8 @@ export async function listRegistrationRequests(): Promise<RegistrationRequest[]>
 export async function reviewRegistrationRequest(id: string, action: 'approve' | 'reject'): Promise<void> {
   await api.patch(`/admin/registration-requests/${id}`, { action });
 }
+
+export async function setUserSuperadmin(userId: string, isSuperadmin: boolean): Promise<AdminUser> {
+  const { data } = await api.patch<AdminUser>(`/admin/users/${userId}`, { isSuperadmin });
+  return data;
+}

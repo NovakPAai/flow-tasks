@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
@@ -36,25 +36,6 @@ const PRIO: Record<string, { bg: string; text: string }> = {
 // ── Due preset helpers ─────────────────────────────────────────────────────────
 type DuePreset = '' | 'today' | 'this_week' | 'overdue' | 'no_date';
 
-function duePresetMatch(task: MyTask, preset: DuePreset): boolean {
-  if (preset === '') return true;
-  const now = new Date();
-  const today = new Date(now); today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
-  if (preset === 'no_date') return !task.dueDate;
-  if (!task.dueDate) return false;
-  const d = new Date(task.dueDate);
-  if (preset === 'overdue') return d < today;
-  if (preset === 'today') return d >= today && d < tomorrow;
-  if (preset === 'this_week') return d >= today && d < weekEnd;
-  return true;
-}
-
-function presetCount(tasks: MyTask[], preset: DuePreset): number {
-  return tasks.filter((t) => duePresetMatch(t, preset)).length;
-}
-
 // ── Workspace icon colors ──────────────────────────────────────────────────────
 const WS_COLORS = ['#22C55E', '#4F6EF7', '#8B5CF6', '#F59E0B', '#EC4899', '#0EA5E9'];
 function wsColor(name: string): string {
@@ -68,37 +49,39 @@ export default function MyTasksPage() {
   const c = mode === 'light' ? LIGHT : DARK;
 
   const [allTasks, setAllTasks] = useState<MyTask[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [duePreset, setDuePreset] = useState<DuePreset>('');
   const [search, setSearch] = useState('');
+  const offsetRef = useRef(0);
+
+  const fetchTasks = async (preset: DuePreset, q: string, replace: boolean) => {
+    const offset = replace ? 0 : offsetRef.current;
+    if (replace) setLoading(true); else setLoadingMore(true);
+    try {
+      const result = await tasksApi.listMyTasks({
+        duePreset: preset || undefined,
+        search: q.trim() || undefined,
+        limit: 100,
+        offset,
+      });
+      setTotal(result.total);
+      setAllTasks(prev => replace ? result.tasks : [...prev, ...result.tasks]);
+      offsetRef.current = replace ? result.tasks.length : offset + result.tasks.length;
+    } catch {
+      message.error('Не удалось загрузить задачи');
+    } finally {
+      if (replace) setLoading(false); else setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await tasksApi.listMyTasks();
-        setAllTasks(data);
-      } catch {
-        message.error('Не удалось загрузить задачи');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  // Filtered + searched tasks
-  const visibleTasks = useMemo(() => {
-    let result = allTasks.filter((t) => duePresetMatch(t, duePreset));
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          (t.issueKey ?? '').toLowerCase().includes(q),
-      );
-    }
-    return result;
-  }, [allTasks, duePreset, search]);
+    offsetRef.current = 0;
+    const timer = setTimeout(() => { fetchTasks(duePreset, search, true); }, search ? 300 : 0);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duePreset, search]);
 
   // Group by workspace → board
   const grouped = useMemo(() => {
@@ -111,7 +94,7 @@ export default function MyTasksPage() {
         boards: Map<string, { boardId: string; boardName: string; tasks: MyTask[] }>;
       }
     >();
-    for (const t of visibleTasks) {
+    for (const t of allTasks) {
       const { workspace, id: boardId, name: boardName } = t.board;
       if (!wsMap.has(workspace.id)) {
         wsMap.set(workspace.id, {
@@ -131,7 +114,7 @@ export default function MyTasksPage() {
       ...ws,
       boards: Array.from(ws.boards.values()),
     }));
-  }, [visibleTasks]);
+  }, [allTasks]);
 
   const chips: { value: DuePreset; label: string }[] = [
     { value: '', label: 'Все' },
@@ -161,7 +144,7 @@ export default function MyTasksPage() {
             color: c.chipText, background: c.chipBg,
             borderRadius: 6, padding: '2px 8px',
           }}>
-            {allTasks.length} задач
+            {total} задач
           </span>
         )}
       </div>
@@ -173,7 +156,6 @@ export default function MyTasksPage() {
         {chips.map((chip) => {
           const active = duePreset === chip.value;
           const isOverdue = chip.value === 'overdue';
-          const count = chip.value === '' ? null : presetCount(allTasks, chip.value);
           return (
             <button
               key={chip.value}
@@ -181,10 +163,10 @@ export default function MyTasksPage() {
               style={{
                 fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
                 fontWeight: active ? 500 : 400,
-                color: isOverdue && (active || count! > 0)
+                color: isOverdue && active
                   ? c.chipOverdueText
                   : active ? c.chipActiveText : c.chipText,
-                background: isOverdue && (active || count! > 0)
+                background: isOverdue && active
                   ? c.chipOverdue
                   : active ? c.chipActive : c.chipBg,
                 border: active
@@ -195,8 +177,8 @@ export default function MyTasksPage() {
               }}
             >
               {chip.label}
-              {count !== null && count > 0 && (
-                <span style={{ marginLeft: 4, opacity: 0.8 }}>· {count}</span>
+              {active && total > 0 && (
+                <span style={{ marginLeft: 4, opacity: 0.8 }}>· {total}</span>
               )}
             </button>
           );
@@ -236,7 +218,7 @@ export default function MyTasksPage() {
           }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
-      ) : visibleTasks.length === 0 ? (
+      ) : allTasks.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 8 }}>
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
             <circle cx="20" cy="20" r="18" stroke={c.border} strokeWidth="1.5"/>
@@ -409,6 +391,25 @@ export default function MyTasksPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Load more */}
+      {!loading && allTasks.length < total && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+          <button
+            onClick={() => fetchTasks(duePreset, search, false)}
+            disabled={loadingMore}
+            style={{
+              fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
+              color: '#4F6EF7', background: 'transparent',
+              border: '1px solid #4F6EF7', borderRadius: 8,
+              padding: '8px 24px', cursor: 'pointer',
+              opacity: loadingMore ? 0.5 : 1,
+            }}
+          >
+            {loadingMore ? 'Загрузка...' : `Загрузить ещё (${total - allTasks.length})`}
+          </button>
         </div>
       )}
     </div>
