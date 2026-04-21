@@ -314,25 +314,31 @@ export default function AppLayout({ children }: Props) {
           )}
         </button>
 
-        {/* Feedback button */}
-        {!isMobile && (
-          <button
-            onClick={() => setFeedbackOpen(true)}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${tabIdleText}`,
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 12,
-              padding: '4px 10px',
-              opacity: 0.7,
-              color: tabIdleText,
-              fontFamily: '"Inter", system-ui, sans-serif',
-            }}
-          >
-            Обратная связь
-          </button>
-        )}
+        {/* Feedback button — text on desktop, icon-only on mobile */}
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          title="Обратная связь"
+          style={{
+            alignItems: 'center',
+            background: 'transparent',
+            border: `1px solid ${tabIdleText}`,
+            borderRadius: 6,
+            cursor: 'pointer',
+            display: 'flex',
+            fontSize: 12,
+            gap: 4,
+            justifyContent: 'center',
+            opacity: 0.7,
+            padding: isMobile ? '4px 7px' : '4px 10px',
+            color: tabIdleText,
+            fontFamily: '"Inter", system-ui, sans-serif',
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.5 1.5H1.5C1.22 1.5 1 1.72 1 2v7c0 .28.22.5.5.5h2v2l2.5-2h5.5c.28 0 .5-.22.5-.5V2c0-.28-.22-.5-.5-.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+          </svg>
+          {!isMobile && 'Обратная связь'}
+        </button>
 
         {/* Avatar */}
         <div style={{ position: 'relative' }}>
