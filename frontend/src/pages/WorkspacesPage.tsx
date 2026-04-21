@@ -5,6 +5,7 @@ import { formatApiError } from '../utils/apiError';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
+import { useResponsiveValue } from '../utils/useBreakpoint';
 import type { Workspace, WorkspaceEvent } from '../types';
 import * as workspacesApi from '../api/workspaces';
 
@@ -389,6 +390,9 @@ export default function WorkspacesPage() {
       .catch(() => {});
   }, [workspaces]);
 
+  const gap         = useResponsiveValue(20, 28, 32);
+  const paddingBlock  = useResponsiveValue('24px', '32px', '48px');
+  const paddingInline = useResponsiveValue('16px', '40px', '80px');
   const firstName = ((user as { firstName?: string; name?: string })?.firstName ?? user?.name?.split(' ')[0] ?? 'ПОЛЬЗОВАТЕЛЬ').toUpperCase();
 
   const handleCreate = async (name: string, slug: string, description?: string) => {
@@ -403,9 +407,9 @@ export default function WorkspacesPage() {
   };
 
   return (
-    <div style={{ backgroundColor: C.rootBg, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', flex: 1, gap: 32, paddingBlock: '48px', paddingInline: '80px', minHeight: '100%' }}>
+    <div style={{ backgroundColor: C.rootBg, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', flex: 1, gap, paddingBlock, paddingInline, minHeight: '100%' }}>
       {/* Header row */}
-      <div style={{ alignItems: 'flex-end', display: 'flex', justifyContent: 'space-between' }}>
+      <div style={{ alignItems: 'flex-end', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
         <div>
           <div style={{ color: C.greeting, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, letterSpacing: '0.06em', lineHeight: '16px', marginBottom: 8, textTransform: 'uppercase' }}>
             Привет, {firstName}
@@ -439,7 +443,7 @@ export default function WorkspacesPage() {
           ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
+        <div data-testid="workspaces-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
           {workspaces.map((ws: Workspace, idx: number) => (
             <WorkspaceCard key={ws.id} ws={ws} idx={idx} C={C} isDark={mode !== 'light'} onClick={() => navigate(`/w/${ws.slug}`)}/>
           ))}

@@ -64,7 +64,7 @@ test.describe('Рабочие пространства', () => {
     const token = await getAdminToken();
     const ws = await createWorkspace(token, `Nav WS ${uid()}`, `nav-ws-${uid()}`);
     await page.goto('/workspaces');
-    await page.waitForLoadState('networkidle');
+    await page.waitForSelector('[data-testid="workspaces-grid"]');
 
     await page.getByText(ws.name).first().click();
     await expect(page).toHaveURL(new RegExp(`/w/${ws.slug}`), { timeout: 8000 });
@@ -74,7 +74,7 @@ test.describe('Рабочие пространства', () => {
     const token = await getAdminToken();
     await createWorkspace(token, `BoardCnt ${uid()}`, `boardcnt-${uid()}`);
     await page.goto('/workspaces');
-    await page.waitForLoadState('networkidle');
+    await page.waitForSelector('[data-testid="workspaces-grid"]');
     // Найдём цифру "0" под "Доски" на карточке
     await expect(page.getByText('Доски').first()).toBeVisible();
   });

@@ -4,6 +4,7 @@ import { message } from 'antd';
 import { useAuthStore } from '../store/auth.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
+import { useBreakpoint } from '../utils/useBreakpoint';
 import FeedbackModal from './FeedbackModal';
 
 interface Props { children: React.ReactNode }
@@ -144,6 +145,8 @@ export default function AppLayout({ children }: Props) {
   const { workspaces, current, load, setCurrent } = useWorkspaceStore();
   const { mode, toggle } = useThemeStore();
 
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -209,9 +212,11 @@ export default function AppLayout({ children }: Props) {
           <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 8, display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}>
             <GridIcon/>
           </div>
-          <span style={{ color: logoText, fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: '20px' }}>
-            FlowTask
-          </span>
+          {bp === 'desktop' && (
+            <span style={{ color: logoText, fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: '20px' }}>
+              FlowTask
+            </span>
+          )}
         </div>
 
         {/* Separator + workspace selector (only on workspace pages) */}
@@ -234,7 +239,7 @@ export default function AppLayout({ children }: Props) {
                     {current.name[0]?.toUpperCase()}
                   </span>
                 </div>
-                <span style={{ color: wsSelectorText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px' }}>
+                <span style={{ color: wsSelectorText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px', maxWidth: bp === 'desktop' ? undefined : bp === 'tablet' ? 160 : 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {current.name}
                 </span>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
@@ -310,22 +315,30 @@ export default function AppLayout({ children }: Props) {
           )}
         </button>
 
-        {/* Feedback button */}
+        {/* Feedback button — icon+text on tablet/desktop, icon-only on mobile */}
         <button
           onClick={() => setFeedbackOpen(true)}
+          title="Обратная связь"
           style={{
+            alignItems: 'center',
             background: 'transparent',
             border: `1px solid ${tabIdleText}`,
             borderRadius: 6,
             cursor: 'pointer',
+            display: 'flex',
             fontSize: 12,
-            padding: '4px 10px',
+            gap: 4,
+            justifyContent: 'center',
             opacity: 0.7,
+            padding: isMobile ? '4px 7px' : '4px 10px',
             color: tabIdleText,
             fontFamily: '"Inter", system-ui, sans-serif',
           }}
         >
-          Обратная связь
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.5 1.5H1.5C1.22 1.5 1 1.72 1 2v7c0 .28.22.5.5.5h2v2l2.5-2h5.5c.28 0 .5-.22.5-.5V2c0-.28-.22-.5-.5-.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+          </svg>
+          {bp !== 'mobile' && 'Обратная связь'}
         </button>
 
         {/* Avatar */}
