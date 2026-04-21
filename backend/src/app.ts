@@ -17,9 +17,11 @@ import commentsRouter, { taskCommentsRouter } from './modules/comments/comments.
 import checklistsRouter, { taskChecklistsRouter, checklistItemsRouter } from './modules/checklists/checklists.router.js';
 import adminRouter from './modules/admin/admin.router.js';
 import feedbackRouter from './modules/feedback/feedback.router.js';
+import integrationsRouter from './modules/integrations/integrations.router.js';
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5174';
@@ -57,6 +59,7 @@ export function createApp() {
   app.use('/api/checklist-items', checklistItemsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/feedback', feedbackRouter);
+  app.use('/api/integrations', integrationsRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);

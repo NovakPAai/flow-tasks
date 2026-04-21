@@ -23,6 +23,7 @@ model User {
 
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
+  apiKeys              ApiKey[]
   workspaceMemberships WorkspaceMember[]
   createdWorkspaces    Workspace[]       @relation("WorkspaceCreator")
   createdTasks         Task[]            @relation("taskCreator")
@@ -58,6 +59,23 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  key        String    @unique
+  keyHash    String    @unique @map("key_hash")
+  label      String
+  isActive   Boolean   @default(true)
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
 }
 
 // ─── Registration Requests ───────────────────────────────────────────────────
