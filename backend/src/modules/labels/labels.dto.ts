@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { stripHtml } from '../../shared/utils/sanitize.js';
 
 export const createLabelDto = z.object({
-  name: z.string().min(1).max(50),
+  name: stripHtml(z.string().min(1).max(50)),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color'),
 });
 

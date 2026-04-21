@@ -117,10 +117,16 @@ jobs:
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          GITHUB_ISSUES_TOKEN: ${{ secrets.GH_ISSUES_TOKEN }}
         run: |
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -e
             APP_DIR=/opt/flowtask
+
+            echo '→ Updating .env with GitHub secrets...'
+            touch \$APP_DIR/backend/.env
+            sed -i '/^GITHUB_ISSUES_TOKEN=/d' \$APP_DIR/backend/.env
+            printf 'GITHUB_ISSUES_TOKEN=%s\n' "$GITHUB_ISSUES_TOKEN" >> \$APP_DIR/backend/.env
 
             echo '→ Running migrations...'
             cd \$APP_DIR/backend
