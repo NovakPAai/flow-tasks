@@ -101,7 +101,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GITHUB_ISSUES_TOKEN: ${{ secrets.GITHUB_ISSUES_TOKEN }}
+          GITHUB_ISSUES_TOKEN: ${{ secrets.GH_ISSUES_TOKEN }}
         run: |
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -e
