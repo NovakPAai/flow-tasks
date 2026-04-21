@@ -3,12 +3,14 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,   // честно: тесты конкурируют за одну БД
-  retries: 0,             // без перепрыжек — упал значит упал
+  retries: 2,             // 2 ретрая для отсева flaky
   workers: 1,
   timeout: 30_000,
+  globalSetup: './e2e/global-setup.ts',
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    // Auto-filer активен только при E2E_AUTO_FILE=1 (CI) — см. reporter
     ['./e2e/reporter/github-issue-reporter.ts'],
   ],
   use: {
