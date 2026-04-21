@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
-import { useIsMobile } from '../utils/useIsMobile';
+import { useBreakpoint } from '../utils/useBreakpoint';
 import type { Board } from '../types';
 import * as workspacesApi from '../api/workspaces';
 import * as boardsApi from '../api/boards';
@@ -185,7 +185,8 @@ export default function WorkspaceDashboardPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>({ name: '', prefix: '', description: '' });
   const [prefixTouched, setPrefixTouched] = useState(false);
-  const isMobile = useIsMobile();
+  const bp = useBreakpoint();
+  const isMobile = bp === 'mobile';
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
 
@@ -274,7 +275,7 @@ export default function WorkspaceDashboardPage() {
       <style>{`@keyframes ft-spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* ── Workspace header ─────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px 16px' : '36px 48px 28px', borderBottom: `1px solid ${c.hdrBorder}`, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px 16px' : bp === 'tablet' ? '24px 32px 20px' : '36px 48px 28px', borderBottom: `1px solid ${c.hdrBorder}`, flexShrink: 0 }}>
         {/* Back link */}
         <div
           onClick={() => navigate('/workspaces')}
@@ -286,8 +287,8 @@ export default function WorkspaceDashboardPage() {
           <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.backText, letterSpacing: '0.02em' }}>Все пространства</span>
         </div>
 
-        {/* Title row — stacks on mobile */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
+        {/* Title row — stacks on mobile/tablet */}
+        <div style={{ display: 'flex', flexDirection: bp === 'desktop' ? 'row' : 'column', alignItems: bp === 'desktop' ? 'center' : 'flex-start', gap: bp === 'desktop' ? 0 : 12 }}>
 
           {/* Top: icon + name + role */}
           <div style={{ display: 'flex', alignItems: 'center', flex: isMobile ? undefined : 1, minWidth: 0, marginRight: isMobile ? 0 : 0 }}>
