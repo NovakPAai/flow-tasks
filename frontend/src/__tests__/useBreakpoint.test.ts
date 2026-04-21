@@ -1,8 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useBreakpoint, useIsMobile } from '../utils/useBreakpoint';
+import { useBreakpoint, useIsMobile, useResponsiveValue } from '../utils/useBreakpoint';
 
-type MqlStore = Record<string, { matches: boolean; listeners: Set<(e: Partial<MediaQueryListEvent>) => void> }>;
+type MqlEntry = { matches: boolean; listeners: Set<(e: Partial<MediaQueryListEvent>) => void> };
+type MqlStore = Record<string, MqlEntry>;
 
 function mockMatchMedia(initial: { mobile: boolean; tablet: boolean }) {
   const store: MqlStore = {
@@ -10,16 +11,14 @@ function mockMatchMedia(initial: { mobile: boolean; tablet: boolean }) {
     '(max-width: 1023px)': { matches: initial.tablet, listeners: new Set() },
   };
 
-  const impl = vi.fn((query: string) => {
-    const entry = store[query] ?? { matches: false, listeners: new Set() };
+  vi.stubGlobal('matchMedia', vi.fn((query: string) => {
+    const entry: MqlEntry = store[query] ?? { matches: false, listeners: new Set() };
     return {
       get matches() { return entry.matches; },
       addEventListener: vi.fn((_: string, fn: (e: Partial<MediaQueryListEvent>) => void) => entry.listeners.add(fn)),
       removeEventListener: vi.fn((_: string, fn: (e: Partial<MediaQueryListEvent>) => void) => entry.listeners.delete(fn)),
     };
-  });
-
-  vi.stubGlobal('matchMedia', impl);
+  }));
 
   return {
     fire: (query: string, matches: boolean) => {
@@ -38,19 +37,19 @@ describe('useBreakpoint', () => {
     expect(result.current).toBe('mobile');
   });
 
-  it('returns "tablet" when 768px ≤ width ≤ 1023px', () => {
+  it('returns "tablet" when 768–1023px', () => {
     mockMatchMedia({ mobile: false, tablet: true });
     const { result } = renderHook(() => useBreakpoint());
     expect(result.current).toBe('tablet');
   });
 
-  it('returns "desktop" when width ≥ 1024px', () => {
+  it('returns "desktop" when ≥ 1024px', () => {
     mockMatchMedia({ mobile: false, tablet: false });
     const { result } = renderHook(() => useBreakpoint());
     expect(result.current).toBe('desktop');
   });
 
-  it('transitions desktop → tablet when crossing 1024px boundary', () => {
+  it('desktop → tablet when crossing 1024px boundary', () => {
     const { fire } = mockMatchMedia({ mobile: false, tablet: false });
     const { result } = renderHook(() => useBreakpoint());
     expect(result.current).toBe('desktop');
@@ -59,7 +58,16 @@ describe('useBreakpoint', () => {
     expect(result.current).toBe('tablet');
   });
 
-  it('transitions tablet → mobile when crossing 768px boundary', () => {
+  it('tablet → desktop when crossing 1024px boundary upward', () => {
+    const { fire } = mockMatchMedia({ mobile: false, tablet: true });
+    const { result } = renderHook(() => useBreakpoint());
+    expect(result.current).toBe('tablet');
+
+    act(() => fire('(max-width: 1023px)', false));
+    expect(result.current).toBe('desktop');
+  });
+
+  it('tablet → mobile when crossing 768px boundary', () => {
     const { fire } = mockMatchMedia({ mobile: false, tablet: true });
     const { result } = renderHook(() => useBreakpoint());
     expect(result.current).toBe('tablet');
@@ -68,12 +76,12 @@ describe('useBreakpoint', () => {
     expect(result.current).toBe('mobile');
   });
 
-  it('transitions mobile → tablet when crossing 768px upward', () => {
+  it('mobile → tablet when crossing 768px boundary upward', () => {
     const { fire } = mockMatchMedia({ mobile: true, tablet: true });
     const { result } = renderHook(() => useBreakpoint());
     expect(result.current).toBe('mobile');
 
-    act(() => { fire('(max-width: 767px)', false); });
+    act(() => fire('(max-width: 767px)', false));
     expect(result.current).toBe('tablet');
   });
 
@@ -92,24 +100,64 @@ describe('useBreakpoint', () => {
   });
 });
 
-describe('useIsMobile (re-export)', () => {
+describe('useIsMobile', () => {
   beforeEach(() => vi.unstubAllGlobals());
 
-  it('returns true only on mobile breakpoint', () => {
+  it('returns true only on mobile', () => {
     mockMatchMedia({ mobile: true, tablet: true });
-    const { result } = renderHook(() => useIsMobile());
-    expect(result.current).toBe(true);
+    expect(renderHook(() => useIsMobile()).result.current).toBe(true);
   });
 
   it('returns false on tablet', () => {
     mockMatchMedia({ mobile: false, tablet: true });
-    const { result } = renderHook(() => useIsMobile());
-    expect(result.current).toBe(false);
+    expect(renderHook(() => useIsMobile()).result.current).toBe(false);
   });
 
   it('returns false on desktop', () => {
     mockMatchMedia({ mobile: false, tablet: false });
+    expect(renderHook(() => useIsMobile()).result.current).toBe(false);
+  });
+
+  it('updates when breakpoint changes', () => {
+    const { fire } = mockMatchMedia({ mobile: false, tablet: false });
     const { result } = renderHook(() => useIsMobile());
     expect(result.current).toBe(false);
+
+    act(() => { fire('(max-width: 767px)', true); });
+    expect(result.current).toBe(true);
+  });
+});
+
+describe('useResponsiveValue', () => {
+  beforeEach(() => vi.unstubAllGlobals());
+
+  it('returns mobile value on mobile', () => {
+    mockMatchMedia({ mobile: true, tablet: true });
+    const { result } = renderHook(() => useResponsiveValue('sm', 'md', 'lg'));
+    expect(result.current).toBe('sm');
+  });
+
+  it('returns tablet value on tablet', () => {
+    mockMatchMedia({ mobile: false, tablet: true });
+    const { result } = renderHook(() => useResponsiveValue('sm', 'md', 'lg'));
+    expect(result.current).toBe('md');
+  });
+
+  it('returns desktop value on desktop', () => {
+    mockMatchMedia({ mobile: false, tablet: false });
+    const { result } = renderHook(() => useResponsiveValue('sm', 'md', 'lg'));
+    expect(result.current).toBe('lg');
+  });
+
+  it('updates when breakpoint changes', () => {
+    const { fire } = mockMatchMedia({ mobile: false, tablet: false });
+    const { result } = renderHook(() => useResponsiveValue(16, 40, 80));
+    expect(result.current).toBe(80);
+
+    act(() => fire('(max-width: 1023px)', true));
+    expect(result.current).toBe(40);
+
+    act(() => fire('(max-width: 767px)', true));
+    expect(result.current).toBe(16);
   });
 });

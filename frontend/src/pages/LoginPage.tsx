@@ -3,7 +3,7 @@ import { message, Modal, Form, Input, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
-import { useBreakpoint } from '../utils/useBreakpoint';
+import { useBreakpoint, useResponsiveValue } from '../utils/useBreakpoint';
 import * as authApi from '../api/auth';
 import api from '../api/client';
 
@@ -299,6 +299,8 @@ export default function LoginPage() {
   const C = mode === 'light' ? LIGHT_C : DARK_C;
   const bp = useBreakpoint();
   const isMobile = bp === 'mobile';
+  const panelWidth   = useResponsiveValue('100%', '480px', '600px');
+  const panelPadding = useResponsiveValue('40px 24px', '48px 40px', '60px');
 
   // Existing logic — preserved as-is
   const [loading, setLoading] = useState(false);
@@ -356,9 +358,9 @@ export default function LoginPage() {
         alignItems: 'center', backgroundColor: C.panelBg,
         display: 'flex', flexDirection: 'column', flexShrink: 0,
         height: '100%', justifyContent: 'center',
-        padding: isMobile ? '40px 24px' : bp === 'tablet' ? '48px 40px' : '60px',
+        padding: panelPadding,
         position: 'relative',
-        width: bp === 'desktop' ? '600px' : bp === 'tablet' ? '480px' : '100%',
+        width: panelWidth,
       }}>
         {/* Logo */}
         <div style={{ alignItems: 'center', display: 'flex', gap: 12, marginBottom: 48 }}>

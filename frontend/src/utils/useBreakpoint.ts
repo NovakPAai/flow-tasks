@@ -2,22 +2,29 @@ import { useState, useEffect } from 'react';
 
 export type Breakpoint = 'mobile' | 'tablet' | 'desktop';
 
-const MOBILE_MAX = 767;   // ≤767px
-const TABLET_MAX = 1023;  // 768–1023px
+const MOBILE_QUERY = '(max-width: 767px)';
+const TABLET_QUERY = '(max-width: 1023px)';
 
 function getBreakpoint(): Breakpoint {
   if (typeof window === 'undefined') return 'desktop';
-  if (window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches) return 'mobile';
-  if (window.matchMedia(`(max-width: ${TABLET_MAX}px)`).matches) return 'tablet';
+  if (window.matchMedia(MOBILE_QUERY).matches) return 'mobile';
+  if (window.matchMedia(TABLET_QUERY).matches) return 'tablet';
   return 'desktop';
 }
 
 export function useBreakpoint(): Breakpoint {
   const [bp, setBp] = useState<Breakpoint>(getBreakpoint);
   useEffect(() => {
-    const mobile = window.matchMedia(`(max-width: ${MOBILE_MAX}px)`);
-    const tablet = window.matchMedia(`(max-width: ${TABLET_MAX}px)`);
-    const update = () => setBp(getBreakpoint());
+    if (typeof window === 'undefined') return;
+    const mobile = window.matchMedia(MOBILE_QUERY);
+    const tablet = window.matchMedia(TABLET_QUERY);
+    // Derive breakpoint from the stable mql references — avoids allocating
+    // throwaway MQL objects on every change event.
+    const update = () => {
+      if (mobile.matches) setBp('mobile');
+      else if (tablet.matches) setBp('tablet');
+      else setBp('desktop');
+    };
     mobile.addEventListener('change', update);
     tablet.addEventListener('change', update);
     return () => {
@@ -28,4 +35,13 @@ export function useBreakpoint(): Breakpoint {
   return bp;
 }
 
-export const useIsMobile = (): boolean => useBreakpoint() === 'mobile';
+export function useIsMobile(): boolean {
+  return useBreakpoint() === 'mobile';
+}
+
+export function useResponsiveValue<T>(mobile: T, tablet: T, desktop: T): T {
+  const bp = useBreakpoint();
+  if (bp === 'mobile') return mobile;
+  if (bp === 'tablet') return tablet;
+  return desktop;
+}
