@@ -101,11 +101,16 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GITHUB_ISSUES_TOKEN: ${{ secrets.GITHUB_ISSUES_TOKEN }}
         run: |
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -e
             APP_DIR=/opt/flowtask
             export DATABASE_URL='$DATABASE_URL'
+
+            echo '→ Updating .env with GitHub secrets...'
+            sed -i '/^GITHUB_ISSUES_TOKEN=/d' \$APP_DIR/backend/.env
+            echo 'GITHUB_ISSUES_TOKEN=$GITHUB_ISSUES_TOKEN' >> \$APP_DIR/backend/.env
 
             echo '→ Running migrations...'
             cd \$APP_DIR/backend
@@ -114,9 +119,9 @@ jobs:
 
             echo '→ Restarting PM2...'
             if pm2 describe flowtask-api > /dev/null 2>&1; then
-              pm2 reload \$APP_DIR/ecosystem.config.js --env production
+              pm2 restart flowtask-api --update-env
             else
-              pm2 start \$APP_DIR/ecosystem.config.js --env production
+              pm2 start \$APP_DIR/ecosystem.config.js
             fi
             pm2 save
 
