@@ -236,9 +236,9 @@ function NewWorkspaceCard({ onClick, C }: { onClick: () => void; C: Theme }) {
         alignItems: 'center', backgroundColor: C.newCardBg,
         border: `1px dashed ${C.newCardBorder}`, borderRadius: 12,
         cursor: 'pointer', display: 'flex', flexDirection: 'column',
-        flexShrink: 0, gap: 12, justifyContent: 'center',
+        gap: 12, justifyContent: 'center',
         minHeight: 200, opacity: hovered ? 1 : 0.6,
-        paddingBlock: 24, paddingInline: 24, width: 380,
+        paddingBlock: 24, paddingInline: 24, width: '100%',
         transition: 'opacity 0.15s',
       }}
       data-onboarding="create-workspace"
