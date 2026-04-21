@@ -3,6 +3,7 @@ import { message, Modal, Form, Input, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
+import { useIsMobile } from '../utils/useIsMobile';
 import * as authApi from '../api/auth';
 import api from '../api/client';
 
@@ -296,6 +297,7 @@ function InputField({
 export default function LoginPage() {
   const { mode } = useThemeStore();
   const C = mode === 'light' ? LIGHT_C : DARK_C;
+  const isMobile = useIsMobile();
 
   // Existing logic — preserved as-is
   const [loading, setLoading] = useState(false);
@@ -353,7 +355,9 @@ export default function LoginPage() {
         alignItems: 'center', backgroundColor: C.panelBg,
         display: 'flex', flexDirection: 'column', flexShrink: 0,
         height: '100%', justifyContent: 'center',
-        padding: '60px', position: 'relative', width: '600px',
+        padding: isMobile ? '40px 24px' : '60px',
+        position: 'relative',
+        width: isMobile ? '100%' : '600px',
       }}>
         {/* Logo */}
         <div style={{ alignItems: 'center', display: 'flex', gap: 12, marginBottom: 48 }}>
@@ -492,7 +496,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right orbital panel ── */}
-      {mode === 'light' ? <LightPanel/> : <DarkPanel/>}
+      {!isMobile && (mode === 'light' ? <LightPanel/> : <DarkPanel/>)}
 
       {/* ── Forgot password modal ── */}
       <Modal

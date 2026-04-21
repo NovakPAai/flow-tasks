@@ -4,6 +4,7 @@ import { message } from 'antd';
 import { useAuthStore } from '../store/auth.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
+import { useIsMobile } from '../utils/useIsMobile';
 import FeedbackModal from './FeedbackModal';
 
 interface Props { children: React.ReactNode }
@@ -144,6 +145,7 @@ export default function AppLayout({ children }: Props) {
   const { workspaces, current, load, setCurrent } = useWorkspaceStore();
   const { mode, toggle } = useThemeStore();
 
+  const isMobile = useIsMobile();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -209,9 +211,11 @@ export default function AppLayout({ children }: Props) {
           <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 8, display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}>
             <GridIcon/>
           </div>
-          <span style={{ color: logoText, fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: '20px' }}>
-            FlowTask
-          </span>
+          {!isMobile && (
+            <span style={{ color: logoText, fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: '20px' }}>
+              FlowTask
+            </span>
+          )}
         </div>
 
         {/* Separator + workspace selector (only on workspace pages) */}
@@ -234,7 +238,7 @@ export default function AppLayout({ children }: Props) {
                     {current.name[0]?.toUpperCase()}
                   </span>
                 </div>
-                <span style={{ color: wsSelectorText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px' }}>
+                <span style={{ color: wsSelectorText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px', maxWidth: isMobile ? 80 : undefined, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {current.name}
                 </span>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
@@ -311,22 +315,24 @@ export default function AppLayout({ children }: Props) {
         </button>
 
         {/* Feedback button */}
-        <button
-          onClick={() => setFeedbackOpen(true)}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${tabIdleText}`,
-            borderRadius: 6,
-            cursor: 'pointer',
-            fontSize: 12,
-            padding: '4px 10px',
-            opacity: 0.7,
-            color: tabIdleText,
-            fontFamily: '"Inter", system-ui, sans-serif',
-          }}
-        >
-          Обратная связь
-        </button>
+        {!isMobile && (
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${tabIdleText}`,
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontSize: 12,
+              padding: '4px 10px',
+              opacity: 0.7,
+              color: tabIdleText,
+              fontFamily: '"Inter", system-ui, sans-serif',
+            }}
+          >
+            Обратная связь
+          </button>
+        )}
 
         {/* Avatar */}
         <div style={{ position: 'relative' }}>

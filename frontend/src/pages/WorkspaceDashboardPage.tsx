@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
+import { useIsMobile } from '../utils/useIsMobile';
 import type { Board } from '../types';
 import * as workspacesApi from '../api/workspaces';
 import * as boardsApi from '../api/boards';
@@ -261,6 +262,7 @@ export default function WorkspaceDashboardPage() {
     );
   }
 
+  const isMobile = useIsMobile();
   const wsColor = pickColor(current.name, WS_COLORS);
   const wsInit = initials(current.name);
   const role = current.role ?? 'MEMBER';
@@ -272,11 +274,11 @@ export default function WorkspaceDashboardPage() {
       <style>{`@keyframes ft-spin{to{transform:rotate(360deg)}}`}</style>
 
       {/* ── Workspace header ─────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', padding: '36px 48px 28px', borderBottom: `1px solid ${c.hdrBorder}`, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', padding: isMobile ? '20px 16px 16px' : '36px 48px 28px', borderBottom: `1px solid ${c.hdrBorder}`, flexShrink: 0 }}>
         {/* Back link */}
         <div
           onClick={() => navigate('/workspaces')}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, cursor: 'pointer', width: 'fit-content' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16, cursor: 'pointer', width: 'fit-content' }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M9 2.5L4.5 7L9 11.5" stroke={c.backText} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -284,73 +286,77 @@ export default function WorkspaceDashboardPage() {
           <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.backText, letterSpacing: '0.02em' }}>Все пространства</span>
         </div>
 
-        {/* Title row */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {/* Workspace icon */}
-          <div style={{ width: 48, height: 48, background: wsColor, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16, flexShrink: 0 }}>
-            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 20, fontWeight: 700, color: '#fff' }}>{wsInit}</span>
-          </div>
+        {/* Title row — stacks on mobile */}
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
 
-          {/* Name & description */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <h1 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 24, fontWeight: 700, color: c.title, letterSpacing: '-0.5px', margin: 0 }}>
-                {current.name}
-              </h1>
-              <span style={{
-                fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, fontWeight: 500,
-                color: '#4F6EF7', background: isDark ? 'rgba(79,110,247,0.10)' : 'rgba(79,110,247,0.08)',
-                border: '1px solid rgba(79,110,247,0.19)', borderRadius: 4, padding: '2px 8px',
-                letterSpacing: '0.05em', flexShrink: 0,
-              }}>
-                {role}
+          {/* Top: icon + name + role */}
+          <div style={{ display: 'flex', alignItems: 'center', flex: isMobile ? undefined : 1, minWidth: 0, marginRight: isMobile ? 0 : 0 }}>
+            <div style={{ width: 48, height: 48, background: wsColor, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16, flexShrink: 0 }}>
+              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 20, fontWeight: 700, color: '#fff' }}>{wsInit}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <h1 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: isMobile ? 20 : 24, fontWeight: 700, color: c.title, letterSpacing: '-0.5px', margin: 0 }}>
+                  {current.name}
+                </h1>
+                <span style={{
+                  fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, fontWeight: 500,
+                  color: '#4F6EF7', background: isDark ? 'rgba(79,110,247,0.10)' : 'rgba(79,110,247,0.08)',
+                  border: '1px solid rgba(79,110,247,0.19)', borderRadius: 4, padding: '2px 8px',
+                  letterSpacing: '0.05em', flexShrink: 0,
+                }}>
+                  {role}
+                </span>
+              </div>
+              <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, color: c.sub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {current.slug}{current.description ? ` · ${current.description}` : ''}
               </span>
             </div>
-            <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, color: c.sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {current.slug}{current.description ? ` · ${current.description}` : ''}
-            </span>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginRight: 32, flexShrink: 0 }}>
-            {([
-              { num: boards.length, label: 'Доски' },
-              { num: totalTasks, label: 'Задачи' },
-              { num: memberCount, label: 'Участники' },
-            ] as const).map((stat, i) => (
-              <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-                {i > 0 && <div style={{ width: 1, height: 28, background: c.div }} />}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 22, fontWeight: 700, color: c.statsNum, lineHeight: '28px' }}>{stat.num}</span>
-                  <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.statsLbl, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{stat.label}</span>
+          {/* Stats + action buttons row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 0, width: isMobile ? '100%' : undefined }}>
+            {/* Stats */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28, marginRight: isMobile ? 'auto' : 32, flexShrink: 0 }}>
+              {([
+                { num: boards.length, label: 'Доски' },
+                { num: totalTasks, label: 'Задачи' },
+                { num: memberCount, label: 'Участники' },
+              ] as const).map((stat, i) => (
+                <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 16 : 28 }}>
+                  {i > 0 && <div style={{ width: 1, height: 28, background: c.div }} />}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: isMobile ? 18 : 22, fontWeight: 700, color: c.statsNum, lineHeight: '28px' }}>{stat.num}</span>
+                    <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.statsLbl, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{stat.label}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Settings button */}
+            <button
+              onClick={() => navigate(`/w/${slug}/settings`)}
+              title="Настройки пространства"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: 'transparent', border: `1px solid ${c.hdrBorder}`, borderRadius: 8, cursor: 'pointer', flexShrink: 0, marginRight: 8 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
+                <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+            </button>
+
+            {/* Create board button */}
+            <button
+              data-onboarding="create-board"
+              onClick={() => setCreateOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', flexShrink: 0 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 2v10M2 7h10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              {!isMobile && <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: '#fff' }}>Создать доску</span>}
+            </button>
           </div>
-
-          {/* Settings button */}
-          <button
-            onClick={() => navigate(`/w/${slug}/settings`)}
-            title="Настройки пространства"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: 'transparent', border: `1px solid ${c.hdrBorder}`, borderRadius: 8, cursor: 'pointer', flexShrink: 0, marginRight: 8 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
-              <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-          </button>
-
-          {/* Create board button */}
-          <button
-            data-onboarding="create-board"
-            onClick={() => setCreateOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', flexShrink: 0 }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 2v10M2 7h10" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
-            <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: '#fff' }}>Создать доску</span>
-          </button>
         </div>
       </div>
 
