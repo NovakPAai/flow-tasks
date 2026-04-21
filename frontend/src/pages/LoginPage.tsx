@@ -298,7 +298,6 @@ export default function LoginPage() {
   const { mode } = useThemeStore();
   const C = mode === 'light' ? LIGHT_C : DARK_C;
   const bp = useBreakpoint();
-  const isMobile = bp === 'mobile';
   const panelWidth   = useResponsiveValue('100%', '480px', '600px');
   const panelPadding = useResponsiveValue('40px 24px', '48px 40px', '60px');
 
