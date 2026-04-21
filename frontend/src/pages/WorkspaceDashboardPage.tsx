@@ -185,6 +185,7 @@ export default function WorkspaceDashboardPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>({ name: '', prefix: '', description: '' });
   const [prefixTouched, setPrefixTouched] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
 
@@ -262,7 +263,6 @@ export default function WorkspaceDashboardPage() {
     );
   }
 
-  const isMobile = useIsMobile();
   const wsColor = pickColor(current.name, WS_COLORS);
   const wsInit = initials(current.name);
   const role = current.role ?? 'MEMBER';
