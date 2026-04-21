@@ -441,7 +441,7 @@ export default function WorkspacesPage() {
           ))}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
+        <div data-testid="workspaces-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
           {workspaces.map((ws: Workspace, idx: number) => (
             <WorkspaceCard key={ws.id} ws={ws} idx={idx} C={C} isDark={mode !== 'light'} onClick={() => navigate(`/w/${ws.slug}`)}/>
           ))}
