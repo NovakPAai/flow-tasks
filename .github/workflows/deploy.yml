@@ -109,8 +109,9 @@ jobs:
             export DATABASE_URL='$DATABASE_URL'
 
             echo '→ Updating .env with GitHub secrets...'
+            touch \$APP_DIR/backend/.env
             sed -i '/^GITHUB_ISSUES_TOKEN=/d' \$APP_DIR/backend/.env
-            echo 'GITHUB_ISSUES_TOKEN=$GITHUB_ISSUES_TOKEN' >> \$APP_DIR/backend/.env
+            printf 'GITHUB_ISSUES_TOKEN=%s\n' "$GITHUB_ISSUES_TOKEN" >> \$APP_DIR/backend/.env
 
             echo '→ Running migrations...'
             cd \$APP_DIR/backend
@@ -121,7 +122,7 @@ jobs:
             if pm2 describe flowtask-api > /dev/null 2>&1; then
               pm2 restart flowtask-api --update-env
             else
-              pm2 start \$APP_DIR/ecosystem.config.js
+              pm2 start \$APP_DIR/ecosystem.config.js --env production
             fi
             pm2 save
 
