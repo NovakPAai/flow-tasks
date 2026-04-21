@@ -63,7 +63,8 @@ test.describe('Рабочие пространства', () => {
     // WorkspaceCard не имеет data-testid, поэтому ищем по структуре
     const token = await getAdminToken();
     const ws = await createWorkspace(token, `Nav WS ${uid()}`, `nav-ws-${uid()}`);
-    await page.reload();
+    await page.goto('/workspaces');
+    await page.waitForLoadState('networkidle');
 
     await page.getByText(ws.name).first().click();
     await expect(page).toHaveURL(new RegExp(`/w/${ws.slug}`), { timeout: 8000 });
@@ -72,7 +73,8 @@ test.describe('Рабочие пространства', () => {
   test('воркспейс показывает boardCount на карточке', async ({ page }) => {
     const token = await getAdminToken();
     await createWorkspace(token, `BoardCnt ${uid()}`, `boardcnt-${uid()}`);
-    await page.reload();
+    await page.goto('/workspaces');
+    await page.waitForLoadState('networkidle');
     // Найдём цифру "0" под "Доски" на карточке
     await expect(page.getByText('Доски').first()).toBeVisible();
   });
