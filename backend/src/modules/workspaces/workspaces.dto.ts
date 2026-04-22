@@ -14,6 +14,7 @@ export const createWorkspaceDto = z.object({
 export const updateWorkspaceDto = z.object({
   name: stripHtml(z.string().min(1).max(100)).optional(),
   description: stripHtml(z.string().max(500)).optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 export const addMemberDto = z.object({

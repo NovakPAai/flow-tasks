@@ -12,6 +12,7 @@ import WorkspaceDashboardPage from './pages/WorkspaceDashboardPage';
 import BoardPage from './pages/BoardPage';
 import MyTasksPage from './pages/MyTasksPage';
 import WorkspaceSettingsPage from './pages/WorkspaceSettingsPage';
+import BoardSettingsPage from './pages/BoardSettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -79,6 +80,7 @@ export default function App() {
           <Route path="/workspaces" element={<PrivateRoute><WorkspacesPage /></PrivateRoute>} />
           <Route path="/w/:slug" element={<PrivateRoute><WorkspaceDashboardPage /></PrivateRoute>} />
           <Route path="/w/:slug/boards/:boardId" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
+          <Route path="/w/:slug/boards/:boardId/settings" element={<PrivateRoute><BoardSettingsPage /></PrivateRoute>} />
           <Route path="/w/:slug/settings" element={<PrivateRoute><WorkspaceSettingsPage /></PrivateRoute>} />
           <Route path="/my-tasks" element={<PrivateRoute><MyTasksPage /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />

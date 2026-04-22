@@ -147,6 +147,7 @@ export default function WorkspaceSettingsPage() {
   // General settings
   const [name, setName]               = useState('');
   const [description, setDescription] = useState('');
+  const [isPrivate, setIsPrivate]     = useState(false);
   const [saving, setSaving]           = useState(false);
 
   // Invite
@@ -172,7 +173,8 @@ export default function WorkspaceSettingsPage() {
   useEffect(() => {
     if (!workspace) return;
     setName(workspace.name);
-    setDescription((workspace as { description?: string }).description ?? '');
+    setDescription(workspace.description ?? '');
+    setIsPrivate(workspace.isPrivate ?? false);
     Promise.all([
       workspacesApi.listMembers(workspace.id),
       labelsApi.listLabels(workspace.id),
@@ -189,7 +191,7 @@ export default function WorkspaceSettingsPage() {
 
   const saveSettings = async () => {
     setSaving(true);
-    try { await workspacesApi.updateWorkspace(workspace.id, { name, description }); await load(); message.success('Сохранено'); }
+    try { await workspacesApi.updateWorkspace(workspace.id, { name, description, isPrivate }); await load(); message.success('Сохранено'); }
     catch { message.error('Ошибка сохранения'); }
     finally { setSaving(false); }
   };
@@ -538,6 +540,39 @@ export default function WorkspaceSettingsPage() {
           <input value={workspace.slug} disabled style={{ ...inp, color: c.muted, fontFamily: 'monospace' }} />
         </div>
         {isOwner && <PrimaryBtn onClick={saveSettings} loading={saving} style={{ alignSelf: 'flex-start' }}>Сохранить</PrimaryBtn>}
+      </div>
+
+      {/* Privacy section */}
+      <div style={{ maxWidth: 480, marginTop: 32, border: `1px solid ${c.border}`, borderRadius: 10, padding: '20px 24px' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: c.text, marginBottom: 4 }}>Приватность</div>
+        <div style={{ fontSize: 12, color: c.muted, marginBottom: 16 }}>
+          Приватное пространство не отображается в публичных списках. Доступ — только для добавленных участников.
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: isOwner ? 'pointer' : 'default' }}>
+          <div
+            onClick={() => isOwner && setIsPrivate(v => !v)}
+            style={{
+              width: 40, height: 22, borderRadius: 11, flexShrink: 0,
+              background: isPrivate ? '#4F6EF7' : (mode === 'dark' ? '#1C2236' : '#D1CBF0'),
+              position: 'relative', transition: 'background 0.2s',
+              cursor: isOwner ? 'pointer' : 'not-allowed', opacity: isOwner ? 1 : 0.5,
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 3, left: isPrivate ? 21 : 3,
+              width: 16, height: 16, borderRadius: '50%', background: '#fff',
+              transition: 'left 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: c.text }}>
+              {isPrivate ? 'Приватное' : 'Публичное'}
+            </div>
+            <div style={{ fontSize: 11, color: c.muted, marginTop: 2 }}>
+              {isPrivate ? 'Видно только участникам' : 'Видно всем авторизованным пользователям'}
+            </div>
+          </div>
+        </label>
       </div>
 
       {isOwner && (

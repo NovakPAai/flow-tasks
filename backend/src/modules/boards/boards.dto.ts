@@ -17,6 +17,7 @@ export const updateBoardDto = z.object({
   name: stripHtml(z.string().min(1, 'Название доски обязательно').max(100, 'Название не должно превышать 100 символов')).optional(),
   description: stripHtml(z.string().max(500, 'Описание не должно превышать 500 символов')).optional(),
   workflowId: z.string().uuid('Некорректный ID workflow').optional(),
+  isPrivate: z.boolean().optional(),
 });
 
 export type CreateBoardDto = z.infer<typeof createBoardDto>;
