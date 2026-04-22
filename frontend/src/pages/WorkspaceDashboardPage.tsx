@@ -228,13 +228,14 @@ export default function WorkspaceDashboardPage() {
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
 
+  // Derive the workspace ID outside the effect to avoid stale closure.
+  // Always refresh current on mount/slug change so memberCount, boardCount
+  // are never stale after settings mutations.
+  const foundId = workspaces.find(w => w.slug === slug)?.id;
   useEffect(() => {
-    if (!slug) return;
-    const found = workspaces.find(w => w.slug === slug);
-    if (found && found.id !== current?.id) {
-      workspacesApi.getWorkspace(found.id).then(setCurrent).catch(() => null);
-    }
-  }, [slug, workspaces, current?.id, setCurrent]);
+    if (!foundId) return;
+    workspacesApi.getWorkspace(foundId).then(setCurrent).catch(() => null);
+  }, [foundId, setCurrent]);
 
   useEffect(() => {
     if (!current) return;
