@@ -61,12 +61,7 @@ export async function createBoard(workspaceId: string, userId: string, dto: Crea
 }
 
 export async function getBoard(boardId: string, userId: string) {
-  const board = await prisma.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new AppError(404, 'Board not found');
-  const member = await assertMember(board.workspaceId, userId);
-  if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
-
-  return prisma.board.findUniqueOrThrow({
+  const board = await prisma.board.findUnique({
     where: { id: boardId },
     include: {
       workflow: {
@@ -76,7 +71,7 @@ export async function getBoard(boardId: string, userId: string) {
         },
       },
       tasks: {
-        where: { parentId: null }, // root tasks only
+        where: { parentId: null },
         orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
         take: 100,
         include: {
@@ -86,6 +81,10 @@ export async function getBoard(boardId: string, userId: string) {
       },
     },
   });
+  if (!board) throw new AppError(404, 'Board not found');
+  const member = await assertMember(board.workspaceId, userId);
+  if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
+  return board;
 }
 
 export async function updateBoard(boardId: string, userId: string, dto: UpdateBoardDto) {

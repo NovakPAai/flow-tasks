@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { message } from 'antd';
+import { message, Spin } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import * as boardsApi from '../api/boards';
@@ -13,14 +13,12 @@ const DARK: C = {
   border: '#1C2236', cardBg: '#0F1320',
   text: '#E2E8F8', muted: '#8B949E', label: '#484F58',
   inputBg: '#0F1320', inputBorder: '#1C2236',
-  dangerBg: '#0F1320', dangerBorder: '#EF444440',
 };
 const LIGHT: C = {
   bg: '#F5F3FF', sidebar: '#FDFCFF', sidebarBorder: '#E8E5F0',
   border: '#E8E5F0', cardBg: '#FDFCFF',
   text: '#1A1A2E', muted: '#9B96B8', label: '#B8B3D0',
   inputBg: '#F5F3FF', inputBorder: '#E8E5F0',
-  dangerBg: '#FDFCFF', dangerBorder: '#EF444440',
 };
 
 const INTER = '"Inter",system-ui,sans-serif';
@@ -35,6 +33,7 @@ export default function BoardSettingsPage() {
   const { workspaces } = useWorkspaceStore();
 
   const [board, setBoard] = useState<Board | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -54,7 +53,7 @@ export default function BoardSettingsPage() {
       setDescription(b.description ?? '');
       setWorkflowId(b.workflowId);
       setIsPrivate(b.isPrivate ?? false);
-    }).catch(() => message.error('Не удалось загрузить доску'));
+    }).catch(() => { message.error('Не удалось загрузить доску'); setLoadError(true); });
   }, [boardId]);
 
   useEffect(() => {
@@ -81,14 +80,41 @@ export default function BoardSettingsPage() {
     } catch { message.error('Не удалось удалить доску'); setDeleting(false); }
   };
 
-  if (!board) return null;
-
   const inp: React.CSSProperties = {
     fontFamily: INTER, fontSize: 13, color: c.text,
     background: c.inputBg, border: `1px solid ${c.inputBorder}`,
     borderRadius: 8, padding: '8px 12px', outline: 'none', width: '100%',
     boxSizing: 'border-box',
   };
+
+  const SaveBtn = ({ style }: { style?: React.CSSProperties }) => (
+    <button
+      onClick={save}
+      disabled={saving}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        fontFamily: INTER, fontSize: 13, fontWeight: 500,
+        background: saving ? '#4F6EF788' : '#4F6EF7',
+        color: '#fff', border: 'none', borderRadius: 8,
+        padding: '8px 16px', cursor: saving ? 'not-allowed' : 'pointer',
+        ...style,
+      }}
+    >
+      {saving ? 'Сохранение...' : 'Сохранить изменения'}
+    </button>
+  );
+
+  // Loading / error state
+  if (!board) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100%', background: c.bg }}>
+        {loadError
+          ? <span style={{ fontFamily: INTER, fontSize: 14, color: c.muted }}>Не удалось загрузить настройки доски</span>
+          : <Spin size="large" />
+        }
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100%', fontFamily: INTER, background: c.bg }}>
@@ -135,32 +161,23 @@ export default function BoardSettingsPage() {
           {workflows.length > 0 && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, color: c.label, letterSpacing: '0.06em', marginBottom: 6 }}>WORKFLOW</div>
-              <select
-                value={workflowId}
-                onChange={(e) => setWorkflowId(e.target.value)}
-                disabled={!isOwner}
-                style={{ ...inp, appearance: 'none' }}
-              >
-                {workflows.map((wf) => (
-                  <option key={wf.id} value={wf.id}>{wf.name}{wf.isDefault ? ' (по умолчанию)' : ''}</option>
-                ))}
-              </select>
+              {/* wrapper for custom dropdown arrow */}
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={workflowId}
+                  onChange={(e) => setWorkflowId(e.target.value)}
+                  disabled={!isOwner}
+                  style={{ ...inp, paddingRight: 32, appearance: 'none' }}
+                >
+                  {workflows.map((wf) => (
+                    <option key={wf.id} value={wf.id}>{wf.name}{wf.isDefault ? ' (по умолчанию)' : ''}</option>
+                  ))}
+                </select>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.5 }}>
+                  <path d="M2 4l4 4 4-4" stroke={c.text} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
-          )}
-          {isOwner && (
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 6,
-                fontFamily: INTER, fontSize: 13, fontWeight: 500,
-                background: saving ? '#4F6EF788' : '#4F6EF7',
-                color: '#fff', border: 'none', borderRadius: 8,
-                padding: '8px 16px', cursor: saving ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {saving ? 'Сохранение...' : 'Сохранить'}
-            </button>
           )}
         </div>
 
@@ -195,22 +212,10 @@ export default function BoardSettingsPage() {
               </div>
             </div>
           </label>
-          {isOwner && (
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                marginTop: 16, display: 'flex', alignItems: 'center', gap: 6,
-                fontFamily: INTER, fontSize: 13, fontWeight: 500,
-                background: saving ? '#4F6EF788' : '#4F6EF7',
-                color: '#fff', border: 'none', borderRadius: 8,
-                padding: '8px 16px', cursor: saving ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {saving ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          )}
         </div>
+
+        {/* Single save button covering all sections */}
+        {isOwner && <SaveBtn style={{ marginTop: 24 }} />}
 
         {/* Danger zone */}
         {isOwner && (

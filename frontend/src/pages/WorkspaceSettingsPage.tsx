@@ -573,11 +573,6 @@ export default function WorkspaceSettingsPage() {
             </div>
           </div>
         </label>
-        {isOwner && (
-          <PrimaryBtn onClick={saveSettings} loading={saving} style={{ marginTop: 16, alignSelf: 'flex-start' }}>
-            Сохранить
-          </PrimaryBtn>
-        )}
       </div>
 
       {isOwner && (

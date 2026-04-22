@@ -67,13 +67,16 @@ export async function listMyWorkspaces(userId: string) {
     taskCountMap = new Map(rows.map((r) => [r.workspaceId, Number(r.task_count)]));
   }
 
-  return memberships.map((m) => ({
-    ...m.workspace,
-    role: m.role,
-    memberCount: m.workspace._count.members,
-    boardCount: m.workspace._count.boards,
-    taskCount: taskCountMap.get(m.workspaceId) ?? 0,
-  }));
+  return memberships
+    // VIEWERs cannot see private workspaces
+    .filter((m) => !(m.workspace.isPrivate && m.role === 'VIEWER'))
+    .map((m) => ({
+      ...m.workspace,
+      role: m.role,
+      memberCount: m.workspace._count.members,
+      boardCount: m.workspace._count.boards,
+      taskCount: taskCountMap.get(m.workspaceId) ?? 0,
+    }));
 }
 
 export async function createWorkspace(userId: string, dto: CreateWorkspaceDto) {
@@ -104,7 +107,10 @@ export async function createWorkspace(userId: string, dto: CreateWorkspaceDto) {
 }
 
 export async function getWorkspace(workspaceId: string, userId: string) {
-  await assertMember(workspaceId, userId);
+  const member = await assertMember(workspaceId, userId);
+  // Private workspaces are not accessible to VIEWERs
+  const ws = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { isPrivate: true } });
+  if (ws?.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This workspace is private');
 
   return prisma.workspace.findUniqueOrThrow({
     where: { id: workspaceId },

@@ -144,7 +144,8 @@ function BoardCard({ board, onClick, c, isDark }: {
               {board.name}
             </span>
             {board.isPrivate && (
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, opacity: 0.6 }}>
+              <svg width="13" height="13" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
+                <title>Приватная доска</title>
                 <path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke={c.cardSub} strokeWidth="1.2"/>
                 <path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke={c.cardSub} strokeWidth="1.2" strokeLinecap="round"/>
               </svg>
@@ -375,8 +376,8 @@ export default function WorkspaceDashboardPage() {
             <SettingsBtn onClick={() => navigate(`/w/${slug}/settings`)} label={bp !== 'mobile' ? 'Настройки' : undefined} borderColor={c.hdrBorder} iconColor={c.sub} />
             {/* Private badge */}
             {current.isPrivate && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: isDark ? 'rgba(79,110,247,0.12)' : 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.25)', borderRadius: 6, padding: '3px 8px', flexShrink: 0 }}>
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke="#4F6EF7" strokeWidth="1.2"/><path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke="#4F6EF7" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              <div title="Приватное пространство" style={{ display: 'flex', alignItems: 'center', gap: 4, background: isDark ? 'rgba(79,110,247,0.12)' : 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.25)', borderRadius: 6, padding: '3px 8px', flexShrink: 0 }}>
+                <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke="#4F6EF7" strokeWidth="1.2"/><path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke="#4F6EF7" strokeWidth="1.2" strokeLinecap="round"/></svg>
                 <span style={{ fontSize: 11, fontWeight: 500, color: '#4F6EF7', fontFamily: '"Inter",system-ui,sans-serif' }}>Приватное</span>
               </div>
             )}
