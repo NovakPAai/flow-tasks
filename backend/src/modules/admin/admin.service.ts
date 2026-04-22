@@ -74,6 +74,15 @@ export async function createUser(dto: CreateUserDto) {
 
 export async function listRegistrationRequests() {
   return prisma.registrationRequest.findMany({
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      status: true,
+      reviewedBy: true,
+      reviewedAt: true,
+      createdAt: true,
+    },
     orderBy: { createdAt: 'desc' },
   });
 }
