@@ -6,7 +6,7 @@ import { config } from '../../config.js';
 import type { CreateUserDto, ReviewRequestDto } from './admin.dto.js';
 
 export async function listUsers() {
-  return prisma.user.findMany({
+  const users = await prisma.user.findMany({
     select: {
       id: true,
       email: true,
@@ -16,9 +16,30 @@ export async function listUsers() {
       lastLoginAt: true,
       createdAt: true,
       isSuperadmin: true,
+      _count: {
+        select: {
+          createdWorkspaces: true,
+          createdTasks: true,
+        },
+      },
+      createdWorkspaces: {
+        select: {
+          _count: { select: { boards: true, members: true } },
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   });
+
+  return users.map(({ createdWorkspaces, _count, ...u }) => ({
+    ...u,
+    stats: {
+      workspaces: _count.createdWorkspaces,
+      boards: createdWorkspaces.reduce((s, ws) => s + ws._count.boards, 0),
+      tasks: _count.createdTasks,
+      members: createdWorkspaces.reduce((s, ws) => s + ws._count.members, 0),
+    },
+  }));
 }
 
 export async function setUserSuperadmin(userId: string, isSuperadmin: boolean) {
@@ -53,6 +74,15 @@ export async function createUser(dto: CreateUserDto) {
 
 export async function listRegistrationRequests() {
   return prisma.registrationRequest.findMany({
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      status: true,
+      reviewedBy: true,
+      reviewedAt: true,
+      createdAt: true,
+    },
     orderBy: { createdAt: 'desc' },
   });
 }

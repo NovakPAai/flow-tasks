@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { message, Modal, Form, Input, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
@@ -6,6 +6,22 @@ import { useThemeStore } from '../store/theme.store';
 import { useBreakpoint, useResponsiveValue } from '../utils/useBreakpoint';
 import * as authApi from '../api/auth';
 import api from '../api/client';
+
+// ─── Transliteration: Cyrillic → Latin for email auto-fill ───────────────────
+const CYR_MAP: Record<string, string> = {
+  а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',
+  к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',
+  х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya',
+};
+function transliterate(s: string): string {
+  return s.toLowerCase().split('').map(c => CYR_MAP[c] ?? (/[a-z0-9]/.test(c) ? c : '')).join('');
+}
+function buildEmailPrefix(first: string, last: string): string {
+  const f = transliterate(first.trim());
+  const l = transliterate(last.trim());
+  if (f && l) return `${f}.${l}`;
+  return f || l;
+}
 
 // ─── Design tokens (from Paper: artboards 2-0 dark, 3-0 light) ───────────────
 type LoginTheme = Record<string, string>;
@@ -247,7 +263,7 @@ function InputField({
 }: {
   type: string; value: string; onChange: (v: string) => void;
   placeholder: string; autoComplete?: string;
-  icon: 'email' | 'lock'; C: LoginTheme; showPasswordToggle?: boolean;
+  icon: 'email' | 'lock' | 'person'; C: LoginTheme; showPasswordToggle?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
@@ -265,6 +281,10 @@ function InputField({
       {icon === 'email' ? (
         <svg width="14" height="14" fill="none" stroke={C.inputIcon} strokeWidth="1.5" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
           <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
+        </svg>
+      ) : icon === 'person' ? (
+        <svg width="14" height="14" fill="none" stroke={C.inputIcon} strokeWidth="1.5" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>
         </svg>
       ) : (
         <svg width="14" height="14" fill="none" stroke={C.inputIcon} strokeWidth="1.5" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
@@ -304,16 +324,17 @@ export default function LoginPage() {
   // Existing logic — preserved as-is
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
-  const [emailPrefix, setEmailPrefix] = useState('');
-  const [registrationDomain, setRegistrationDomain] = useState('');
+  const [registrationDomain, setRegistrationDomain] = useState('flowtask.dev');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotDone, setForgotDone] = useState(false);
   const { login, register } = useAuthStore();
+  const emailPrefix = useMemo(() => buildEmailPrefix(firstName, lastName), [firstName, lastName]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -325,14 +346,20 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (showRegister) {
+        if (registrationDomain && !emailPrefix) {
+          message.error('Не удалось сформировать email из указанного имени');
+          setLoading(false);
+          return;
+        }
         const registerEmail = registrationDomain ? `${emailPrefix}@${registrationDomain}` : email;
-        const msg = await register(registerEmail, password, name);
+        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+        const msg = await register(registerEmail, password, fullName);
         message.success(msg);
         setShowRegister(false);
         setEmail('');
-        setEmailPrefix('');
+        setFirstName('');
+        setLastName('');
         setPassword('');
-        setName('');
       } else {
         await login(email, password);
         navigate('/');
@@ -395,49 +422,67 @@ export default function LoginPage() {
             {showRegister ? 'Создайте аккаунт FlowTask' : 'Войдите в свой аккаунт FlowTask'}
           </div>
 
-          {/* Name field (register only) */}
+          {/* First + Last name (register only) */}
           {showRegister && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 6 }}>
-                Имя
+            <>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 6 }}>
+                    Имя
+                  </div>
+                  <InputField type="text" value={firstName} onChange={setFirstName} placeholder="Иван" autoComplete="given-name" icon="person" C={C}/>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 6 }}>
+                    Фамилия
+                  </div>
+                  <InputField type="text" value={lastName} onChange={setLastName} placeholder="Петров" autoComplete="family-name" icon="person" C={C}/>
+                </div>
               </div>
-              <InputField type="text" value={name} onChange={setName} placeholder="Иван Петров" autoComplete="name" icon="email" C={C}/>
-            </div>
+
+              {/* Auto-filled email preview */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 4 }}>
+                  Email
+                </div>
+                <div style={{ fontSize: 11, color: C.muted, fontFamily: '"Inter", system-ui, sans-serif', marginBottom: 6 }}>
+                  Генерируется из имени и фамилии
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  backgroundColor: C.inputBg, border: `1px solid ${C.inputBorder}`,
+                  borderRadius: 8, paddingBlock: '11px', paddingInline: '14px',
+                  opacity: emailPrefix ? 1 : 0.5,
+                }}>
+                  <svg width="14" height="14" fill="none" stroke={C.inputIcon} strokeWidth="1.5" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
+                  </svg>
+                  <input
+                    type="email"
+                    readOnly
+                    aria-label="Email (заполняется автоматически)"
+                    value={emailPrefix ? `${emailPrefix}@${registrationDomain}` : ''}
+                    placeholder={`имя.фамилия@${registrationDomain}`}
+                    style={{
+                      flex: 1, background: 'none', border: 'none', outline: 'none', cursor: 'default',
+                      color: emailPrefix ? C.inputText : C.inputPh,
+                      fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px',
+                    }}
+                  />
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Email */}
+          {/* Email — shown for login OR registration without domain */}
+          {(!showRegister || !registrationDomain) && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ color: C.label, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 6 }}>
               Email
             </div>
-            {showRegister && registrationDomain ? (
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                backgroundColor: C.inputBg, border: `1px solid ${C.inputBorder}`,
-                borderRadius: 8, overflow: 'hidden',
-              }}>
-                <input
-                  value={emailPrefix}
-                  onChange={e => setEmailPrefix(e.target.value)}
-                  placeholder="ivan.petrov"
-                  autoComplete="email"
-                  style={{
-                    flex: 1, background: 'transparent', border: 'none', outline: 'none',
-                    padding: '11px 14px', fontFamily: '"Inter", system-ui, sans-serif',
-                    fontSize: 14, color: C.inputText,
-                  }}
-                />
-                <span style={{
-                  padding: '11px 14px 11px 0', fontFamily: '"Inter", system-ui, sans-serif',
-                  fontSize: 14, color: C.inputIcon, whiteSpace: 'nowrap', userSelect: 'none',
-                }}>
-                  @{registrationDomain}
-                </span>
-              </div>
-            ) : (
-              <InputField type="email" value={email} onChange={setEmail} placeholder="ivan@company.ru" autoComplete="email" icon="email" C={C}/>
-            )}
+            <InputField type="email" value={email} onChange={setEmail} placeholder="ivan@company.ru" autoComplete="email" icon="email" C={C}/>
           </div>
+          )}
 
           {/* Password */}
           <div style={{ marginBottom: 24 }}>
@@ -459,7 +504,7 @@ export default function LoginPage() {
           </div>
 
           {/* Submit button */}
-          <button type="submit" disabled={loading} style={{
+          <button type="submit" disabled={loading || (showRegister && (!firstName.trim() || !lastName.trim() || !emailPrefix || (!registrationDomain && !email.trim())))} style={{
             backgroundImage: LOGO_GRAD, borderRadius: 8, border: 'none',
             boxSizing: 'border-box', cursor: loading ? 'not-allowed' : 'pointer',
             opacity: loading ? 0.7 : 1, paddingBlock: '13px', paddingInline: '13px',
@@ -469,7 +514,7 @@ export default function LoginPage() {
               color: '#FFFFFF', fontFamily: '"Space Grotesk", system-ui, sans-serif',
               fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: '18px', textAlign: 'center',
             }}>
-              {loading ? '...' : showRegister ? 'Зарегистрироваться' : 'Войти'}
+              {loading ? '...' : showRegister ? 'Отправить заявку' : 'Войти'}
             </div>
           </button>
 
@@ -478,7 +523,7 @@ export default function LoginPage() {
             <span style={{ color: C.subtitle, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13 }}>
               {showRegister ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
             </span>
-            <span onClick={() => setShowRegister(v => !v)} style={{
+            <span onClick={() => { setShowRegister(v => !v); setFirstName(''); setLastName(''); setEmail(''); setPassword(''); }} style={{
               color: C.accent, fontFamily: '"Inter", system-ui, sans-serif',
               fontSize: 13, fontWeight: 500, cursor: 'pointer',
             }}>
