@@ -50,7 +50,15 @@ function formatMessage(event: WorkspaceEvent): string {
     case 'workflow_created':     return `${event.user.name} создал workflow «${meta?.name ?? ''}»`;
     case 'workflow_deleted':     return `${event.user.name} удалил workflow «${meta?.name ?? ''}»`;
     case 'workspace_created':    return `${event.user.name} создал рабочее пространство «${meta?.name ?? ''}»`;
-    case 'workspace_updated':    return `${event.user.name} обновил настройки workspace`;
+    case 'workspace_updated': {
+      const changes: string[] = [];
+      if (meta?.name)        changes.push(`название → «${meta.name}»`);
+      if (meta?.description !== undefined) changes.push(`описание обновлено`);
+      if (meta?.isPrivate !== undefined)   changes.push(meta.isPrivate === 'true' ? 'сделал приватным' : 'сделал публичным');
+      return changes.length > 0
+        ? `${event.user.name} изменил настройки: ${changes.join(', ')}`
+        : `${event.user.name} обновил настройки пространства`;
+    }
     case 'board_created':        return `${event.user.name} создал доску «${meta?.name ?? ''}»`;
     case 'board_deleted':        return `${event.user.name} удалил доску «${meta?.name ?? ''}»`;
     default: return `${event.user.name}: ${event.action}`;

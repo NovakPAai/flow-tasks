@@ -463,11 +463,17 @@ export default function WorkspacesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {recentEvents.map(ev => {
+              const name = ev.user?.name ?? 'Кто-то';
+              const nameParts = name.trim().split(/\s+/);
+              const isFem = /[аяАЯ]$/u.test(nameParts[nameParts.length - 1] ?? name);
               const ACTION_LABELS: Record<string, string> = {
-                workspace_created: 'создал(а) пространство',
-                workspace_updated: 'обновил(а) пространство',
-                member_added: 'добавил(а) участника',
-                member_removed: 'удалил(а) участника',
+                workspace_created: isFem ? 'создала пространство' : 'создал пространство',
+                workspace_updated: isFem ? 'обновила настройки' : 'обновил настройки',
+                member_added:      isFem ? 'добавила участника' : 'добавил участника',
+                member_removed:    isFem ? 'удалила участника' : 'удалил участника',
+                board_created:     isFem ? 'создала доску' : 'создал доску',
+                board_deleted:     isFem ? 'удалила доску' : 'удалил доску',
+                member_role_changed: isFem ? 'изменила роль участника' : 'изменил роль участника',
               };
               const label = ACTION_LABELS[ev.action] ?? ev.action;
               const ws = workspaces.find(w => w.id === ev.workspaceId);
@@ -476,7 +482,7 @@ export default function WorkspacesPage() {
                 <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0 }} />
                   <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, color: C.actText }}>
-                    <span style={{ fontWeight: 600 }}>{ev.user?.name ?? 'Кто-то'}</span>
+                    <span style={{ fontWeight: 600 }}>{name}</span>
                     {' '}{label}{ws ? ` «${ws.name}»` : ''}
                   </span>
                   <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, color: C.actTime, marginLeft: 'auto', flexShrink: 0 }}>{time}</span>
