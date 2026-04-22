@@ -200,12 +200,17 @@ export default function WorkspaceSettingsPage() {
     try {
       await workspacesApi.updateMemberRole(workspace.id, userId, role);
       setMembers((prev) => prev.map((m) => m.userId === userId ? { ...m, role } : m));
+      load(); // refresh memberCount in workspace store
     } catch { message.error('Не удалось изменить роль'); }
   };
 
   const handleRemoveMember = async (userId: string) => {
     if (!confirm('Удалить участника?')) return;
-    try { await workspacesApi.removeMember(workspace.id, userId); setMembers((prev) => prev.filter((m) => m.userId !== userId)); }
+    try {
+      await workspacesApi.removeMember(workspace.id, userId);
+      setMembers((prev) => prev.filter((m) => m.userId !== userId));
+      load(); // refresh memberCount in workspace store
+    }
     catch { message.error('Не удалось удалить'); }
   };
 
@@ -217,6 +222,7 @@ export default function WorkspaceSettingsPage() {
       const updated = await workspacesApi.listMembers(workspace.id);
       setMembers(updated); setInviteEmail(''); setShowInviteForm(false);
       message.success('Участник добавлен');
+      load(); // refresh memberCount in workspace store
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
       message.error(msg ?? 'Не удалось пригласить');
