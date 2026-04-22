@@ -111,6 +111,7 @@ model Workspace {
   name        String
   slug        String   @unique
   description String?
+  isPrivate   Boolean  @default(false)
   creatorId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -219,6 +220,7 @@ model Board {
   name        String
   prefix      String   // "DEV", "OPS" — для issueKey
   description String?
+  isPrivate   Boolean  @default(false)
   nextNumber  Int      @default(1)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

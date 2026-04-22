@@ -22,7 +22,7 @@ export async function getWorkspace(id: string): Promise<Workspace> {
 
 export async function updateWorkspace(
   id: string,
-  payload: { name?: string; description?: string },
+  payload: { name?: string; description?: string; isPrivate?: boolean },
 ): Promise<Workspace> {
   const { data } = await api.patch<Workspace>(`/workspaces/${id}`, payload);
   return data;

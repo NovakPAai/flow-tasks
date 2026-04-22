@@ -70,6 +70,7 @@ export interface Workspace {
   name: string;
   slug: string;
   description?: string;
+  isPrivate: boolean;
   creatorId: string;
   createdAt: string;
   updatedAt: string;
@@ -125,6 +126,7 @@ export interface Board {
   name: string;
   prefix: string;
   description?: string;
+  isPrivate: boolean;
   createdAt: string;
   workflow: Workflow;
   tasks?: Task[];

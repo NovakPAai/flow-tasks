@@ -86,6 +86,41 @@ function CalIcon() {
   );
 }
 
+// ── BoardSettingsBtn ───────────────────────────────────────────────────────────
+function BoardSettingsBtn({ onClick, border, addText, isPrivate }: {
+  onClick: () => void; border: string; addText: string; isPrivate: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title="Настройки доски"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, height: 34,
+        padding: '0 12px',
+        background: hovered ? 'rgba(79,110,247,0.08)' : 'transparent',
+        border: `1px solid ${hovered ? 'rgba(79,110,247,0.4)' : border}`,
+        borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: hovered ? '#4F6EF7' : addText, transition: 'color 0.15s' }}>Настройки</span>
+      {isPrivate && (
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.7 }}>
+          <path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2"/>
+          <path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2" strokeLinecap="round"/>
+        </svg>
+      )}
+    </button>
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -359,6 +394,14 @@ export default function BoardPage() {
             </button>
           ))}
         </div>
+
+        {/* Board settings button */}
+        <BoardSettingsBtn
+          onClick={() => navigate(`settings`)}
+          border={border}
+          addText={addText}
+          isPrivate={board.isPrivate}
+        />
 
         {/* Создать task button */}
         <button

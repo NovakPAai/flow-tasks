@@ -17,9 +17,13 @@ async function assertOwner(workspaceId: string, userId: string) {
 }
 
 export async function listBoards(workspaceId: string, userId: string) {
-  await assertMember(workspaceId, userId);
+  const member = await assertMember(workspaceId, userId);
+  // VIEWERs cannot see private boards
+  const where = member.role === 'VIEWER'
+    ? { workspaceId, isPrivate: false }
+    : { workspaceId };
   return prisma.board.findMany({
-    where: { workspaceId },
+    where,
     include: {
       workflow: { include: { statuses: { orderBy: { position: 'asc' } } } },
       _count: { select: { tasks: true } },
@@ -59,7 +63,8 @@ export async function createBoard(workspaceId: string, userId: string, dto: Crea
 export async function getBoard(boardId: string, userId: string) {
   const board = await prisma.board.findUnique({ where: { id: boardId } });
   if (!board) throw new AppError(404, 'Board not found');
-  await assertMember(board.workspaceId, userId);
+  const member = await assertMember(board.workspaceId, userId);
+  if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
 
   return prisma.board.findUniqueOrThrow({
     where: { id: boardId },

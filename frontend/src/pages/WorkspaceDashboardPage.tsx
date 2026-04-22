@@ -81,6 +81,35 @@ function pluralTasks(n: number): string {
   return `${n} задач`;
 }
 
+// ── SettingsBtn ───────────────────────────────────────────────────────────────
+function SettingsBtn({ onClick, label, borderColor, iconColor }: {
+  onClick: () => void; label?: string; borderColor: string; iconColor: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title="Настройки"
+      style={{
+        display: 'flex', alignItems: 'center', gap: label ? 6 : 0,
+        justifyContent: 'center', height: 36, padding: label ? '0 12px' : '0 10px',
+        background: hovered ? 'rgba(79,110,247,0.08)' : 'transparent',
+        border: `1px solid ${hovered ? 'rgba(79,110,247,0.4)' : borderColor}`,
+        borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={hovered ? '#4F6EF7' : iconColor} strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={hovered ? '#4F6EF7' : iconColor} strokeWidth="1.4" strokeLinecap="round"/>
+      </svg>
+      {label && <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 500, color: hovered ? '#4F6EF7' : iconColor, transition: 'color 0.15s' }}>{label}</span>}
+    </button>
+  );
+}
+
 // ── BoardCard ──────────────────────────────────────────────────────────────────
 function BoardCard({ board, onClick, c, isDark }: {
   board: Board; onClick: () => void; c: C; isDark: boolean;
@@ -110,9 +139,17 @@ function BoardCard({ board, onClick, c, isDark }: {
           </span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-          <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: c.cardTitle, letterSpacing: '-0.2px' }}>
-            {board.name}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 15, fontWeight: 600, color: c.cardTitle, letterSpacing: '-0.2px' }}>
+              {board.name}
+            </span>
+            {board.isPrivate && (
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, opacity: 0.6 }}>
+                <path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke={c.cardSub} strokeWidth="1.2"/>
+                <path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke={c.cardSub} strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            )}
+          </div>
           <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.cardSub }}>
             {board.prefix}{board.description ? ` · ${board.description}` : ''}
           </span>
@@ -335,16 +372,14 @@ export default function WorkspaceDashboardPage() {
             </div>
 
             {/* Settings button */}
-            <button
-              onClick={() => navigate(`/w/${slug}/settings`)}
-              title="Настройки пространства"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, background: 'transparent', border: `1px solid ${c.hdrBorder}`, borderRadius: 8, cursor: 'pointer', flexShrink: 0, marginRight: 8 }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
-                <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={c.sub} strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-            </button>
+            <SettingsBtn onClick={() => navigate(`/w/${slug}/settings`)} label={bp !== 'mobile' ? 'Настройки' : undefined} borderColor={c.hdrBorder} iconColor={c.sub} />
+            {/* Private badge */}
+            {current.isPrivate && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: isDark ? 'rgba(79,110,247,0.12)' : 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.25)', borderRadius: 6, padding: '3px 8px', flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke="#4F6EF7" strokeWidth="1.2"/><path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke="#4F6EF7" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#4F6EF7', fontFamily: '"Inter",system-ui,sans-serif' }}>Приватное</span>
+              </div>
+            )}
 
             {/* Create board button */}
             <button
