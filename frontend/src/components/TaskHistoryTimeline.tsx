@@ -4,7 +4,6 @@ import { useThemeStore } from '../store/theme.store';
 import type { TaskHistory, WorkflowStatus } from '../types';
 import * as tasksApi from '../api/tasks';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
   text: '#E2E8F8', muted: '#8B95B0', dim: '#4A5578',
@@ -15,36 +14,54 @@ const LIGHT: C = {
   line: '#E8E5F0', removed: '#EF4444', added: '#10B981',
 };
 
-// ── Avatar helpers ─────────────────────────────────────────────────────────────
 const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 
-// ── Field / value labels ───────────────────────────────────────────────────────
 const FIELD_LABELS: Record<string, string> = {
-  title: 'заголовок', description: 'описание', priority: 'приоритет',
-  statusId: 'статус', assigneeId: 'исполнитель', dueDate: 'срок', startDate: 'дата начала',
+  title:       'заголовок',
+  description: 'описание',
+  priority:    'приоритет',
+  statusId:    'статус',
+  assigneeId:  'исполнитель',
+  dueDate:     'срок',
+  startDate:   'дата начала',
 };
-const PRIORITY_LABELS: Record<string, string> = { HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий' };
+
+const PRIORITY_LABELS: Record<string, string> = {
+  HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий',
+};
+
+// Russian verb form heuristic: names ending in а/я are typically feminine.
+// Checks the last word (usually given name in "Фамилия Имя" format).
+function verbForm(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  const firstName = parts[parts.length - 1] ?? name;
+  return /[аяАЯ]$/u.test(firstName) ? 'изменила' : 'изменил';
+}
 
 function formatValue(field: string, value: string | null, statuses: WorkflowStatus[]): string {
-  if (value === null) return '—';
+  if (value === null || value === '') return '—';
   if (field === 'statusId') return statuses.find(s => s.id === value)?.name ?? value;
   if (field === 'priority') return PRIORITY_LABELS[value] ?? value;
   if (field === 'dueDate' || field === 'startDate') {
-    try { return new Date(value).toLocaleDateString('ru-RU'); } catch { return value; }
+    try {
+      return new Date(value).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch { return value; }
   }
-  if (value.length > 60) return value.slice(0, 60) + '…';
-  return value;
+  return value.length > 80 ? value.slice(0, 80) + '…' : value;
 }
 
-// ── Props ──────────────────────────────────────────────────────────────────────
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString('ru-RU', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  });
+}
+
 interface Props { taskId: string; statuses: WorkflowStatus[]; }
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function TaskHistoryTimeline({ taskId, statuses }: Props) {
   const mode = useThemeStore(s => s.mode);
-  const isDark = mode === 'dark';
-  const c = isDark ? DARK : LIGHT;
+  const c = mode === 'dark' ? DARK : LIGHT;
 
   const [history, setHistory] = useState<TaskHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,80 +76,64 @@ export default function TaskHistoryTimeline({ taskId, statuses }: Props) {
     return () => controller.abort();
   }, [taskId]);
 
-  if (loading) {
-    return (
-      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.dim }}>
-        Загрузка...
-      </span>
-    );
-  }
-  if (history.length === 0) {
-    return (
-      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.dim }}>
-        История изменений пуста
-      </span>
-    );
-  }
+  if (loading) return <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.dim }}>Загрузка…</span>;
+  if (history.length === 0) return <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.dim }}>История изменений пуста</span>;
 
   return (
-    <div style={{ marginTop: 8, paddingLeft: 0 }}>
+    <div style={{ marginTop: 8 }}>
       {history.map((entry, i) => {
         const dotColor = avatarColor(entry.user.name);
         const isLast = i === history.length - 1;
+        const fieldLabel = FIELD_LABELS[entry.field] ?? entry.field;
+        const verb = verbForm(entry.user.name);
+
         return (
           <div key={entry.id} style={{ display: 'flex', gap: 12, position: 'relative', paddingBottom: isLast ? 0 : 16 }}>
-            {/* Vertical line */}
             {!isLast && (
-              <div style={{
-                position: 'absolute', left: 9, top: 20, bottom: 0, width: 1,
-                background: c.line,
-              }} />
+              <div style={{ position: 'absolute', left: 9, top: 20, bottom: 0, width: 1, background: c.line }} />
             )}
             {/* Avatar dot */}
             <div style={{
               width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-              background: dotColor,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginTop: 1,
+              background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
             }}>
               <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: '#fff' }}>
                 {entry.user.name?.[0]?.toUpperCase() ?? '?'}
               </span>
             </div>
             {/* Content */}
-            <div style={{ flex: 1, paddingBottom: 4 }}>
+            <div style={{ flex: 1, paddingBottom: 2 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{
-                  fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 600, color: c.muted,
-                }}>
+                <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 600, color: c.muted }}>
                   {entry.user.name}
                 </span>
-                <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.dim }}>
-                  изменил(-а) {FIELD_LABELS[entry.field] ?? entry.field}
+                <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.dim }}>
+                  {verb} {fieldLabel}
                 </span>
-                <span style={{
-                  fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, color: c.dim, marginLeft: 'auto',
-                }}>
-                  {new Date(entry.createdAt).toLocaleString('ru-RU', {
-                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                  })}
+                <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, color: c.dim, marginLeft: 'auto' }}>
+                  {formatDate(entry.createdAt)}
                 </span>
               </div>
-              <div style={{ fontSize: 12, marginTop: 2, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {entry.oldValue !== null && (
-                  <span style={{
-                    fontFamily: '"Inter",system-ui,sans-serif',
-                    color: c.removed, textDecoration: 'line-through',
-                  }}>
-                    {formatValue(entry.field, entry.oldValue, statuses)}
-                  </span>
-                )}
-                {entry.newValue !== null && (
-                  <span style={{ fontFamily: '"Inter",system-ui,sans-serif', color: c.added }}>
-                    {formatValue(entry.field, entry.newValue, statuses)}
-                  </span>
-                )}
-              </div>
+              {/* Old → New values */}
+              {(entry.oldValue !== null || entry.newValue !== null) && (
+                <div style={{ fontSize: 12, marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {entry.oldValue !== null && (
+                    <span style={{ fontFamily: '"Inter",system-ui,sans-serif', color: c.removed, textDecoration: 'line-through' }}>
+                      {formatValue(entry.field, entry.oldValue, statuses)}
+                    </span>
+                  )}
+                  {entry.oldValue !== null && entry.newValue !== null && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M1 5h8M6 2l3 3-3 3" stroke={c.dim} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  {entry.newValue !== null && (
+                    <span style={{ fontFamily: '"Inter",system-ui,sans-serif', color: c.added }}>
+                      {formatValue(entry.field, entry.newValue, statuses)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         );

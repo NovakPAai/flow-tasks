@@ -364,11 +364,34 @@ export async function moveTask(taskId: string, userId: string, toStatusId: strin
 export async function getTaskHistory(taskId: string, userId: string) {
   await getTaskWithAccess(taskId, userId);
 
-  return prisma.taskHistory.findMany({
+  const entries = await prisma.taskHistory.findMany({
     where: { taskId },
     orderBy: { createdAt: 'asc' },
     include: { user: { select: { id: true, name: true, avatar: true } } },
   });
+
+  // Resolve assigneeId UUIDs → user names so the frontend can display them.
+  const assigneeIds = new Set<string>();
+  for (const e of entries) {
+    if (e.field === 'assigneeId') {
+      if (e.oldValue) assigneeIds.add(e.oldValue);
+      if (e.newValue) assigneeIds.add(e.newValue);
+    }
+  }
+  const userMap = new Map<string, string>();
+  if (assigneeIds.size > 0) {
+    const users = await prisma.user.findMany({
+      where: { id: { in: [...assigneeIds] } },
+      select: { id: true, name: true },
+    });
+    for (const u of users) userMap.set(u.id, u.name);
+  }
+
+  return entries.map((e) => ({
+    ...e,
+    oldValue: e.field === 'assigneeId' && e.oldValue ? (userMap.get(e.oldValue) ?? e.oldValue) : e.oldValue,
+    newValue: e.field === 'assigneeId' && e.newValue ? (userMap.get(e.newValue) ?? e.newValue) : e.newValue,
+  }));
 }
 
 // ─── Delete task ──────────────────────────────────────────────────────────────
