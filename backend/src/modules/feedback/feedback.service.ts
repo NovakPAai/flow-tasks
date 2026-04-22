@@ -15,12 +15,15 @@ export async function submitFeedback(dto: FeedbackDto, user: FeedbackUser) {
   }
 
   const label = dto.type === 'bug' ? 'bug' : 'enhancement';
-
-  const deviceBlock = dto.device
-    ? `**Устройство:** ${dto.device.tier} (${dto.device.screenWidth}×${dto.device.screenHeight})\n**User-Agent:** \`${dto.device.userAgent}\``
-    : '**Устройство:** неизвестно';
-
-  const bodyWithMeta = `${dto.body}\n\n---\n**Отправитель:** ${user.name} (${user.email})\n**Окружение:** ${config.NODE_ENV}\n${deviceBlock}`;
+  const deviceSection = dto.meta
+    ? [
+        `**UA:** \`${dto.meta.ua}\``,
+        `**Экран:** ${dto.meta.screen} / вьюпорт: ${dto.meta.viewport}`,
+        `**Язык:** ${dto.meta.language}`,
+        `**URL:** ${dto.meta.url}`,
+      ].join('\n')
+    : '*нет данных об устройстве*';
+  const bodyWithMeta = `${dto.body}\n\n---\n**Отправитель:** ${user.name} (${user.email})\n**Окружение:** ${config.NODE_ENV}\n\n### Устройство\n${deviceSection}`;
 
   const response = await fetch(
     `https://api.github.com/repos/${config.GITHUB_REPO_OWNER}/${config.GITHUB_REPO_NAME}/issues`,

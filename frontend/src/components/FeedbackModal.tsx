@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Modal, Form, Input, Radio, Button, message } from 'antd';
 import api from '../api/client';
 import { formatApiError } from '../utils/apiError';
-import { useBreakpoint } from '../utils/useBreakpoint';
 
 interface FeedbackModalProps {
   open: boolean;
@@ -12,18 +11,24 @@ interface FeedbackModalProps {
 export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
-  const tier = useBreakpoint();
+
+  function collectDeviceMeta() {
+    return {
+      ua: navigator.userAgent,
+      screen: `${screen.width}x${screen.height}`,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      url: window.location.href,
+      language: navigator.language,
+    };
+  }
 
   const onFinish = async (values: { title: string; body: string; type: 'bug' | 'idea' }) => {
     setLoading(true);
     try {
-      const device = {
-        tier,
-        screenWidth: window.screen.width,
-        screenHeight: window.screen.height,
-        userAgent: navigator.userAgent.slice(0, 500),
-      };
-      const res = await api.post<{ url: string; number: number }>('/feedback', { ...values, device });
+      const res = await api.post<{ url: string; number: number }>('/feedback', {
+        ...values,
+        meta: collectDeviceMeta(),
+      });
       message.success(
         <span>
           Обращение #{res.data.number} создано.{' '}
