@@ -240,7 +240,7 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', ...font }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
@@ -280,20 +280,23 @@ export default function AdminUsersPage() {
               <>
                 {/* Header row */}
                 <div style={{
-                  display: 'grid', gridTemplateColumns: '1fr 200px 70px 110px 110px 130px',
+                  display: 'grid', gridTemplateColumns: '1fr 180px 48px 48px 48px 52px 52px 110px 130px',
                   padding: '10px 20px', borderBottom: `1px solid ${C.border}`,
                   fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: '0.06em', textTransform: 'uppercase',
                 }}>
                   <span>Пользователь</span>
                   <span>Email</span>
                   <span>Входов</span>
-                  <span>Последний вход</span>
-                  <span>Создан</span>
+                  <span title="Спейсы">Спейсы</span>
+                  <span title="Доски">Доски</span>
+                  <span title="Задачи">Задачи</span>
+                  <span title="Участники спейсов">Участн.</span>
+                  <span>Активность</span>
                   <span>Роль</span>
                 </div>
                 {users.map((u, i) => (
                   <div key={u.id} style={{
-                    display: 'grid', gridTemplateColumns: '1fr 200px 70px 110px 110px 130px',
+                    display: 'grid', gridTemplateColumns: '1fr 180px 48px 48px 48px 52px 52px 110px 130px',
                     padding: '12px 20px', alignItems: 'center',
                     borderBottom: i < users.length - 1 ? `1px solid ${C.border}` : 'none',
                     transition: 'background .1s',
@@ -303,14 +306,22 @@ export default function AdminUsersPage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       <Avatar name={u.name} size={30} />
-                      <span style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {u.name}
-                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: C.label, marginTop: 2 }}>
+                          создан {formatDate(u.createdAt)}
+                        </div>
+                      </div>
                     </div>
                     <span style={{ fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</span>
                     <span style={{ fontSize: 13, color: C.text }}>{u.loginCount}</span>
+                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{u.stats?.workspaces ?? '—'}</span>
+                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{u.stats?.boards ?? '—'}</span>
+                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{u.stats?.tasks ?? '—'}</span>
+                    <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{u.stats?.members ?? '—'}</span>
                     <span style={{ fontSize: 12, color: C.muted }}>{formatDate(u.lastLoginAt)}</span>
-                    <span style={{ fontSize: 12, color: C.muted }}>{formatDate(u.createdAt)}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {u.isSuperadmin && (
                         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(79,110,247,0.12)', color: '#4F6EF7' }}>

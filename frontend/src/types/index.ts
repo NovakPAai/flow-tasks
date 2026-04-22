@@ -13,6 +13,13 @@ export interface User {
 
 // ─── Admin ─────────────────────────────────────────────────────────────────────
 
+export interface AdminUserStats {
+  workspaces: number;
+  boards: number;
+  tasks: number;
+  members: number;
+}
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -22,6 +29,7 @@ export interface AdminUser {
   lastLoginAt?: string;
   createdAt: string;
   isSuperadmin: boolean;
+  stats?: AdminUserStats;
 }
 
 export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
