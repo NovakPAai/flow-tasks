@@ -10,6 +10,12 @@ import type { RegisterDto, LoginDto, UpdateProfileDto } from './auth.dto.js';
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 15 * 60;
 
+// Convention: name field stores "FirstName LastName". Takes first word.
+function extractFirstName(name: string): string {
+  const trimmed = name.trim();
+  return trimmed.split(/\s+/)[0] || trimmed;
+}
+
 async function checkBruteForce(email: string): Promise<void> {
   if (!await isRedisAvailable()) return; // brute-force protection degraded gracefully
   const key = `auth:fail:${email.toLowerCase()}`;
@@ -191,7 +197,8 @@ export async function updateProfile(userId: string, dto: UpdateProfileDto) {
     data,
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
   });
-  return user;
+  const firstName = extractFirstName(user.name);
+  return { ...user, firstName };
 }
 
 export async function getMe(userId: string) {
@@ -200,7 +207,7 @@ export async function getMe(userId: string) {
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true, isSuperadmin: true },
   });
   if (!user) throw new AppError(404, 'Пользователь не найден');
-  const firstName = user.name.split(' ')[0] ?? user.name;
+  const firstName = extractFirstName(user.name);
   // SUPERADMIN_EMAIL always has superadmin access even if DB flag not set
   const isSuperadmin = user.isSuperadmin || user.email === config.SUPERADMIN_EMAIL;
   return { ...user, isSuperadmin, firstName };

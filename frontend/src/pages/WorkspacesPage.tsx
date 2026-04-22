@@ -393,7 +393,7 @@ export default function WorkspacesPage() {
   const gap         = useResponsiveValue(20, 28, 32);
   const paddingBlock  = useResponsiveValue('24px', '32px', '48px');
   const paddingInline = useResponsiveValue('16px', '40px', '80px');
-  const firstName = ((user as { firstName?: string; name?: string })?.firstName ?? user?.name?.split(' ')[0] ?? 'ПОЛЬЗОВАТЕЛЬ').toUpperCase();
+  const firstName = (user?.firstName ?? user?.name?.trim().split(/\s+/)[0] ?? 'ПОЛЬЗОВАТЕЛЬ').toUpperCase();
 
   const handleCreate = async (name: string, slug: string, description?: string) => {
     try {
