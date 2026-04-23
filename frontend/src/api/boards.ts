@@ -21,6 +21,11 @@ export async function getBoard(boardId: string): Promise<Board> {
   return data;
 }
 
+export async function getBoardByPrefix(workspaceId: string, prefix: string): Promise<Board> {
+  const { data } = await api.get<Board>(`/workspaces/${workspaceId}/boards/by-prefix/${prefix}`);
+  return data;
+}
+
 export async function updateBoard(boardId: string, payload: { name?: string; description?: string; workflowId?: string; isPrivate?: boolean }): Promise<Board> {
   const { data } = await api.patch<Board>(`/boards/${boardId}`, payload);
   return data;

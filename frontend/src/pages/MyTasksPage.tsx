@@ -91,11 +91,11 @@ export default function MyTasksPage() {
         wsId: string;
         wsName: string;
         wsSlug: string;
-        boards: Map<string, { boardId: string; boardName: string; tasks: MyTask[] }>;
+        boards: Map<string, { boardId: string; boardSlug: string; boardName: string; tasks: MyTask[] }>;
       }
     >();
     for (const t of allTasks) {
-      const { workspace, id: boardId, name: boardName } = t.board;
+      const { workspace, id: boardId, name: boardName, prefix } = t.board;
       if (!wsMap.has(workspace.id)) {
         wsMap.set(workspace.id, {
           wsId: workspace.id,
@@ -106,7 +106,7 @@ export default function MyTasksPage() {
       }
       const ws = wsMap.get(workspace.id)!;
       if (!ws.boards.has(boardId)) {
-        ws.boards.set(boardId, { boardId, boardName, tasks: [] });
+        ws.boards.set(boardId, { boardId, boardSlug: prefix.toLowerCase(), boardName, tasks: [] });
       }
       ws.boards.get(boardId)!.tasks.push(t);
     }
@@ -291,7 +291,7 @@ export default function MyTasksPage() {
                         return (
                           <div
                             key={task.id}
-                            onClick={() => navigate(`/w/${ws.wsSlug}/boards/${board.boardId}`)}
+                            onClick={() => navigate(`/w/${ws.wsSlug}/boards/${board.boardSlug}`)}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 12,
                               padding: '11px 16px',

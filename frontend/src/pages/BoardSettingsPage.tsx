@@ -25,12 +25,12 @@ const INTER = '"Inter",system-ui,sans-serif';
 const GROTESK = '"Space Grotesk",system-ui,sans-serif';
 
 export default function BoardSettingsPage() {
-  const { slug, boardId } = useParams<{ slug: string; boardId: string }>();
+  const { slug, boardSlug } = useParams<{ slug: string; boardSlug: string }>();
   const navigate = useNavigate();
   const mode = useThemeStore((s) => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
   const isDark = mode !== 'light';
-  const { workspaces } = useWorkspaceStore();
+  const { workspaces, loading: wsLoading } = useWorkspaceStore();
 
   const [board, setBoard] = useState<Board | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -43,18 +43,23 @@ export default function BoardSettingsPage() {
   const [deleting, setDeleting] = useState(false);
 
   const workspace = workspaces.find((w) => w.slug === slug) ?? null;
+  const wsId = workspace?.id;
   const isOwner = workspace?.role === 'OWNER';
 
   useEffect(() => {
-    if (!boardId) return;
-    boardsApi.getBoard(boardId).then((b) => {
+    if (!boardSlug) { setLoadError(true); return; }
+    if (!wsId) {
+      if (!wsLoading) setLoadError(true);
+      return;
+    }
+    boardsApi.getBoardByPrefix(wsId, boardSlug).then((b) => {
       setBoard(b);
       setName(b.name);
       setDescription(b.description ?? '');
       setWorkflowId(b.workflowId);
       setIsPrivate(b.isPrivate ?? false);
     }).catch(() => { message.error('Не удалось загрузить доску'); setLoadError(true); });
-  }, [boardId]);
+  }, [wsId, wsLoading, boardSlug]);
 
   useEffect(() => {
     if (!workspace?.id) return;
@@ -62,20 +67,20 @@ export default function BoardSettingsPage() {
   }, [workspace?.id]);
 
   const save = async () => {
-    if (!boardId) return;
+    if (!board) return;
     setSaving(true);
     try {
-      await boardsApi.updateBoard(boardId, { name, description, workflowId, isPrivate });
+      await boardsApi.updateBoard(board.id, { name, description, workflowId, isPrivate });
       message.success('Сохранено');
     } catch { message.error('Ошибка сохранения'); }
     finally { setSaving(false); }
   };
 
   const handleDelete = async () => {
-    if (!boardId || !confirm(`Удалить доску "${board?.name}"? Все задачи будут удалены.`)) return;
+    if (!board || !confirm(`Удалить доску "${board.name}"? Все задачи будут удалены.`)) return;
     setDeleting(true);
     try {
-      await boardsApi.deleteBoard(boardId);
+      await boardsApi.deleteBoard(board.id);
       navigate(`/w/${slug}`);
     } catch { message.error('Не удалось удалить доску'); setDeleting(false); }
   };
@@ -125,7 +130,7 @@ export default function BoardSettingsPage() {
           <div style={{ fontSize: 12, color: c.muted, marginTop: 2 }}>{board.name}</div>
         </div>
         <button
-          onClick={() => navigate(`/w/${slug}/boards/${boardId}`)}
+          onClick={() => navigate(`/w/${slug}/boards/${boardSlug}`)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             margin: '0 12px', padding: '8px 12px', borderRadius: 8,

@@ -6,6 +6,7 @@ import {
 import { message } from 'antd';
 import type { Board, Task, WorkflowStatus, WorkspaceMember, Label } from '../types';
 import { useThemeStore } from '../store/theme.store';
+import { useWorkspaceStore } from '../store/workspace.store';
 import * as boardsApi from '../api/boards';
 import * as tasksApi from '../api/tasks';
 import * as workspacesApi from '../api/workspaces';
@@ -123,9 +124,12 @@ function BoardSettingsBtn({ onClick, border, addText, isPrivate }: {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function BoardPage() {
-  const { boardId } = useParams<{ boardId: string }>();
+  const { slug, boardSlug } = useParams<{ slug: string; boardSlug: string }>();
   const navigate = useNavigate();
   const mode = useThemeStore(s => s.mode);
+  const workspaces = useWorkspaceStore(s => s.workspaces);
+  const wsLoading = useWorkspaceStore(s => s.loading);
+  const wsId = workspaces.find(w => w.slug === slug)?.id;
   const isDark = mode === 'dark';
 
   // ── Theme tokens ──────────────────────────────────────────────────────────
@@ -147,6 +151,7 @@ export default function BoardPage() {
   const [board, setBoard] = useState<Board | null>(null);
   const [columns, setColumns] = useState<Columns>({});
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
@@ -164,9 +169,13 @@ export default function BoardPage() {
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const loadBoard = useCallback(async () => {
-    if (!boardId) return;
+    if (!boardSlug) { setLoading(false); return; }
+    if (!wsId) {
+      if (!wsLoading) setLoading(false); // store loaded but workspace not found
+      return;
+    }
     try {
-      const b = await boardsApi.getBoard(boardId);
+      const b = await boardsApi.getBoardByPrefix(wsId, boardSlug);
       setBoard(b);
       const cols = groupByStatus(b.tasks ?? [], b.workflow.statuses);
       setColumns(cols);
@@ -178,16 +187,20 @@ export default function BoardPage() {
       if (fullCols.length > 0) {
         const totals = await Promise.all(
           fullCols.map(s =>
-            tasksApi.listTasks(boardId, { statusId: s.id, rootOnly: 'true', limit: '1', offset: '0' })
+            tasksApi.listTasks(b.id, { statusId: s.id, rootOnly: 'true', limit: '1', offset: '0' })
               .then(r => [s.id, r.total] as const)
               .catch(() => [s.id, 100] as const)
           )
         );
         setColumnTotals(Object.fromEntries(totals));
       }
-    } catch { message.error('Не удалось загрузить доску'); }
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      if (status === 404 || status === 403) { setNotFound(true); }
+      else { message.error('Не удалось загрузить доску'); }
+    }
     finally { setLoading(false); }
-  }, [boardId]);
+  }, [wsId, wsLoading, boardSlug]);
 
   useEffect(() => { loadBoard(); }, [loadBoard]);
 
@@ -245,7 +258,7 @@ export default function BoardPage() {
       }
     }
     try {
-      await tasksApi.reorderTasks(boardId!, updates);
+      await tasksApi.reorderTasks(board!.id, updates);
     } catch {
       message.error('Не удалось сохранить порядок');
       loadBoard();
@@ -254,11 +267,11 @@ export default function BoardPage() {
 
   // ── Load more (column pagination) ────────────────────────────────────────
   const loadMoreColumn = async (statusId: string) => {
-    if (!boardId || loadingMoreCols.has(statusId)) return;
+    if (!board || loadingMoreCols.has(statusId)) return;
     const offset = columnOffsets[statusId] ?? 0;
     setLoadingMoreCols(prev => new Set(prev).add(statusId));
     try {
-      const { tasks: more, total } = await tasksApi.listTasks(boardId, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      const { tasks: more, total } = await tasksApi.listTasks(board.id, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
       setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), ...more] }));
       setColumnOffsets(prev => ({ ...prev, [statusId]: offset + more.length }));
       setColumnTotals(prev => ({ ...prev, [statusId]: total }));
@@ -270,7 +283,7 @@ export default function BoardPage() {
   const submitAdd = async (statusId: string) => {
     if (!addTitle.trim()) { setAddingTo(null); return; }
     try {
-      const task = await tasksApi.createTask(boardId!, { title: addTitle.trim(), statusId });
+      const task = await tasksApi.createTask(board!.id, { title: addTitle.trim(), statusId });
       setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), task] }));
       setAddTitle('');
       setAddingTo(null);
@@ -337,6 +350,14 @@ export default function BoardPage() {
     );
   }
 
+  if (notFound || (!loading && !board)) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, background: pageBg }}>
+        <div style={{ fontSize: 15, color: isDark ? '#8B949E' : '#9B96B8', fontFamily: '"Inter",system-ui,sans-serif' }}>Доска не найдена</div>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, color: '#4F6EF7', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}>← Назад</button>
+      </div>
+    );
+  }
   if (!board) return null;
 
   const viewBtns: { mode: ViewMode; icon: React.ReactNode }[] = [
@@ -597,7 +618,7 @@ export default function BoardPage() {
         statuses={statuses}
         members={members}
         workspaceId={board.workspaceId}
-        boardId={boardId}
+        boardId={board.id}
         workspaceLabels={labels}
         onWorkspaceLabelCreated={label => setLabels(prev => [...prev, label])}
         onClose={() => setSelectedTaskId(null)}
