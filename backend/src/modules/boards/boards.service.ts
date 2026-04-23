@@ -60,6 +60,15 @@ export async function createBoard(workspaceId: string, userId: string, dto: Crea
   });
 }
 
+export async function getBoardByPrefix(workspaceId: string, prefix: string, userId: string) {
+  await assertMember(workspaceId, userId);
+  const board = await prisma.board.findFirst({
+    where: { workspaceId, prefix: prefix.toUpperCase() },
+  });
+  if (!board) throw new AppError(404, 'Board not found');
+  return getBoard(board.id, userId);
+}
+
 export async function getBoard(boardId: string, userId: string) {
   const board = await prisma.board.findUnique({
     where: { id: boardId },

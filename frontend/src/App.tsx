@@ -79,8 +79,8 @@ export default function App() {
           <Route path="/" element={<Navigate to="/workspaces" replace />} />
           <Route path="/workspaces" element={<PrivateRoute><WorkspacesPage /></PrivateRoute>} />
           <Route path="/w/:slug" element={<PrivateRoute><WorkspaceDashboardPage /></PrivateRoute>} />
-          <Route path="/w/:slug/boards/:boardId" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
-          <Route path="/w/:slug/boards/:boardId/settings" element={<PrivateRoute><BoardSettingsPage /></PrivateRoute>} />
+          <Route path="/w/:slug/boards/:boardSlug" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
+          <Route path="/w/:slug/boards/:boardSlug/settings" element={<PrivateRoute><BoardSettingsPage /></PrivateRoute>} />
           <Route path="/w/:slug/settings" element={<PrivateRoute><WorkspaceSettingsPage /></PrivateRoute>} />
           <Route path="/my-tasks" element={<PrivateRoute><MyTasksPage /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />

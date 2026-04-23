@@ -9,6 +9,7 @@ import {
   inviteByEmailDto,
 } from './workspaces.dto.js';
 import * as ws from './workspaces.service.js';
+import * as boards from '../boards/boards.service.js';
 import { authHandler } from '../../shared/utils/async-handler.js';
 
 const router = Router();
@@ -60,6 +61,10 @@ router.post('/:id/invite', validate(inviteByEmailDto), authHandler(async (req, r
 router.delete('/:id/members/:userId', authHandler(async (req, res) => {
   await ws.removeMember(String(req.params.id), req.user!.userId, String(req.params.userId));
   res.json({ message: 'Member removed' });
+}));
+
+router.get('/:id/boards/by-prefix/:prefix', authHandler(async (req, res) => {
+  res.json(await boards.getBoardByPrefix(String(req.params.id), String(req.params.prefix), req.user!.userId));
 }));
 
 router.get('/:id/history', authHandler(async (req, res) => {

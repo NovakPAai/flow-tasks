@@ -259,7 +259,7 @@ export default function WorkspaceDashboardPage() {
       incrementBoardCount(current.id);
       message.success(`Доска "${board.name}" создана`);
       closeModal();
-      navigate(`/w/${slug}/boards/${board.id}`);
+      navigate(`/w/${slug}/boards/${board.prefix.toLowerCase()}`);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string } } };
       message.error(err?.response?.data?.error ?? 'Не удалось создать доску');
@@ -431,7 +431,7 @@ export default function WorkspaceDashboardPage() {
             {boards.map(board => (
               <BoardCard
                 key={board.id} board={board} c={c} isDark={isDark}
-                onClick={() => navigate(`/w/${slug}/boards/${board.id}`)}
+                onClick={() => navigate(`/w/${slug}/boards/${board.prefix.toLowerCase()}`)}
               />
             ))}
           </div>

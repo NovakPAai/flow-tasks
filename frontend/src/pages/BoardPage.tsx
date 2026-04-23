@@ -6,6 +6,7 @@ import {
 import { message } from 'antd';
 import type { Board, Task, WorkflowStatus, WorkspaceMember, Label } from '../types';
 import { useThemeStore } from '../store/theme.store';
+import { useWorkspaceStore } from '../store/workspace.store';
 import * as boardsApi from '../api/boards';
 import * as tasksApi from '../api/tasks';
 import * as workspacesApi from '../api/workspaces';
@@ -123,9 +124,11 @@ function BoardSettingsBtn({ onClick, border, addText, isPrivate }: {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function BoardPage() {
-  const { boardId } = useParams<{ boardId: string }>();
+  const { slug, boardSlug } = useParams<{ slug: string; boardSlug: string }>();
   const navigate = useNavigate();
   const mode = useThemeStore(s => s.mode);
+  const workspaces = useWorkspaceStore(s => s.workspaces);
+  const wsId = workspaces.find(w => w.slug === slug)?.id;
   const isDark = mode === 'dark';
 
   // ── Theme tokens ──────────────────────────────────────────────────────────
@@ -164,9 +167,9 @@ export default function BoardPage() {
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const loadBoard = useCallback(async () => {
-    if (!boardId) return;
+    if (!wsId || !boardSlug) return;
     try {
-      const b = await boardsApi.getBoard(boardId);
+      const b = await boardsApi.getBoardByPrefix(wsId, boardSlug);
       setBoard(b);
       const cols = groupByStatus(b.tasks ?? [], b.workflow.statuses);
       setColumns(cols);
@@ -178,7 +181,7 @@ export default function BoardPage() {
       if (fullCols.length > 0) {
         const totals = await Promise.all(
           fullCols.map(s =>
-            tasksApi.listTasks(boardId, { statusId: s.id, rootOnly: 'true', limit: '1', offset: '0' })
+            tasksApi.listTasks(b.id, { statusId: s.id, rootOnly: 'true', limit: '1', offset: '0' })
               .then(r => [s.id, r.total] as const)
               .catch(() => [s.id, 100] as const)
           )
@@ -187,7 +190,7 @@ export default function BoardPage() {
       }
     } catch { message.error('Не удалось загрузить доску'); }
     finally { setLoading(false); }
-  }, [boardId]);
+  }, [wsId, boardSlug]);
 
   useEffect(() => { loadBoard(); }, [loadBoard]);
 
@@ -245,7 +248,7 @@ export default function BoardPage() {
       }
     }
     try {
-      await tasksApi.reorderTasks(boardId!, updates);
+      await tasksApi.reorderTasks(board!.id, updates);
     } catch {
       message.error('Не удалось сохранить порядок');
       loadBoard();
@@ -254,11 +257,11 @@ export default function BoardPage() {
 
   // ── Load more (column pagination) ────────────────────────────────────────
   const loadMoreColumn = async (statusId: string) => {
-    if (!boardId || loadingMoreCols.has(statusId)) return;
+    if (!board || loadingMoreCols.has(statusId)) return;
     const offset = columnOffsets[statusId] ?? 0;
     setLoadingMoreCols(prev => new Set(prev).add(statusId));
     try {
-      const { tasks: more, total } = await tasksApi.listTasks(boardId, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      const { tasks: more, total } = await tasksApi.listTasks(board.id, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
       setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), ...more] }));
       setColumnOffsets(prev => ({ ...prev, [statusId]: offset + more.length }));
       setColumnTotals(prev => ({ ...prev, [statusId]: total }));
@@ -270,7 +273,7 @@ export default function BoardPage() {
   const submitAdd = async (statusId: string) => {
     if (!addTitle.trim()) { setAddingTo(null); return; }
     try {
-      const task = await tasksApi.createTask(boardId!, { title: addTitle.trim(), statusId });
+      const task = await tasksApi.createTask(board!.id, { title: addTitle.trim(), statusId });
       setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), task] }));
       setAddTitle('');
       setAddingTo(null);
@@ -597,7 +600,7 @@ export default function BoardPage() {
         statuses={statuses}
         members={members}
         workspaceId={board.workspaceId}
-        boardId={boardId}
+        boardId={board?.id ?? ''}
         workspaceLabels={labels}
         onWorkspaceLabelCreated={label => setLabels(prev => [...prev, label])}
         onClose={() => setSelectedTaskId(null)}
