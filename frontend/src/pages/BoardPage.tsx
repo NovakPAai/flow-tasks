@@ -128,6 +128,7 @@ export default function BoardPage() {
   const navigate = useNavigate();
   const mode = useThemeStore(s => s.mode);
   const workspaces = useWorkspaceStore(s => s.workspaces);
+  const wsLoading = useWorkspaceStore(s => s.loading);
   const wsId = workspaces.find(w => w.slug === slug)?.id;
   const isDark = mode === 'dark';
 
@@ -150,6 +151,7 @@ export default function BoardPage() {
   const [board, setBoard] = useState<Board | null>(null);
   const [columns, setColumns] = useState<Columns>({});
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
@@ -167,7 +169,11 @@ export default function BoardPage() {
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const loadBoard = useCallback(async () => {
-    if (!wsId || !boardSlug) return;
+    if (!boardSlug) { setLoading(false); return; }
+    if (!wsId) {
+      if (!wsLoading) setLoading(false); // store loaded but workspace not found
+      return;
+    }
     try {
       const b = await boardsApi.getBoardByPrefix(wsId, boardSlug);
       setBoard(b);
@@ -188,9 +194,13 @@ export default function BoardPage() {
         );
         setColumnTotals(Object.fromEntries(totals));
       }
-    } catch { message.error('Не удалось загрузить доску'); }
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      if (status === 404 || status === 403) { setNotFound(true); }
+      else { message.error('Не удалось загрузить доску'); }
+    }
     finally { setLoading(false); }
-  }, [wsId, boardSlug]);
+  }, [wsId, wsLoading, boardSlug]);
 
   useEffect(() => { loadBoard(); }, [loadBoard]);
 
@@ -340,6 +350,14 @@ export default function BoardPage() {
     );
   }
 
+  if (notFound || (!loading && !board)) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, background: pageBg }}>
+        <div style={{ fontSize: 15, color: isDark ? '#8B949E' : '#9B96B8', fontFamily: '"Inter",system-ui,sans-serif' }}>Доска не найдена</div>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, color: '#4F6EF7', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}>← Назад</button>
+      </div>
+    );
+  }
   if (!board) return null;
 
   const viewBtns: { mode: ViewMode; icon: React.ReactNode }[] = [
@@ -600,7 +618,7 @@ export default function BoardPage() {
         statuses={statuses}
         members={members}
         workspaceId={board.workspaceId}
-        boardId={board?.id ?? ''}
+        boardId={board.id}
         workspaceLabels={labels}
         onWorkspaceLabelCreated={label => setLabels(prev => [...prev, label])}
         onClose={() => setSelectedTaskId(null)}

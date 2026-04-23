@@ -30,7 +30,7 @@ export default function BoardSettingsPage() {
   const mode = useThemeStore((s) => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
   const isDark = mode !== 'light';
-  const { workspaces } = useWorkspaceStore();
+  const { workspaces, loading: wsLoading } = useWorkspaceStore();
 
   const [board, setBoard] = useState<Board | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -47,7 +47,11 @@ export default function BoardSettingsPage() {
   const isOwner = workspace?.role === 'OWNER';
 
   useEffect(() => {
-    if (!wsId || !boardSlug) return;
+    if (!boardSlug) { setLoadError(true); return; }
+    if (!wsId) {
+      if (!wsLoading) setLoadError(true);
+      return;
+    }
     boardsApi.getBoardByPrefix(wsId, boardSlug).then((b) => {
       setBoard(b);
       setName(b.name);
@@ -55,7 +59,7 @@ export default function BoardSettingsPage() {
       setWorkflowId(b.workflowId);
       setIsPrivate(b.isPrivate ?? false);
     }).catch(() => { message.error('Не удалось загрузить доску'); setLoadError(true); });
-  }, [wsId, boardSlug]);
+  }, [wsId, wsLoading, boardSlug]);
 
   useEffect(() => {
     if (!workspace?.id) return;
