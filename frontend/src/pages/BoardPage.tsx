@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   DragDropContext, Droppable, Draggable, type DropResult, type DragStart,
 } from '@hello-pangea/dnd';
@@ -160,7 +160,11 @@ export default function BoardPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [searchParams] = useSearchParams();
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const v = searchParams.get('view');
+    return (v === 'roadmap' || v === 'list' || v === 'calendar') ? v : 'board';
+  });
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
@@ -638,7 +642,6 @@ export default function BoardPage() {
           <RoadmapView
             boardId={board.id}
             statuses={statuses}
-            members={members}
           />
         )}
       </div>

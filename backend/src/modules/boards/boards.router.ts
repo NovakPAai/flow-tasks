@@ -34,8 +34,11 @@ router.delete('/:id', authHandler(async (req, res) => {
   res.json({ message: 'Board deleted' });
 }));
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 router.get('/:id/roadmap', authHandler(async (req, res) => {
-  const { from, to } = req.query as { from?: string; to?: string };
+  const from = typeof req.query.from === 'string' && DATE_RE.test(req.query.from) ? req.query.from : undefined;
+  const to   = typeof req.query.to   === 'string' && DATE_RE.test(req.query.to)   ? req.query.to   : undefined;
   res.json(await boards.getRoadmapTasks(String(req.params.id), req.user!.userId, from, to));
 }));
 

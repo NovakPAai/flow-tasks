@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
-import type { Task, WorkflowStatus, WorkspaceMember } from '../types';
+import type { Task, WorkflowStatus } from '../types';
 import * as boardsApi from '../api/boards';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -33,21 +34,22 @@ function fmtShort(d: Date) {
 }
 
 // ── Zoom config ────────────────────────────────────────────────────────────────
-const TODAY = d0(new Date());
+function getToday() { return d0(new Date()); }
 
 function zoomRange(z: Zoom): { start: Date; end: Date } {
+  const t = getToday();
   switch (z) {
     case 'week':
-      return { start: addDays(TODAY, -21), end: addDays(TODAY, 42) };
+      return { start: addDays(t, -21), end: addDays(t, 42) };
     case 'month':
       return {
-        start: new Date(TODAY.getFullYear(), TODAY.getMonth() - 1, 1),
-        end:   new Date(TODAY.getFullYear(), TODAY.getMonth() + 6, 1),
+        start: new Date(t.getFullYear(), t.getMonth() - 1, 1),
+        end:   new Date(t.getFullYear(), t.getMonth() + 6, 1),
       };
     case 'quarter':
       return {
-        start: new Date(TODAY.getFullYear(), 0, 1),
-        end:   new Date(TODAY.getFullYear() + 1, 0, 1),
+        start: new Date(t.getFullYear(), 0, 1),
+        end:   new Date(t.getFullYear() + 1, 0, 1),
       };
   }
 }
@@ -76,7 +78,6 @@ const LIGHT: C = {
 interface Props {
   boardId: string;
   statuses: WorkflowStatus[];
-  members?: WorkspaceMember[];
 }
 
 // ── Row height constants ───────────────────────────────────────────────────────
@@ -112,7 +113,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         const ids = new Set(data.filter(t => (t._count?.children ?? 0) > 0).map(t => t.id));
         setExpanded(ids);
       })
-      .catch(() => {})
+      .catch(() => { message.error('Не удалось загрузить дорожную карту'); })
       .finally(() => setLoading(false));
   }, [boardId, zoom]);
 
@@ -149,7 +150,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
     const r = zoomRange(zoom);
     const total = diffDays(r.start, r.end);
     const dayPx = TL_W / total;
-    const todayX = diffDays(r.start, TODAY) * dayPx;
+    const todayX = diffDays(r.start, getToday()) * dayPx;
     right.scrollLeft = Math.max(0, todayX - right.clientWidth * 0.35);
   }, [zoom]);
 
@@ -204,13 +205,13 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         const wEnd = addDays(cur, 7);
         const we   = wEnd < range.end ? wEnd : range.end;
         const w    = xOf(we) - xOf(cur);
-        const isCW = cur <= TODAY && TODAY < we;
+        const isCW = cur <= getToday() && getToday() < we;
         weeks.push({ label: `${fmtShort(cur)} – ${fmtShort(addDays(we, -1))}`, x: xOf(cur), w, isCurrent: isCW });
         cur = wEnd;
       }
       cur = new Date(range.start);
       while (cur < range.end) {
-        const isToday   = isSameDay(cur, TODAY);
+        const isToday   = isSameDay(cur, getToday());
         const isWeekend = cur.getDay() === 0 || cur.getDay() === 6;
         const isMon     = cur.getDay() === 1;
         days.push({
@@ -239,7 +240,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
       while (cur < range.end) {
         const wEnd = addDays(cur, 7);
         const we   = wEnd < range.end ? wEnd : range.end;
-        const isCW = cur <= TODAY && TODAY < wEnd;
+        const isCW = cur <= getToday() && getToday() < wEnd;
         weeks.push({ label: fmtShort(cur), x: xOf(cur), w: xOf(we) - xOf(cur), isCurrent: isCW });
         cur = wEnd;
       }
@@ -250,21 +251,21 @@ export default function RoadmapView({ boardId, statuses }: Props) {
     const quarters: { label: string; x: number; w: number }[] = [];
     const months:   { label: string; x: number; w: number; isCurrent: boolean }[] = [];
     const QS = [
-      { label: 'Q1', start: new Date(TODAY.getFullYear(), 0, 1), end: new Date(TODAY.getFullYear(), 3, 1) },
-      { label: 'Q2', start: new Date(TODAY.getFullYear(), 3, 1), end: new Date(TODAY.getFullYear(), 6, 1) },
-      { label: 'Q3', start: new Date(TODAY.getFullYear(), 6, 1), end: new Date(TODAY.getFullYear(), 9, 1) },
-      { label: 'Q4', start: new Date(TODAY.getFullYear(), 9, 1), end: new Date(TODAY.getFullYear() + 1, 0, 1) },
+      { label: 'Q1', start: new Date(getToday().getFullYear(), 0, 1), end: new Date(getToday().getFullYear(), 3, 1) },
+      { label: 'Q2', start: new Date(getToday().getFullYear(), 3, 1), end: new Date(getToday().getFullYear(), 6, 1) },
+      { label: 'Q3', start: new Date(getToday().getFullYear(), 6, 1), end: new Date(getToday().getFullYear(), 9, 1) },
+      { label: 'Q4', start: new Date(getToday().getFullYear(), 9, 1), end: new Date(getToday().getFullYear() + 1, 0, 1) },
     ].filter(q => q.end > range.start && q.start < range.end);
     for (const q of QS) {
       const qs = q.start < range.start ? range.start : q.start;
       const qe = q.end   > range.end   ? range.end   : q.end;
-      quarters.push({ label: `${q.label} ${TODAY.getFullYear()}`, x: xOf(qs), w: xOf(qe) - xOf(qs) });
+      quarters.push({ label: `${q.label} ${getToday().getFullYear()}`, x: xOf(qs), w: xOf(qe) - xOf(qs) });
     }
     let cur = new Date(range.start);
     while (cur < range.end) {
       const next  = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
       const me    = next < range.end ? next : range.end;
-      const isCM  = cur.getMonth() === TODAY.getMonth() && cur.getFullYear() === TODAY.getFullYear();
+      const isCM  = cur.getMonth() === getToday().getMonth() && cur.getFullYear() === getToday().getFullYear();
       const lbl   = cur.toLocaleString('ru', { month: 'short' });
       months.push({ label: lbl[0].toUpperCase() + lbl.slice(1), x: xOf(cur), w: xOf(me) - xOf(cur), isCurrent: isCM });
       cur = next;
@@ -277,7 +278,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   const totalH = rows.reduce((acc, t) => acc + (t.parentId ? CROW_H : ROW_H), 0);
 
   // ── Today X ───────────────────────────────────────────────────────────────
-  const todayX = xOf(TODAY);
+  const todayX = xOf(getToday());
 
   // ── Status color for tooltip ───────────────────────────────────────────────
   function statusLabel(task: Task) {
@@ -288,7 +289,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   // ── Overdue ────────────────────────────────────────────────────────────────
   function isOverdue(task: Task) {
     const due = parseDate(task.dueDate);
-    return due && due < TODAY && task.status?.category !== 'DONE';
+    return due && due < getToday() && task.status?.category !== 'DONE';
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -408,7 +409,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
               const isExp    = expanded.has(task.id);
               const due      = parseDate(task.dueDate);
               const overdue  = isOverdue(task);
-              const dueColor = overdue ? '#EF4444' : due && diffDays(due, TODAY) < 7 && due >= TODAY ? '#F59E0B' : task.status?.category === 'DONE' ? '#10B981' : c.dimmed;
+              const dueColor = overdue ? '#EF4444' : due && diffDays(due, getToday()) < 7 && due >= getToday() ? '#F59E0B' : task.status?.category === 'DONE' ? '#10B981' : c.dimmed;
 
               return (
                 <div
@@ -521,7 +522,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
               {/* Current-week highlight */}
               {(() => {
-                const ws = d0(new Date(TODAY));
+                const ws = d0(new Date(getToday()));
                 const dayOfWeek = ws.getDay();
                 const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
                 const monday = addDays(ws, mondayOffset);
@@ -620,9 +621,9 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
                 const overdue = isOverdue(task);
                 const ovLeft  = Math.min(TL_W, Math.max(0, xOf(end)));
-                const ovRight = Math.min(TL_W, xOf(TODAY));
+                const ovRight = Math.min(TL_W, xOf(getToday()));
                 const ovW     = overdue ? ovRight - ovLeft : 0;
-                const overdueDays = overdue ? diffDays(end, TODAY) : 0;
+                const overdueDays = overdue ? diffDays(end, getToday()) : 0;
 
                 return (
                   <div key={task.id} style={rowStyle}>
