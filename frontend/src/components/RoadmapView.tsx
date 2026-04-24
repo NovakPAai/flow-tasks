@@ -106,26 +106,55 @@ function BarTooltip({ tip, isDark, statuses }: {
   statuses: WorkflowStatus[];
 }) {
   const { task, x, y } = tip;
-  const bg      = isDark ? '#161C30' : '#FFFFFF';
-  const border  = isDark ? '#1C2236' : '#E8E5F0';
-  const text    = isDark ? '#E2E8F8' : '#1A1A2E';
-  const muted   = isDark ? '#8B95B0' : '#6B7194';
-  const dimmed  = isDark ? '#484F58' : '#9B96B8';
+  const bg     = isDark ? '#161C30' : '#FFFFFF';
+  const border = isDark ? '#1C2236' : '#E8E5F0';
+  const text   = isDark ? '#E2E8F8' : '#1A1A2E';
+  const muted  = isDark ? '#8B95B0' : '#6B7194';
+  const dimmed = isDark ? '#484F58' : '#9B96B8';
 
-  const start    = parseDate(task.startDate);
-  const end      = parseDate(task.dueDate);
-  const dur      = start && end ? diffDays(start, end) : null;
-  const overdue  = end && end < getToday() && task.status?.category !== 'DONE';
-  const overdueD = overdue && end ? diffDays(end, getToday()) : 0;
-  const chip     = STATUS_CHIP[task.status?.category ?? 'OPEN'] ?? STATUS_CHIP.OPEN;
+  const start      = parseDate(task.startDate);
+  const end        = parseDate(task.dueDate);
+  const dur        = start && end ? diffDays(start, end) : null;
+  const today      = getToday();
+  const overdue    = end && end < today && task.status?.category !== 'DONE';
+  const overdueD   = overdue && end ? diffDays(end, today) : 0;
+  const chip       = STATUS_CHIP[task.status?.category ?? 'OPEN'] ?? STATUS_CHIP.OPEN;
   const statusName = statuses.find(s => s.id === task.statusId)?.name ?? task.status?.name ?? '–';
   const childCount = task._count?.children ?? (task.children?.length ?? 0);
   const doneCount  = task.children?.filter(ch => ch.status?.category === 'DONE').length ?? 0;
+  const statusMap  = new Map(statuses.map(s => [s.id, s]));
 
-  // viewport-aware positioning
-  const W = 240, H = 160;
+  // История статусов: вычисляем длительность каждого сегмента
+  const history = task.statusHistory;
+  const historySegs = history && history.length > 0 && start && end
+    ? (() => {
+        const totalMs = +end - +start;
+        if (totalMs <= 0) return null;
+        const segs = history.map(seg => {
+          const segEnd = seg.endedAt ? new Date(seg.endedAt) : (today < end ? today : end);
+          const ms     = Math.max(0, +segEnd - +new Date(seg.startedAt));
+          const pct    = Math.round(ms / totalMs * 100);
+          const st     = statusMap.get(seg.statusId);
+          return { name: st?.name ?? '?', color: st?.color ?? '#8B95B0', days: Math.round(ms / DAY_MS), pct, ongoing: !seg.endedAt };
+        });
+        // Хвост: запланированное оставшееся время
+        const last = history[history.length - 1];
+        let tailSeg: { color: string; pct: number; days: number } | null = null;
+        if (!last.endedAt && today < end) {
+          const tailMs  = +end - +today;
+          const tailPct = Math.round(tailMs / totalMs * 100);
+          const st      = statusMap.get(last.statusId);
+          tailSeg = { color: st?.color ?? '#8B95B0', pct: tailPct, days: Math.round(tailMs / DAY_MS) };
+        }
+        return { segs, tailSeg };
+      })()
+    : null;
+
+  // viewport-aware position — высота зависит от содержимого
+  const W = 256;
+  const estH = 200 + (historySegs ? 80 : 0) + (task.description ? 40 : 0);
   const left = x + 14 + W > window.innerWidth  ? x - W - 14 : x + 14;
-  const top  = y - 12 + H > window.innerHeight ? y - H      : y - 12;
+  const top  = y - 12 + estH > window.innerHeight ? y - estH  : y - 12;
 
   return (
     <div style={{
@@ -136,68 +165,107 @@ function BarTooltip({ tip, isDark, statuses }: {
       fontFamily: '"Inter",system-ui,sans-serif',
       pointerEvents: 'none',
     }}>
-      {/* Overdue banner */}
+
+      {/* Просрочка */}
       {overdue && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 6, padding: '5px 9px', marginBottom: 10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(239,68,68,.1)', border:'1px solid rgba(239,68,68,.3)', borderRadius:6, padding:'5px 9px', marginBottom:10 }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <circle cx="6" cy="6" r="5" stroke="#F87171" strokeWidth="1.3"/>
             <line x1="6" y1="3.5" x2="6" y2="6.5" stroke="#F87171" strokeWidth="1.3" strokeLinecap="round"/>
             <circle cx="6" cy="8.5" r=".75" fill="#F87171"/>
           </svg>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#F87171' }}>Просрочено на {overdueD} дн.</span>
+          <span style={{ fontSize:12, fontWeight:600, color:'#F87171' }}>Просрочено на {overdueD} дн.</span>
         </div>
       )}
 
-      {/* Title */}
-      <div style={{ fontSize: 13, fontWeight: 600, color: text, marginBottom: 8, lineHeight: '1.3', fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>
+      {/* Заголовок */}
+      <div style={{ fontSize:13, fontWeight:600, color:text, marginBottom:8, lineHeight:'1.3', fontFamily:'"Space Grotesk",system-ui,sans-serif' }}>
         {task.title}
       </div>
 
-      {/* Key + status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-        <span style={{ fontSize: 11, color: dimmed, fontWeight: 500 }}>{task.issueKey}</span>
-        <span style={{ background: chip.bg, color: chip.text, fontSize: 11, fontWeight: 500, borderRadius: 5, padding: '2px 7px' }}>
-          {statusName}
-        </span>
+      {/* Key + статус */}
+      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
+        <span style={{ fontSize:11, color:dimmed, fontWeight:500 }}>{task.issueKey}</span>
+        <span style={{ background:chip.bg, color:chip.text, fontSize:11, fontWeight:500, borderRadius:5, padding:'2px 7px' }}>{statusName}</span>
       </div>
 
-      {/* Dates */}
+      {/* Даты */}
       {start && end && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: muted, fontSize: 11.5, marginBottom: 5 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:5, color:muted, fontSize:11.5, marginBottom:5 }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.1"/>
             <path d="M1 4.5h10M4 1v2M8 1v2" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
           </svg>
           {fmtShort(start)} → {fmtShort(end)}
-          <span style={{ color: dimmed }}>({dur} дн.)</span>
+          <span style={{ color:dimmed }}>({dur} дн.)</span>
         </div>
       )}
 
-      {/* Priority */}
+      {/* Приоритет */}
       {task.priority && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: muted, fontSize: 11.5, marginBottom: 5 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: PRIO_COLOR[task.priority] ?? dimmed, flexShrink: 0 }} />
+        <div style={{ display:'flex', alignItems:'center', gap:5, color:muted, fontSize:11.5, marginBottom:5 }}>
+          <div style={{ width:6, height:6, borderRadius:'50%', background:PRIO_COLOR[task.priority] ?? dimmed, flexShrink:0 }}/>
           Приоритет: {PRIO_LABEL[task.priority] ?? task.priority}
         </div>
       )}
 
-      {/* Assignee */}
+      {/* Исполнитель */}
       {task.assignee && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: muted, fontSize: 11.5, marginBottom: childCount > 0 ? 8 : 0 }}>
-          <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#4F6EF7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontSize: 8, fontWeight: 700, color: '#fff' }}>{task.assignee.name[0]?.toUpperCase()}</span>
+        <div style={{ display:'flex', alignItems:'center', gap:6, color:muted, fontSize:11.5, marginBottom: historySegs || childCount > 0 ? 0 : 0 }}>
+          <div style={{ width:18, height:18, borderRadius:'50%', background:'#4F6EF7', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <span style={{ fontSize:8, fontWeight:700, color:'#fff' }}>{task.assignee.name[0]?.toUpperCase()}</span>
           </div>
           {task.assignee.name}
         </div>
       )}
 
-      {/* Subtasks */}
+      {/* Подзадачи */}
       {childCount > 0 && (
-        <div style={{ paddingTop: 8, borderTop: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 6, color: muted, fontSize: 11.5 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, color:muted, fontSize:11.5, marginTop:5 }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             <path d="M2 2h2v2H2zM5 2h5v2H5zM2 5h2v2H2zM5 5h5v2H5zM2 8h2v2H2zM5 8h3v2H5z" fill="currentColor"/>
           </svg>
           Подзадачи: {doneCount}/{childCount} закрыто
+        </div>
+      )}
+
+      {/* История статусов */}
+      {historySegs && (
+        <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${border}` }}>
+          <div style={{ fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'.06em', color:dimmed, marginBottom:6 }}>
+            История статусов
+          </div>
+          {/* Мини-бар */}
+          <div style={{ display:'flex', height:5, borderRadius:3, overflow:'hidden', marginBottom:7, gap:1 }}>
+            {historySegs.segs.map((seg, i) => (
+              <div key={i} style={{ flex: seg.pct, background: seg.color, opacity: seg.ongoing ? .55 : .85, minWidth: seg.pct > 0 ? 3 : 0 }} />
+            ))}
+            {historySegs.tailSeg && (
+              <div style={{ flex: historySegs.tailSeg.pct, background: historySegs.tailSeg.color, opacity: .2, minWidth: 3 }} />
+            )}
+          </div>
+          {/* Текстовые строки */}
+          <div style={{ display:'flex', flexDirection:'column', gap:3 }}>
+            {historySegs.segs.map((seg, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:muted }}>
+                <div style={{ width:7, height:7, borderRadius:'50%', background:seg.color, flexShrink:0 }}/>
+                <span>{seg.name}: {seg.days} дн.{seg.ongoing ? <span style={{ color:dimmed }}> (сейчас)</span> : ''}</span>
+              </div>
+            ))}
+            {historySegs.tailSeg && (
+              <div style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:dimmed, opacity:.7 }}>
+                <div style={{ width:7, height:7, borderRadius:'50%', background:historySegs.tailSeg.color, opacity:.4, flexShrink:0 }}/>
+                <span>Запланировано ещё: {historySegs.tailSeg.days} дн.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Описание */}
+      {task.description && (
+        <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${border}`, fontSize:11, color:dimmed, lineHeight:'1.45' }}>
+          {task.description.length > 120 ? task.description.slice(0, 120) + '…' : task.description}
         </div>
       )}
     </div>
