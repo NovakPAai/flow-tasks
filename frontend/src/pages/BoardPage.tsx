@@ -11,6 +11,7 @@ import * as boardsApi from '../api/boards';
 import * as tasksApi from '../api/tasks';
 import * as workspacesApi from '../api/workspaces';
 import * as labelsApi from '../api/labels';
+import { useBreakpoint } from '../utils/useBreakpoint';
 import TaskCard from '../components/TaskCard';
 import TaskDrawer from '../components/TaskDrawer';
 import BoardListView from '../components/BoardListView';
@@ -126,6 +127,9 @@ function BoardSettingsBtn({ onClick, border, addText, isPrivate }: {
 export default function BoardPage() {
   const { slug, boardSlug } = useParams<{ slug: string; boardSlug: string }>();
   const navigate = useNavigate();
+  const bp      = useBreakpoint();
+  const isMobile = bp === 'mobile';
+
   const mode = useThemeStore(s => s.mode);
   const workspaces = useWorkspaceStore(s => s.workspaces);
   const wsLoading = useWorkspaceStore(s => s.loading);
@@ -372,14 +376,15 @@ export default function BoardPage() {
 
       {/* ── Board header ─────────────────────────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '16px 24px', background: headerBg,
-        borderBottom: `1px solid ${border}`, flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12,
+        padding: isMobile ? '12px 16px' : '16px 24px',
+        background: headerBg, borderBottom: `1px solid ${border}`,
+        flexShrink: 0, minWidth: 0, overflow: 'hidden',
       }}>
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: addText }}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: addText, flexShrink: 0 }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -387,14 +392,22 @@ export default function BoardPage() {
         </button>
 
         {/* Board name + task count */}
-        <h1 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 700, color: nameColor, margin: 0, letterSpacing: '-0.3px' }}>
+        <h1 style={{
+          fontFamily: '"Space Grotesk",system-ui,sans-serif',
+          fontSize: isMobile ? 16 : 18, fontWeight: 700, color: nameColor,
+          margin: 0, letterSpacing: '-0.3px',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          minWidth: 0, flex: isMobile ? '1 1 0' : undefined,
+        }}>
           {board.name}
         </h1>
-        <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: cntText, background: cntBg, borderRadius: 6, padding: '2px 8px', flexShrink: 0 }}>
-          {allTasks.length}{hasMoreTasks ? '+' : ''} задач
-        </span>
+        {!isMobile && (
+          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: cntText, background: cntBg, borderRadius: 6, padding: '2px 8px', flexShrink: 0 }}>
+            {allTasks.length}{hasMoreTasks ? '+' : ''} задач
+          </span>
+        )}
 
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: isMobile ? undefined : 1 }} />
 
         {/* View switcher */}
         <div style={{ display: 'flex', gap: 2, background: isDark ? '#0F1320' : '#EDE9FE', borderRadius: 10, padding: 3 }}>
@@ -428,12 +441,12 @@ export default function BoardPage() {
         <button
           data-onboarding="create-task"
           onClick={() => { if (statuses.length > 0) { setAddingTo(statuses[0].id); setAddTitle(''); } }}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: isMobile ? '7px 10px' : '7px 14px', cursor: 'pointer', flexShrink: 0 }}
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 1v10M1 6h10" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
           </svg>
-          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: '#fff' }}>Создать</span>
+          {!isMobile && <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: '#fff' }}>Создать</span>}
         </button>
       </div>
 
@@ -451,7 +464,7 @@ export default function BoardPage() {
 
         {/* Kanban */}
         {viewMode === 'board' && (
-          <div style={{ overflowX: 'auto', padding: '24px', height: '100%' }}>
+          <div style={{ overflowX: 'auto', padding: isMobile ? '12px 16px' : '24px', height: '100%', WebkitOverflowScrolling: 'touch' }}>
             <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
               <div style={{ display: 'flex', gap: 16, height: '100%', minHeight: 0 }}>
                 {statuses.map(status => {

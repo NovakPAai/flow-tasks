@@ -13,12 +13,37 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
   const [form] = Form.useForm();
 
   function collectDeviceMeta() {
+    const ua = navigator.userAgent;
+
+    const deviceType =
+      /Mobi|Android|iPhone|iPod/i.test(ua) ? 'mobile' :
+      /iPad|Tablet/i.test(ua) ? 'tablet' : 'desktop';
+
+    let os = 'Unknown';
+    if      (/Windows/i.test(ua))                          os = 'Windows';
+    else if (/Mac OS X/i.test(ua) && !/iPhone|iPad/i.test(ua)) os = 'macOS';
+    else if (/iPhone/i.test(ua))                           os = 'iOS';
+    else if (/iPad/i.test(ua))                             os = 'iPadOS';
+    else if (/Android/i.test(ua))                          os = 'Android';
+    else if (/Linux/i.test(ua))                            os = 'Linux';
+
+    let browser = 'Unknown';
+    if      (/Edg\//i.test(ua))     browser = 'Edge';
+    else if (/OPR\//i.test(ua))     browser = 'Opera';
+    else if (/YaBrowser/i.test(ua)) browser = 'Yandex';
+    else if (/Chrome\//i.test(ua))  browser = 'Chrome';
+    else if (/Firefox\//i.test(ua)) browser = 'Firefox';
+    else if (/Safari\//i.test(ua))  browser = 'Safari';
+
     return {
-      ua: navigator.userAgent,
-      screen: `${screen.width}x${screen.height}`,
-      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      ua,
+      screen: `${screen.width}×${screen.height}`,
+      viewport: `${window.innerWidth}×${window.innerHeight}`,
       url: window.location.href,
       language: navigator.language,
+      deviceType,
+      os,
+      browser,
     };
   }
 
