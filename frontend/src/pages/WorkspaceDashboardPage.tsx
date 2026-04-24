@@ -4,7 +4,7 @@ import { message } from 'antd';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
 import { useBreakpoint } from '../utils/useBreakpoint';
-import type { Board } from '../types';
+import type { Board, WorkspaceEvent } from '../types';
 import * as workspacesApi from '../api/workspaces';
 import * as boardsApi from '../api/boards';
 
@@ -218,6 +218,7 @@ export default function WorkspaceDashboardPage() {
 
   const { workspaces, current, setCurrent, loading: wsLoading, load, incrementBoardCount } = useWorkspaceStore();
   const [boards, setBoards] = useState<Board[]>([]);
+  const [activity, setActivity] = useState<WorkspaceEvent[]>([]);
   const [boardsLoading, setBoardsLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -244,6 +245,9 @@ export default function WorkspaceDashboardPage() {
       .then(setBoards)
       .catch(() => setBoards([]))
       .finally(() => setBoardsLoading(false));
+    workspacesApi.getWorkspaceHistory(current.id)
+      .then(evs => setActivity(evs.slice(0, 6)))
+      .catch(() => {});
   }, [current?.id]);
 
   const onCreateBoard = async () => {
@@ -399,7 +403,70 @@ export default function WorkspaceDashboardPage() {
       </div>
 
       {/* ── Content ──────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '28px 48px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: isMobile ? '20px 16px' : '28px 48px', overflowY: 'auto' }}>
+
+        {/* Quick nav */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 32 }}>
+          {[
+            {
+              title: 'Мои задачи',
+              desc: 'Назначенные вам задачи',
+              color: '#4F6EF7',
+              icon: (
+                <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
+                  <path d="M3 5.5h7M3 9h5M3 12.5h4" stroke="#4F6EF7" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="13" cy="11" r="3.5" stroke="#4F6EF7" strokeWidth="1.4"/>
+                  <path d="M11.8 11l.8.8 1.7-1.7" stroke="#4F6EF7" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ),
+              onClick: () => navigate('/my-tasks'),
+            },
+            {
+              title: 'Дорожные карты',
+              desc: `${boards.length} ${boards.length === 1 ? 'доска' : boards.length < 5 ? 'доски' : 'досок'} · сроки и прогресс`,
+              color: '#F59E0B',
+              icon: (
+                <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
+                  <line x1="2" y1="5"  x2="12" y2="5"  stroke="#F59E0B" strokeWidth="1.6" strokeLinecap="round"/>
+                  <line x1="6" y1="9"  x2="16" y2="9"  stroke="#F59E0B" strokeWidth="1.6" strokeLinecap="round"/>
+                  <line x1="3" y1="13" x2="13" y2="13" stroke="#F59E0B" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
+              ),
+              onClick: () => navigate(`/w/${slug}/roadmaps`),
+            },
+          ].map(item => (
+            <div
+              key={item.title}
+              onClick={item.onClick}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: c.cardBg, border: `1px solid ${c.cardBorder}`,
+                borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
+                transition: 'border-color .14s, box-shadow .12s',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(79,110,247,.35)';
+                (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(79,110,247,.06)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.borderColor = c.cardBorder;
+                (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+              }}
+            >
+              <div style={{ width: 34, height: 34, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: `${item.color}18` }}>
+                {item.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: c.cardTitle }}>{item.title}</div>
+                <div style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.cardSub, marginTop: 2 }}>{item.desc}</div>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: c.cardSub }}>
+                <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          ))}
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, fontWeight: 600, color: c.secLbl, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Доски · {boards.length}
@@ -434,6 +501,48 @@ export default function WorkspaceDashboardPage() {
                 onClick={() => navigate(`/w/${slug}/boards/${board.prefix.toLowerCase()}`)}
               />
             ))}
+          </div>
+        )}
+
+        {/* ── Activity ──────────────────────────────────────────────────── */}
+        {activity.length > 0 && (
+          <div style={{ marginTop: 36 }}>
+            <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, fontWeight: 600, color: c.secLbl, letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: 14 }}>
+              Последняя активность
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {activity.map(ev => {
+                const name = ev.user?.name ?? 'Кто-то';
+                const nameParts = name.trim().split(/\s+/);
+                const isFem = /[аяАЯ]$/u.test(nameParts[nameParts.length - 1] ?? '');
+                const ACTION_LABELS: Record<string, string> = {
+                  workspace_created: isFem ? 'создала пространство' : 'создал пространство',
+                  workspace_updated: isFem ? 'обновила настройки' : 'обновил настройки',
+                  member_added:      isFem ? 'добавила участника' : 'добавил участника',
+                  member_removed:    isFem ? 'удалила участника' : 'удалил участника',
+                  board_created:     isFem ? 'создала доску' : 'создал доску',
+                  board_deleted:     isFem ? 'удалила доску' : 'удалил доску',
+                  member_role_changed: isFem ? 'изменила роль' : 'изменил роль',
+                };
+                const label = ACTION_LABELS[ev.action] ?? ev.action;
+                const time  = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const AVATAR_COLORS = ['#4F6EF7','#8B5CF6','#F59E0B','#34D399','#F87171','#38BDF8'];
+                const avColor = AVATAR_COLORS[(name.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
+                const initials = name.split(/\s+/).map((p: string) => p[0]).slice(0,2).join('').toUpperCase();
+
+                return (
+                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${c.cardBorder}` }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: avColor, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 9, fontWeight: 700, color: '#fff' }}>{initials}</span>
+                    </div>
+                    <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, color: c.cardSub, flex: 1 }}>
+                      <span style={{ color: c.cardTitle, fontWeight: 500 }}>{name}</span> {label}
+                    </span>
+                    <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.cardSub, flexShrink: 0 }}>{time}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
