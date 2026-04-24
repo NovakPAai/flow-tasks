@@ -16,9 +16,10 @@ import TaskCard from '../components/TaskCard';
 import TaskDrawer from '../components/TaskDrawer';
 import BoardListView from '../components/BoardListView';
 import BoardCalendarView from '../components/BoardCalendarView';
+import RoadmapView from '../components/RoadmapView';
 import FilterBar, { type FilterState, EMPTY_FILTERS } from '../components/FilterBar';
 
-type ViewMode = 'board' | 'list' | 'calendar';
+type ViewMode = 'board' | 'list' | 'calendar' | 'roadmap';
 type Columns = Record<string, Task[]>;
 
 function groupByStatus(tasks: Task[], statuses: WorkflowStatus[]): Columns {
@@ -364,10 +365,17 @@ export default function BoardPage() {
   }
   if (!board) return null;
 
-  const viewBtns: { mode: ViewMode; icon: React.ReactNode }[] = [
-    { mode: 'board',    icon: <KanbanIcon active={viewMode === 'board'} color={viewActive} /> },
-    { mode: 'list',     icon: <ListIcon /> },
-    { mode: 'calendar', icon: <CalIcon /> },
+  const viewBtns: { mode: ViewMode; icon: React.ReactNode; title: string }[] = [
+    { mode: 'board',    title: 'Канбан',        icon: <KanbanIcon active={viewMode === 'board'} color={viewActive} /> },
+    { mode: 'list',     title: 'Список',         icon: <ListIcon /> },
+    { mode: 'calendar', title: 'Календарь',      icon: <CalIcon /> },
+    { mode: 'roadmap',  title: 'Дорожная карта', icon: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <line x1="1" y1="4"   x2="9"  y2="4"   stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="5" y1="7.5" x2="13" y2="7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="2" y1="11"  x2="10" y2="11"  stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      </svg>
+    )},
   ];
 
   return (
@@ -415,6 +423,7 @@ export default function BoardPage() {
             <button
               key={btn.mode}
               onClick={() => setViewMode(btn.mode)}
+              title={btn.title}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 32, height: 28, border: 'none', cursor: 'pointer', borderRadius: 7,
@@ -460,7 +469,7 @@ export default function BoardPage() {
       />
 
       {/* ── View content ─────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: viewMode === 'board' ? 'hidden' : 'auto' }}>
+      <div style={{ flex: 1, overflow: viewMode === 'board' || viewMode === 'roadmap' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* Kanban */}
         {viewMode === 'board' && (
@@ -621,6 +630,15 @@ export default function BoardPage() {
             statuses={statuses}
             tasks={filteredTasks}
             onTaskClick={setSelectedTaskId}
+          />
+        )}
+
+        {/* Roadmap */}
+        {viewMode === 'roadmap' && (
+          <RoadmapView
+            boardId={board.id}
+            statuses={statuses}
+            members={members}
           />
         )}
       </div>
