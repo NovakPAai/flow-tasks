@@ -34,4 +34,9 @@ router.delete('/:id', authHandler(async (req, res) => {
   res.json({ message: 'Board deleted' });
 }));
 
+router.get('/:id/roadmap', authHandler(async (req, res) => {
+  const { from, to } = req.query as { from?: string; to?: string };
+  res.json(await boards.getRoadmapTasks(String(req.params.id), req.user!.userId, from, to));
+}));
+
 export default router;

@@ -118,3 +118,46 @@ export async function deleteBoard(boardId: string, userId: string) {
   await assertOwner(board.workspaceId, userId);
   await prisma.board.delete({ where: { id: boardId } });
 }
+
+// ─── Roadmap ──────────────────────────────────────────────────────────────────
+export async function getRoadmapTasks(boardId: string, userId: string, from?: string, to?: string) {
+  const board = await prisma.board.findUnique({ where: { id: boardId } });
+  if (!board) throw new AppError(404, 'Board not found');
+  await assertMember(board.workspaceId, userId);
+
+  const fromDate = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
+  const toDate   = to   ? new Date(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
+
+  const taskInclude = {
+    status:   { select: { id: true, name: true, color: true, category: true } },
+    assignee: { select: { id: true, name: true, avatar: true } },
+    _count:   { select: { children: true } },
+  } as const;
+
+  const dateInRange = {
+    OR: [
+      { startDate: { gte: fromDate, lte: toDate } },
+      { dueDate:   { gte: fromDate, lte: toDate } },
+      { startDate: { lte: fromDate }, dueDate: { gte: toDate } },
+    ],
+  };
+
+  return prisma.task.findMany({
+    where: {
+      boardId,
+      parentId: null,
+      OR: [
+        dateInRange,
+        { children: { some: dateInRange } },
+      ],
+    },
+    include: {
+      ...taskInclude,
+      children: {
+        include: taskInclude,
+        orderBy: { orderIndex: 'asc' },
+      },
+    },
+    orderBy: { orderIndex: 'asc' },
+  });
+}

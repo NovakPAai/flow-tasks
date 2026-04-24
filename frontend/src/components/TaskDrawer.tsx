@@ -110,6 +110,7 @@ export default function TaskDrawer({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('details');
+  const [subtaskId, setSubtaskId] = useState<string | null>(null);
 
   // Edit states
   const [editTitle, setEditTitle] = useState(false);
@@ -603,6 +604,7 @@ export default function TaskDrawer({
                       boardId={boardId}
                       statuses={statuses}
                       onRefresh={refreshTask}
+                      onOpenTask={setSubtaskId}
                     />
                   ) : (task._count?.children ?? 0) > 0 ? (
                     <span style={{ fontSize: 12, color: c.label }}>{task._count?.children} подзадач</span>
@@ -649,6 +651,22 @@ export default function TaskDrawer({
           )}
         </div>
       </div>
+
+      {/* Nested TaskDrawer — drill-down в подзадачу */}
+      {subtaskId && (
+        <TaskDrawer
+          taskId={subtaskId}
+          statuses={statuses}
+          members={members}
+          workspaceId={workspaceId}
+          boardId={boardId}
+          workspaceLabels={workspaceLabels}
+          onWorkspaceLabelCreated={onWorkspaceLabelCreated}
+          onClose={() => setSubtaskId(null)}
+          onUpdated={() => { refreshTask(); }}
+          onDeleted={() => { setSubtaskId(null); refreshTask(); }}
+        />
+      )}
     </>
   );
 }
