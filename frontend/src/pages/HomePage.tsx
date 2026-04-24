@@ -23,7 +23,7 @@ export default function HomePage() {
         fontFamily: '"Inter",system-ui,sans-serif', fontSize: 14,
         color: c.sub, display: 'block', marginBottom: 24,
       }}>
-        Добро пожаловать, {user?.name ?? 'пользователь'}!
+        Добро пожаловать, {user?.name?.trim().split(/\s+/)[0] ?? 'пользователь'}!
       </span>
       <button
         onClick={logout}

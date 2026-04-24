@@ -17,10 +17,11 @@ export async function submitFeedback(dto: FeedbackDto, user: FeedbackUser) {
   const label = dto.type === 'bug' ? 'bug' : 'enhancement';
   const deviceSection = dto.meta
     ? [
-        `**UA:** \`${dto.meta.ua}\``,
+        `**Устройство:** ${dto.meta.deviceType ?? '—'} | **ОС:** ${dto.meta.os ?? '—'} | **Браузер:** ${dto.meta.browser ?? '—'}`,
         `**Экран:** ${dto.meta.screen} / вьюпорт: ${dto.meta.viewport}`,
         `**Язык:** ${dto.meta.language}`,
         `**URL:** ${dto.meta.url}`,
+        `**UA:** \`${dto.meta.ua}\``,
       ].join('\n')
     : '*нет данных об устройстве*';
   const bodyWithMeta = `${dto.body}\n\n---\n**Отправитель:** ${user.name} (${user.email})\n**Окружение:** ${config.NODE_ENV}\n\n### Устройство\n${deviceSection}`;
