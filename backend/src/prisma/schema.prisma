@@ -181,10 +181,11 @@ model WorkflowStatus {
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
-  workflow        Workflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  transitionsFrom WorkflowTransition[] @relation("FromStatus")
-  transitionsTo   WorkflowTransition[] @relation("ToStatus")
+  workflow        Workflow              @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  transitionsFrom WorkflowTransition[]  @relation("FromStatus")
+  transitionsTo   WorkflowTransition[]  @relation("ToStatus")
   tasks           Task[]
+  statusHistory   TaskStatusHistory[]
 
   @@index([workflowId, position])
   @@map("workflow_statuses")
@@ -266,10 +267,11 @@ model Task {
   assignee User?          @relation("taskAssignee", fields: [assigneeId], references: [id])
   parent   Task?          @relation("Subtasks", fields: [parentId], references: [id])
   children Task[]         @relation("Subtasks")
-  labels     TaskLabel[]
-  comments   Comment[]
-  checklists Checklist[]
-  history    TaskHistory[]
+  labels        TaskLabel[]
+  comments      Comment[]
+  checklists    Checklist[]
+  history       TaskHistory[]
+  statusHistory TaskStatusHistory[]
 
   @@index([boardId, statusId, orderIndex])
   @@index([parentId])
@@ -277,6 +279,22 @@ model Task {
   @@index([path])
   @@index([dueDate])
   @@map("tasks")
+}
+
+// ─── Task status history ─────────────────────────────────────────────────────
+
+model TaskStatusHistory {
+  id        String    @id @default(uuid())
+  taskId    String
+  statusId  String
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  task   Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  status WorkflowStatus @relation(fields: [statusId], references: [id])
+
+  @@index([taskId])
+  @@map("task_status_history")
 }
 
 enum Priority {

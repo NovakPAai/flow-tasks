@@ -168,7 +168,7 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
   });
   const orderIndex = (maxOrder._max.orderIndex ?? -1) + 1;
 
-  return prisma.task.create({
+  const task = await prisma.task.create({
     data: {
       boardId,
       statusId,
@@ -193,6 +193,13 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
       _count: { select: { children: true } },
     },
   });
+
+  // Открываем первую запись истории статусов
+  await prisma.taskStatusHistory.create({
+    data: { taskId: task.id, statusId },
+  });
+
+  return task;
 }
 
 // ─── Get task detail ──────────────────────────────────────────────────────────
@@ -353,6 +360,14 @@ export async function moveTask(taskId: string, userId: string, toStatusId: strin
     }),
     prisma.taskHistory.create({
       data: { taskId, userId, field: 'statusId', oldValue: fromStatusId, newValue: toStatusId },
+    }),
+    // Закрываем текущую запись истории статусов и открываем новую
+    prisma.taskStatusHistory.updateMany({
+      where: { taskId, endedAt: null },
+      data: { endedAt: new Date() },
+    }),
+    prisma.taskStatusHistory.create({
+      data: { taskId, statusId: toStatusId },
     }),
   ]);
 

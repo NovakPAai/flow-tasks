@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { Task, WorkflowStatus } from '../types';
@@ -216,6 +216,12 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   const [expanded, setExpanded]   = useState<Set<string>>(new Set());
   const [hideOpen, setHideOpen]   = useState(false);
   const [tip, setTip]             = useState<TipState | null>(null);
+
+  // Быстрый доступ к цвету/категории статуса по id
+  const statusMap = useMemo(
+    () => new Map(statuses.map(s => [s.id, s])),
+    [statuses],
+  );
 
   const leftRef  = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -746,6 +752,23 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                 const ovW     = overdue ? ovRight - ovLeft : 0;
                 const overdueDays = overdue ? diffDays(end, getToday()) : 0;
 
+                // Сегментный бар когда есть история статусов
+                const history = task.statusHistory;
+                const isSegmented = history && history.length > 0;
+
+                const barMouseProps = {
+                  onMouseEnter: (e: React.MouseEvent) => {
+                    (e.currentTarget as HTMLDivElement).style.filter = 'brightness(1.1)';
+                    setTip({ task, x: e.clientX, y: e.clientY });
+                  },
+                  onMouseMove: (e: React.MouseEvent) =>
+                    setTip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null),
+                  onMouseLeave: (e: React.MouseEvent) => {
+                    (e.currentTarget as HTMLDivElement).style.filter = '';
+                    setTip(null);
+                  },
+                };
+
                 return (
                   <div key={task.id} style={rowStyle}>
                     {cw > 0 && (
@@ -756,33 +779,75 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                           top: '50%', transform: 'translateY(-50%)',
                           left: cx, width: cw, height: barH,
                           borderRadius: barR, overflow: 'hidden',
-                          background: bg, border: `1px solid ${border}`,
+                          background: isSegmented ? 'transparent' : bg,
+                          border: isSegmented ? `1px solid ${c.border}` : `1px solid ${border}`,
                           display: 'flex', alignItems: 'center',
-                          padding: '0 8px 0 10px', cursor: 'default',
-                          color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,.35)',
-                          fontSize: isChild ? 11 : 12, fontWeight: 500,
-                          whiteSpace: 'nowrap',
-                          transition: 'filter .12s',
-                          zIndex: 2,
+                          cursor: 'default', whiteSpace: 'nowrap',
+                          transition: 'filter .12s', zIndex: 2,
                         }}
-                        onMouseEnter={e => {
-                          (e.currentTarget as HTMLDivElement).style.filter = 'brightness(1.12)';
-                          setTip({ task, x: e.clientX, y: e.clientY });
-                        }}
-                        onMouseMove={e => setTip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
-                        onMouseLeave={e => {
-                          (e.currentTarget as HTMLDivElement).style.filter = '';
-                          setTip(null);
-                        }}
+                        {...barMouseProps}
                       >
-                        {/* Left accent stripe */}
-                        <div style={{
-                          position: 'absolute', left: 0, top: 0, bottom: 0, width: isChild ? 3 : 4,
-                          background: 'rgba(0,0,0,.25)',
-                        }} />
-                        {cw > 38 && <span style={{ color: 'rgba(255,255,255,.7)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0 }}>{task.issueKey}</span>}
-                        {cw > 60 && <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</span>}
-                        {cw > 90 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.82)', marginLeft: 6, flexShrink: 0, fontWeight: 600 }}>{fmtShort(end)}</span>}
+                        {isSegmented ? (
+                          <>
+                            {/* Цветные сегменты по истории статусов */}
+                            {history!.map((seg) => {
+                              const segStart = new Date(seg.startedAt);
+                              const segEnd   = seg.endedAt ? new Date(seg.endedAt) : getToday();
+                              const clampS   = segStart < start! ? start! : segStart;
+                              const clampE   = segEnd   > end!   ? end!   : segEnd;
+                              const segL     = Math.max(0, xOf(clampS) - cx);
+                              const segW     = Math.max(2, xOf(clampE) - xOf(clampS));
+                              const st       = statusMap.get(seg.statusId);
+                              const color    = st?.color ?? '#8B95B0';
+                              const alpha    = st?.category === 'DONE'
+                                ? 'A0' : st?.category === 'IN_PROGRESS' ? 'B0' : '70';
+                              return (
+                                <div key={seg.id} style={{
+                                  position: 'absolute', top: 0, bottom: 0,
+                                  left: segL, width: segW,
+                                  background: `${color}${alpha}`,
+                                }} />
+                              );
+                            })}
+                            {/* Призрачный хвост: от сегодня до конца если задача ещё идёт */}
+                            {(() => {
+                              const last = history![history!.length - 1];
+                              if (last.endedAt) return null; // задача уже завершена
+                              const today = getToday();
+                              if (today >= end!) return null; // просрочена — tail не нужен
+                              const tailL = Math.max(0, xOf(today) - cx);
+                              const tailW = Math.max(2, xOf(end!) - xOf(today));
+                              const st    = statusMap.get(last.statusId);
+                              return (
+                                <div style={{
+                                  position: 'absolute', top: 0, bottom: 0,
+                                  left: tailL, width: tailW,
+                                  background: `${st?.color ?? '#8B95B0'}28`,
+                                  borderLeft: `1px dashed ${st?.color ?? '#8B95B0'}55`,
+                                }} />
+                              );
+                            })()}
+                            {/* Текст поверх сегментов */}
+                            <div style={{
+                              position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
+                              height: '100%', width: '100%', padding: '0 8px 0 10px',
+                              color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,.4)',
+                              fontSize: isChild ? 11 : 12, fontWeight: 500, pointerEvents: 'none',
+                            }}>
+                              {cw > 38 && <span style={{ color: 'rgba(255,255,255,.75)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0 }}>{task.issueKey}</span>}
+                              {cw > 60 && <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</span>}
+                              {cw > 90 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.85)', marginLeft: 6, flexShrink: 0, fontWeight: 600 }}>{fmtShort(end!)}</span>}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* Оригинальный сплошной бар */}
+                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: isChild ? 3 : 4, background: 'rgba(0,0,0,.25)' }} />
+                            {cw > 38 && <span style={{ color: 'rgba(255,255,255,.7)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0, position: 'relative', zIndex: 1 }}>{task.issueKey}</span>}
+                            {cw > 60 && <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,.35)', fontSize: isChild ? 11 : 12, fontWeight: 500, position: 'relative', zIndex: 1 }}>{task.title}</span>}
+                            {cw > 90 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.82)', marginLeft: 6, flexShrink: 0, fontWeight: 600, position: 'relative', zIndex: 1 }}>{fmtShort(end!)}</span>}
+                          </>
+                        )}
                       </div>
                     )}
 

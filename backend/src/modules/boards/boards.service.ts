@@ -130,9 +130,10 @@ export async function getRoadmapTasks(boardId: string, userId: string, from?: st
   const toDate   = to   ? new Date(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
 
   const taskInclude = {
-    status:   { select: { id: true, name: true, color: true, category: true } },
-    assignee: { select: { id: true, name: true, avatar: true } },
-    _count:   { select: { children: true } },
+    status:        { select: { id: true, name: true, color: true, category: true } },
+    assignee:      { select: { id: true, name: true, avatar: true } },
+    _count:        { select: { children: true } },
+    statusHistory: { orderBy: { startedAt: 'asc' as const } },
   } as const;
 
   const dateInRange = {
