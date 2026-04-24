@@ -642,7 +642,6 @@ export default function BoardPage() {
           <RoadmapView
             boardId={board.id}
             statuses={statuses}
-            members={members}
           />
         )}
       </div>

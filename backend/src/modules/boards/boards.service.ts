@@ -123,7 +123,8 @@ export async function deleteBoard(boardId: string, userId: string) {
 export async function getRoadmapTasks(boardId: string, userId: string, from?: string, to?: string) {
   const board = await prisma.board.findUnique({ where: { id: boardId } });
   if (!board) throw new AppError(404, 'Board not found');
-  await assertMember(board.workspaceId, userId);
+  const member = await assertMember(board.workspaceId, userId);
+  if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
 
   const fromDate = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
   const toDate   = to   ? new Date(to)   : new Date(new Date().getFullYear() + 1, 0, 1);

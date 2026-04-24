@@ -192,7 +192,9 @@ export default function AppLayout({ children }: Props) {
 
   const isWorkspace = !!urlSlug;
   const isRoadmaps = isWorkspace && location.pathname.endsWith('/roadmaps');
-  const isBoards   = isWorkspace && !location.pathname.includes('/settings') && !isRoadmaps;
+  const isBoards   = isWorkspace
+    && (location.pathname === `/w/${urlSlug}`
+        || location.pathname.startsWith(`/w/${urlSlug}/boards`));
   const isMyTasks  = location.pathname === '/my-tasks';
 
   const userInitials = user ? initials(user.name) : '?';

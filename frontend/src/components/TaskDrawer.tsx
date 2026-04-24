@@ -663,8 +663,8 @@ export default function TaskDrawer({
           workspaceLabels={workspaceLabels}
           onWorkspaceLabelCreated={onWorkspaceLabelCreated}
           onClose={() => setSubtaskId(null)}
-          onUpdated={() => { refreshTask(); }}
-          onDeleted={() => { setSubtaskId(null); refreshTask(); }}
+          onUpdated={(updated) => { onUpdated(updated); refreshTask(); }}
+          onDeleted={(id) => { setSubtaskId(null); onDeleted(id); refreshTask(); }}
         />
       )}
     </>
