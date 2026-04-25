@@ -17,6 +17,7 @@ import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import RoadmapsPage from './pages/RoadmapsPage';
+import FeedbackFAB from './components/FeedbackFAB';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -74,6 +75,7 @@ export default function App() {
       }}
     >
       <BrowserRouter>
+        <FeedbackFAB />
         <Routes>
           <Route path="/login" element={user ? <Navigate to="/workspaces" replace /> : <LoginPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

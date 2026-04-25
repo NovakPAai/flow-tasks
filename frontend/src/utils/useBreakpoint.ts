@@ -39,6 +39,23 @@ export function useIsMobile(): boolean {
   return useBreakpoint() === 'mobile';
 }
 
+// Landscape на мобильном/планшете: ширина > высоты И не desktop
+const LANDSCAPE_QUERY = '(orientation: landscape) and (max-height: 600px)';
+
+export function useIsLandscape(): boolean {
+  const [landscape, setLandscape] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia(LANDSCAPE_QUERY).matches,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia(LANDSCAPE_QUERY);
+    const update = (e: MediaQueryListEvent) => setLandscape(e.matches);
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
+  return landscape;
+}
+
 export function useResponsiveValue<T>(mobile: T, tablet: T, desktop: T): T {
   const bp = useBreakpoint();
   if (bp === 'mobile') return mobile;

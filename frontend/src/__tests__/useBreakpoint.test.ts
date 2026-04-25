@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useBreakpoint, useIsMobile, useResponsiveValue } from '../utils/useBreakpoint';
+import { useBreakpoint, useIsMobile, useIsLandscape, useResponsiveValue } from '../utils/useBreakpoint';
 
 type MqlEntry = { matches: boolean; listeners: Set<(e: Partial<MediaQueryListEvent>) => void> };
 type MqlStore = Record<string, MqlEntry>;
@@ -125,6 +125,33 @@ describe('useIsMobile', () => {
 
     act(() => { fire('(max-width: 767px)', true); });
     expect(result.current).toBe(true);
+  });
+});
+
+describe('useIsLandscape', () => {
+  beforeEach(() => vi.unstubAllGlobals());
+
+  function mockOrientationMedia(isLandscape: boolean) {
+    vi.stubGlobal('matchMedia', vi.fn((query: string) => {
+      const matches = query.includes('landscape') ? isLandscape : false;
+      return {
+        matches,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+    }));
+  }
+
+  it('returns true when in landscape with small height', () => {
+    mockOrientationMedia(true);
+    const { result } = renderHook(() => useIsLandscape());
+    expect(result.current).toBe(true);
+  });
+
+  it('returns false when in portrait', () => {
+    mockOrientationMedia(false);
+    const { result } = renderHook(() => useIsLandscape());
+    expect(result.current).toBe(false);
   });
 });
 
