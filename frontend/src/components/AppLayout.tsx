@@ -4,8 +4,8 @@ import { message } from 'antd';
 import { useAuthStore } from '../store/auth.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
-import { useBreakpoint } from '../utils/useBreakpoint';
-import FeedbackModal from './FeedbackModal';
+import { useBreakpoint, useIsLandscape } from '../utils/useBreakpoint';
+
 
 interface Props { children: React.ReactNode }
 
@@ -145,11 +145,12 @@ export default function AppLayout({ children }: Props) {
   const { workspaces, current, load, setCurrent } = useWorkspaceStore();
   const { mode, toggle } = useThemeStore();
 
-  const bp = useBreakpoint();
-  const isMobile = bp === 'mobile';
+  const bp          = useBreakpoint();
+  const isLandscape = useIsLandscape();
+  // В landscape на мобиле/планшете используем компактный топбар
+  const topbarH = isLandscape && bp !== 'desktop' ? 40 : 56;
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // ── Design tokens ──────────────────────────────────────────────────────────
   const isDark = mode !== 'light';
@@ -204,8 +205,8 @@ export default function AppLayout({ children }: Props) {
       {/* ── Topbar ── */}
       <div style={{
         alignItems: 'center', backgroundColor: navBg, borderBottom: `1px solid ${navBorder}`,
-        display: 'flex', flexShrink: 0, gap: 16, height: 56,
-        paddingInline: 24, position: 'relative', zIndex: 100,
+        display: 'flex', flexShrink: 0, gap: isLandscape ? 10 : 16, height: topbarH,
+        paddingInline: isLandscape ? 16 : 24, position: 'relative', zIndex: 100,
       }}>
         {/* Logo */}
         <div
@@ -332,32 +333,6 @@ export default function AppLayout({ children }: Props) {
           )}
         </button>
 
-        {/* Feedback button — icon+text on tablet/desktop, icon-only on mobile */}
-        <button
-          onClick={() => setFeedbackOpen(true)}
-          title="Обратная связь"
-          style={{
-            alignItems: 'center',
-            background: 'transparent',
-            border: `1px solid ${tabIdleText}`,
-            borderRadius: 6,
-            cursor: 'pointer',
-            display: 'flex',
-            fontSize: 12,
-            gap: 4,
-            justifyContent: 'center',
-            opacity: 0.7,
-            padding: isMobile ? '4px 7px' : '4px 10px',
-            color: tabIdleText,
-            fontFamily: '"Inter", system-ui, sans-serif',
-          }}
-        >
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11.5 1.5H1.5C1.22 1.5 1 1.72 1 2v7c0 .28.22.5.5.5h2v2l2.5-2h5.5c.28 0 .5-.22.5-.5V2c0-.28-.22-.5-.5-.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
-          </svg>
-          {bp !== 'mobile' && 'Обратная связь'}
-        </button>
-
         {/* Avatar */}
         <div style={{ position: 'relative' }}>
           <div
@@ -390,7 +365,6 @@ export default function AppLayout({ children }: Props) {
         {children}
       </div>
 
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }
