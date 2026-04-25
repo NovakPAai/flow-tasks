@@ -3,6 +3,7 @@ import { message, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../store/theme.store';
 import { useAuthStore } from '../store/auth.store';
+import { useBreakpoint } from '../utils/useBreakpoint';
 import type { AdminUser, RegistrationRequest } from '../types';
 import * as adminApi from '../api/admin';
 
@@ -124,6 +125,9 @@ type Tab = 'users' | 'create' | 'requests';
 // ── Main component ──────────────────────────────────────────────────────────────
 export default function AdminUsersPage() {
   const { mode } = useThemeStore();
+  const bp        = useBreakpoint();
+  const isMobile  = bp === 'mobile';
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const C = mode === 'dark' ? DARK : LIGHT;
@@ -240,7 +244,7 @@ export default function AdminUsersPage() {
 
   return (
     <div style={{ background: C.bg, minHeight: '100vh', ...font }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ padding: isMobile ? '20px 16px' : '40px 32px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
@@ -271,13 +275,13 @@ export default function AdminUsersPage() {
 
         {/* ── Tab: Пользователи ── */}
         {tab === 'users' && (
-          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 12 }}>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 12, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {loadingUsers ? (
               <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontSize: 14 }}>Загрузка...</div>
             ) : users.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: C.muted, fontSize: 14 }}>Пользователей нет</div>
             ) : (
-              <>
+              <div style={{ minWidth: 780 }}>
                 {/* Header row */}
                 <div style={{
                   display: 'grid', gridTemplateColumns: '1fr 180px 48px 48px 48px 52px 52px 110px 130px',
@@ -299,10 +303,11 @@ export default function AdminUsersPage() {
                     display: 'grid', gridTemplateColumns: '1fr 180px 48px 48px 48px 52px 52px 110px 130px',
                     padding: '12px 20px', alignItems: 'center',
                     borderBottom: i < users.length - 1 ? `1px solid ${C.border}` : 'none',
+                    background: hoveredRow === u.id ? C.rowHover : 'transparent',
                     transition: 'background .1s',
                   }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = C.rowHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    onMouseEnter={() => setHoveredRow(u.id)}
+                    onMouseLeave={() => setHoveredRow(null)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       <Avatar name={u.name} size={30} />
@@ -345,7 +350,7 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
                 ))}
-              </>
+              </div>
             )}
           </div>
         )}
