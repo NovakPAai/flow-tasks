@@ -1,6 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi as vitest } from 'vitest';
 import FeedbackFAB from '../components/FeedbackFAB';
+import * as authStore from '../store/auth.store';
+import type { User } from '../types';
 
 // Mock FeedbackModal — тестируем только FAB, не саму модалку
 vi.mock('../components/FeedbackModal', () => ({
@@ -22,13 +25,16 @@ vi.mock('../store/auth.store', () => ({
   ),
 }));
 
-const { useAuthStore } = await import('../store/auth.store') as { useAuthStore: ReturnType<typeof vi.fn> };
+const useAuthStoreMock = vitest.mocked(authStore.useAuthStore);
+
+const mockUser = { id: '1', name: 'Test', email: 'test@test.com' } as User;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockAuth = (user: User | null) => (sel: (s: any) => unknown) => sel({ user });
 
 describe('FeedbackFAB — unauthenticated', () => {
-  it('does not render when user is null', async () => {
-    useAuthStore.mockImplementation((sel: (s: { user: null }) => unknown) =>
-      sel({ user: null })
-    );
+  it('does not render when user is null', () => {
+    useAuthStoreMock.mockImplementation(mockAuth(null));
     render(<FeedbackFAB />);
     expect(screen.queryByTestId('feedback-fab')).not.toBeInTheDocument();
   });
@@ -37,9 +43,7 @@ describe('FeedbackFAB — unauthenticated', () => {
 describe('FeedbackFAB', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useAuthStore.mockImplementation((sel: (s: { user: object }) => unknown) =>
-      sel({ user: { id: '1', name: 'Test', email: 'test@test.com' } })
-    );
+    useAuthStoreMock.mockImplementation(mockAuth(mockUser));
   });
 
   it('renders floating action button', () => {
