@@ -191,8 +191,11 @@ export default function AppLayout({ children }: Props) {
   };
 
   const isWorkspace = !!urlSlug;
-  const isBoards = isWorkspace && !location.pathname.includes('/settings');
-  const isMyTasks = location.pathname === '/my-tasks';
+  const isRoadmaps = isWorkspace && location.pathname.endsWith('/roadmaps');
+  const isBoards   = isWorkspace
+    && (location.pathname === `/w/${urlSlug}`
+        || location.pathname.startsWith(`/w/${urlSlug}/boards`));
+  const isMyTasks  = location.pathname === '/my-tasks';
 
   const userInitials = user ? initials(user.name) : '?';
 
@@ -277,6 +280,20 @@ export default function AppLayout({ children }: Props) {
             >
               <span style={{ color: isMyTasks ? tabActiveText : tabIdleText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, lineHeight: '16px' }}>
                 My Tasks
+              </span>
+            </div>
+
+            {/* Roadmaps tab */}
+            <div
+              onClick={() => navigate(`/w/${current.slug}/roadmaps`)}
+              style={{
+                alignItems: 'center', backgroundColor: isRoadmaps ? tabActiveBg : 'transparent',
+                borderRadius: 8, cursor: 'pointer', display: 'flex', gap: 4,
+                paddingBlock: 5, paddingInline: 12,
+              }}
+            >
+              <span style={{ color: isRoadmaps ? tabActiveText : tabIdleText, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, fontWeight: isRoadmaps ? 500 : 400, lineHeight: '16px' }}>
+                Roadmaps
               </span>
             </div>
           </>

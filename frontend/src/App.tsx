@@ -16,6 +16,7 @@ import BoardSettingsPage from './pages/BoardSettingsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import RoadmapsPage from './pages/RoadmapsPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="/w/:slug" element={<PrivateRoute><WorkspaceDashboardPage /></PrivateRoute>} />
           <Route path="/w/:slug/boards/:boardSlug" element={<PrivateRoute><BoardPage /></PrivateRoute>} />
           <Route path="/w/:slug/boards/:boardSlug/settings" element={<PrivateRoute><BoardSettingsPage /></PrivateRoute>} />
+          <Route path="/w/:slug/roadmaps" element={<PrivateRoute><RoadmapsPage /></PrivateRoute>} />
           <Route path="/w/:slug/settings" element={<PrivateRoute><WorkspaceSettingsPage /></PrivateRoute>} />
           <Route path="/my-tasks" element={<PrivateRoute><MyTasksPage /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />

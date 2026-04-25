@@ -44,11 +44,12 @@ interface Props {
   statuses: WorkflowStatus[];
   depth?: number;
   onRefresh: () => void;
+  onOpenTask?: (taskId: string) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function SubtaskTree({
-  tasks, parentId, boardId, statuses, depth = 0, onRefresh,
+  tasks, parentId, boardId, statuses, depth = 0, onRefresh, onOpenTask,
 }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
@@ -179,14 +180,24 @@ export default function SubtaskTree({
                 )}
               </span>
 
-              {/* Title */}
-              <span style={{
-                flex: 1, fontSize: 13,
-                fontFamily: '"Inter",system-ui,sans-serif',
-                color: done ? c.doneTitleText : c.titleText,
-                textDecoration: done ? 'line-through' : 'none',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
+              {/* Title — кликабельный переход в карточку */}
+              <span
+                onClick={() => onOpenTask?.(task.id)}
+                style={{
+                  flex: 1, fontSize: 13,
+                  fontFamily: '"Inter",system-ui,sans-serif',
+                  color: done ? c.doneTitleText : c.titleText,
+                  textDecoration: done ? 'line-through' : 'none',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  cursor: onOpenTask ? 'pointer' : 'default',
+                }}
+                onMouseEnter={e => {
+                  if (onOpenTask) (e.currentTarget as HTMLSpanElement).style.color = isDark ? '#A8B4D0' : '#4F6EF7';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLSpanElement).style.color = done ? c.doneTitleText : c.titleText;
+                }}
+              >
                 {task.title}
               </span>
 
@@ -256,6 +267,7 @@ export default function SubtaskTree({
                   statuses={statuses}
                   depth={depth + 1}
                   onRefresh={() => { fetchSubtree(task.id); onRefresh(); }}
+                  onOpenTask={onOpenTask}
                 />
               </div>
             )}

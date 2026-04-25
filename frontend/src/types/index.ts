@@ -231,4 +231,5 @@ export interface Task {
   comments?: Comment[];
   checklists?: Checklist[];
   _count?: { children: number };
+  statusHistory?: { id: string; statusId: string; startedAt: string; endedAt: string | null }[];
 }
