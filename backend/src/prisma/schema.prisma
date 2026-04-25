@@ -291,7 +291,7 @@ model TaskStatusHistory {
   endedAt   DateTime?
 
   task   Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  status WorkflowStatus @relation(fields: [statusId], references: [id])
+  status WorkflowStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
   @@map("task_status_history")
