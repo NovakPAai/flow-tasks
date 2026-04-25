@@ -125,8 +125,9 @@ type Tab = 'users' | 'create' | 'requests';
 // ── Main component ──────────────────────────────────────────────────────────────
 export default function AdminUsersPage() {
   const { mode } = useThemeStore();
-  const bp      = useBreakpoint();
-  const isMobile = bp === 'mobile';
+  const bp        = useBreakpoint();
+  const isMobile  = bp === 'mobile';
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const C = mode === 'dark' ? DARK : LIGHT;
@@ -302,10 +303,11 @@ export default function AdminUsersPage() {
                     display: 'grid', gridTemplateColumns: '1fr 180px 48px 48px 48px 52px 52px 110px 130px',
                     padding: '12px 20px', alignItems: 'center',
                     borderBottom: i < users.length - 1 ? `1px solid ${C.border}` : 'none',
+                    background: hoveredRow === u.id ? C.rowHover : 'transparent',
                     transition: 'background .1s',
                   }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = C.rowHover)}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    onMouseEnter={() => setHoveredRow(u.id)}
+                    onMouseLeave={() => setHoveredRow(null)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                       <Avatar name={u.name} size={30} />

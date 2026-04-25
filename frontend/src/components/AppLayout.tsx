@@ -206,7 +206,10 @@ export default function AppLayout({ children }: Props) {
       <div style={{
         alignItems: 'center', backgroundColor: navBg, borderBottom: `1px solid ${navBorder}`,
         display: 'flex', flexShrink: 0, gap: isLandscape ? 10 : 16, height: topbarH,
-        paddingInline: isLandscape ? 16 : 24, position: 'relative', zIndex: 100,
+        // safe-area-inset-left/right для iPhone notch в landscape
+        paddingLeft:  isLandscape ? 'max(16px, env(safe-area-inset-left))' : 24,
+        paddingRight: isLandscape ? 'max(16px, env(safe-area-inset-right))' : 24,
+        position: 'relative', zIndex: 100,
       }}>
         {/* Logo */}
         <div

@@ -16,8 +16,31 @@ vi.mock('../store/theme.store', () => ({
   useThemeStore: () => 'dark',
 }));
 
+vi.mock('../store/auth.store', () => ({
+  useAuthStore: vi.fn((sel: (s: { user: object | null }) => unknown) =>
+    sel({ user: { id: '1', name: 'Test User', email: 'test@test.com' } })
+  ),
+}));
+
+const { useAuthStore } = await import('../store/auth.store') as { useAuthStore: ReturnType<typeof vi.fn> };
+
+describe('FeedbackFAB — unauthenticated', () => {
+  it('does not render when user is null', async () => {
+    useAuthStore.mockImplementation((sel: (s: { user: null }) => unknown) =>
+      sel({ user: null })
+    );
+    render(<FeedbackFAB />);
+    expect(screen.queryByTestId('feedback-fab')).not.toBeInTheDocument();
+  });
+});
+
 describe('FeedbackFAB', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAuthStore.mockImplementation((sel: (s: { user: object }) => unknown) =>
+      sel({ user: { id: '1', name: 'Test', email: 'test@test.com' } })
+    );
+  });
 
   it('renders floating action button', () => {
     render(<FeedbackFAB />);
