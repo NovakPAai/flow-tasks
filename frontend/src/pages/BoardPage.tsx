@@ -12,8 +12,10 @@ import * as tasksApi from '../api/tasks';
 import * as workspacesApi from '../api/workspaces';
 import * as labelsApi from '../api/labels';
 import { useBreakpoint, useIsLandscape } from '../utils/useBreakpoint';
+import { useAuthStore } from '../store/auth.store';
 import TaskCard from '../components/TaskCard';
 import TaskDrawer from '../components/TaskDrawer';
+import WorkflowEditor from '../components/WorkflowEditor';
 import BoardListView from '../components/BoardListView';
 import BoardCalendarView from '../components/BoardCalendarView';
 import RoadmapView from '../components/RoadmapView';
@@ -86,6 +88,35 @@ function CalIcon() {
       <rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.2"/>
       <path d="M1 5.5h12M4.5 1v2M9.5 1v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
     </svg>
+  );
+}
+
+// ── ColumnsBtn ────────────────────────────────────────────────────────────────
+function ColumnsBtn({ onClick, border, addText }: { onClick: () => void; border: string; addText: string }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title="Управление колонками"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, height: 34,
+        padding: '0 12px',
+        background: hovered ? 'rgba(79,110,247,0.08)' : 'transparent',
+        border: `1px solid ${hovered ? 'rgba(79,110,247,0.4)' : border}`,
+        borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2"/>
+        <rect x="5.5" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2"/>
+        <rect x="10" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2" strokeDasharray="2 1.5"/>
+        <path d="M11.75 5v4M9.75 7h4" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: hovered ? '#4F6EF7' : addText, transition: 'color 0.15s' }}>Колонки</span>
+    </button>
   );
 }
 
@@ -170,12 +201,15 @@ export default function BoardPage() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [wfEditorOpen, setWfEditorOpen] = useState(false);
   const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
   const [columnOffsets, setColumnOffsets] = useState<Record<string, number>>({});
   const [columnTotals, setColumnTotals] = useState<Record<string, number>>({});
   const [loadingMoreCols, setLoadingMoreCols] = useState<Set<string>>(new Set());
   const addInputRef = useRef<HTMLInputElement | null>(null);
 
+  const currentUserId = useAuthStore(s => s.user?.id);
+  const isOwner = members.some(m => m.userId === currentUserId && m.role === 'OWNER');
   const statuses = board?.workflow.statuses ?? [];
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -444,6 +478,11 @@ export default function BoardPage() {
           ))}
         </div>
 
+        {/* Columns / workflow editor */}
+        {!isMobile && (
+          <ColumnsBtn onClick={() => setWfEditorOpen(true)} border={border} addText={addText} />
+        )}
+
         {/* Board settings button */}
         <BoardSettingsBtn
           onClick={() => navigate(`settings`)}
@@ -661,6 +700,46 @@ export default function BoardPage() {
         onUpdated={onTaskUpdated}
         onDeleted={onTaskDeleted}
       />
+
+      {/* Workflow / columns editor modal */}
+      {wfEditorOpen && board.workflow && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) { setWfEditorOpen(false); loadBoard(); } }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 400,
+            background: 'rgba(0,0,0,0.55)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+        >
+          <div style={{
+            width: '100%', maxWidth: 640, maxHeight: '80vh', overflow: 'auto',
+            background: isDark ? '#0F1320' : '#FDFCFF',
+            borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', borderBottom: `1px solid ${border}`,
+            }}>
+              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 15, fontWeight: 700, color: isDark ? '#E2E8F8' : '#1A1A2E' }}>
+                Колонки доски
+              </span>
+              <button
+                onClick={() => { setWfEditorOpen(false); loadBoard(); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#8B95B0' : '#9B96B8', display: 'flex', alignItems: 'center', padding: 4 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <WorkflowEditor
+              workflowId={board.workflow.id}
+              isOwner={isOwner}
+              onClose={() => { setWfEditorOpen(false); loadBoard(); }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
