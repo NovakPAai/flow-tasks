@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
 import { useThemeStore } from './store/theme.store';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
 import AppLayout from './components/AppLayout';
 import OnboardingProvider from './components/OnboardingProvider';
 import LoginPage from './pages/LoginPage';
@@ -22,7 +23,14 @@ import FeedbackFAB from './components/FeedbackFAB';
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
+  const logout = useAuthStore((s) => s.logout);
   const mode = useThemeStore((s) => s.mode);
+  const navigate = useNavigate();
+
+  useIdleTimeout(useCallback(async () => {
+    await logout();
+    navigate('/login', { state: { timedOut: true } });
+  }, [logout, navigate]));
 
   if (loading) {
     return (
