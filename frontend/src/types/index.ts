@@ -9,6 +9,10 @@ export interface FilterState {
   duePreset: string;
 }
 
+export const EMPTY_FILTERS: FilterState = {
+  search: '', statusId: '', priority: '', assigneeId: '', labelId: '', duePreset: '',
+};
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface User {

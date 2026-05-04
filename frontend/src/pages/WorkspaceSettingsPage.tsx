@@ -169,19 +169,23 @@ export default function WorkspaceSettingsPage() {
   const [creatingWf, setCreatingWf] = useState(false);
   const [editingWfId, setEditingWfId] = useState<string | null>(null);
 
+  const wsId          = workspace?.id;
+  const wsName        = workspace?.name;
+  const wsDescription = workspace?.description;
+  const wsIsPrivate   = workspace?.isPrivate;
+
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
   useEffect(() => {
-    if (!workspace) return;
-    setName(workspace.name);
-    setDescription(workspace.description ?? '');
-    setIsPrivate(workspace.isPrivate ?? false);
-    const wsId = workspace.id;
+    if (!wsId) return;
+    setName(wsName ?? '');
+    setDescription(wsDescription ?? '');
+    setIsPrivate(wsIsPrivate ?? false);
     Promise.all([
       workspacesApi.listMembers(wsId),
       labelsApi.listLabels(wsId),
       wfApi.listWorkflows(wsId),
     ]).then(([m, l, wfs]) => { setMembers(m); setLabels(l); setWorkflows(wfs); }).catch(() => {});
-  }, [workspace]);
+  }, [wsId, wsName, wsDescription, wsIsPrivate]);
 
   const myRole = members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';

@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useThemeStore } from '../store/theme.store';
+import { EMPTY_FILTERS } from '../types';
 import type { FilterState, WorkflowStatus, WorkspaceMember, Label } from '../types';
-
-const EMPTY_FILTERS: FilterState = {
-  search: '', statusId: '', priority: '', assigneeId: '', labelId: '', duePreset: '',
-};
 
 interface Props {
   filters: FilterState;

@@ -4,6 +4,7 @@ import {
   DragDropContext, Droppable, Draggable, type DropResult, type DragStart,
 } from '@hello-pangea/dnd';
 import { message } from 'antd';
+import { EMPTY_FILTERS } from '../types';
 import type { Board, FilterState, Task, WorkflowStatus, WorkspaceMember, Label } from '../types';
 import { useThemeStore } from '../store/theme.store';
 import { useWorkspaceStore } from '../store/workspace.store';
@@ -20,8 +21,6 @@ import BoardListView from '../components/BoardListView';
 import BoardCalendarView from '../components/BoardCalendarView';
 import RoadmapView from '../components/RoadmapView';
 import FilterBar from '../components/FilterBar';
-
-const EMPTY_FILTERS: FilterState = { search: '', statusId: '', priority: '', assigneeId: '', labelId: '', duePreset: '' };
 
 type ViewMode = 'board' | 'list' | 'calendar' | 'roadmap';
 type Columns = Record<string, Task[]>;

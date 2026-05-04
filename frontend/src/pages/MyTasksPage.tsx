@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
@@ -60,7 +60,7 @@ export default function MyTasksPage() {
   const [search, setSearch] = useState('');
   const offsetRef = useRef(0);
 
-  const fetchTasks = async (preset: DuePreset, q: string, replace: boolean) => {
+  const fetchTasks = useCallback(async (preset: DuePreset, q: string, replace: boolean) => {
     const offset = replace ? 0 : offsetRef.current;
     if (replace) setLoading(true); else setLoadingMore(true);
     try {
@@ -78,13 +78,13 @@ export default function MyTasksPage() {
     } finally {
       if (replace) setLoading(false); else setLoadingMore(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     offsetRef.current = 0;
     const timer = setTimeout(() => { fetchTasks(duePreset, search, true); }, search ? 300 : 0);
     return () => clearTimeout(timer);
-  }, [duePreset, search]);
+  }, [duePreset, search, fetchTasks]);
 
   // Group by workspace → board
   const grouped = useMemo(() => {
