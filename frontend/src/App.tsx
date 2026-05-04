@@ -32,9 +32,9 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(WARN_SECONDS);
 
-  const handleIdle = useCallback(async () => {
+  const handleIdle = useCallback(() => {
     setShowWarning(false);
-    try { await logout(); } catch { /* best-effort — navigate regardless */ }
+    void logout().catch(() => {});
     navigate('/login', { state: { timedOut: true } });
   }, [logout, navigate]);
 
@@ -66,9 +66,9 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     resetTimer();
   }, [resetTimer]);
 
-  const handleLogoutNow = useCallback(async () => {
+  const handleLogoutNow = useCallback(() => {
     setShowWarning(false);
-    try { await logout(); } catch {}
+    void logout().catch(() => {});
     navigate('/login');
   }, [logout, navigate]);
 
