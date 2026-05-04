@@ -341,8 +341,11 @@ export default function LoginPage() {
   useEffect(() => {
     if ((location.state as { timedOut?: boolean } | null)?.timedOut) {
       message.warning('Время сессии истекло. Войдите снова.');
+      // Clear the flag so Back/Forward navigation doesn't replay the toast.
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run once on mount
 
   useEffect(() => {
     authApi.getRegistrationDomain().then(setRegistrationDomain).catch(() => {});
