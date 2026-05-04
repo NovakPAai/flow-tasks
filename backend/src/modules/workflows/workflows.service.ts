@@ -149,10 +149,21 @@ export async function getWorkflow(workflowId: string, userId: string) {
 export async function updateWorkflow(workflowId: string, userId: string, dto: UpdateWorkflowDto) {
   const workflow = await assertWorkspaceOwner(workflowId, userId);
 
+  if (dto.isDefault === false && workflow.isDefault) {
+    throw new AppError(400, 'Cannot unset the default workflow — set another workflow as default first');
+  }
+
   const oldMode = workflow.mode;
-  const updated = await prisma.workflow.update({
-    where: { id: workflowId },
-    data: dto,
+
+  const updated = await prisma.$transaction(async (tx) => {
+    // Atomically unset previous default before setting a new one
+    if (dto.isDefault === true) {
+      await tx.workflow.updateMany({
+        where: { workspaceId: workflow.workspaceId, isDefault: true, id: { not: workflowId } },
+        data: { isDefault: false },
+      });
+    }
+    return tx.workflow.update({ where: { id: workflowId }, data: dto });
   });
 
   // If mode changed from/to FORWARD_ONLY or BIDIRECTIONAL, regenerate transitions
@@ -218,26 +229,23 @@ export async function deleteStatus(statusId: string, userId: string) {
   const status = await prisma.workflowStatus.findUnique({ where: { id: statusId } });
   if (!status) throw new AppError(404, 'Status not found');
 
-  await assertWorkspaceOwner(status.workflowId, userId);
+  const workflow = await assertWorkspaceOwner(status.workflowId, userId);
 
   const count = await prisma.workflowStatus.count({ where: { workflowId: status.workflowId } });
   if (count <= 1) throw new AppError(400, 'Workflow must have at least one status');
 
-  await prisma.workflowStatus.delete({ where: { id: statusId } });
-
-  // Re-normalize positions
-  const remaining = await prisma.workflowStatus.findMany({
-    where: { workflowId: status.workflowId },
-    orderBy: { position: 'asc' },
+  // Delete + re-normalize positions in a single transaction
+  await prisma.$transaction(async (tx) => {
+    await tx.workflowStatus.delete({ where: { id: statusId } });
+    const rest = await tx.workflowStatus.findMany({
+      where: { workflowId: status.workflowId },
+      orderBy: { position: 'asc' },
+    });
+    await Promise.all(
+      rest.map((s, i) => tx.workflowStatus.update({ where: { id: s.id }, data: { position: i } })),
+    );
   });
-  await Promise.all(
-    remaining.map((s, i) =>
-      prisma.workflowStatus.update({ where: { id: s.id }, data: { position: i } }),
-    ),
-  );
 
-  // Regenerate transitions
-  const workflow = await prisma.workflow.findUniqueOrThrow({ where: { id: status.workflowId } });
   if (workflow.mode !== 'CUSTOM') {
     await generateTransitions(status.workflowId);
   }
@@ -256,7 +264,7 @@ export async function reorderStatuses(workflowId: string, userId: string, ordere
     throw new AppError(400, 'Must provide all status IDs for reorder');
   }
 
-  await Promise.all(
+  await prisma.$transaction(
     orderedIds.map((id, i) =>
       prisma.workflowStatus.update({ where: { id }, data: { position: i } }),
     ),
