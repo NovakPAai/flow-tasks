@@ -99,11 +99,18 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    workspacesApi.getWorkspaceHistory(workspaceId)
-      .then(data => { if (!controller.signal.aborted) setEvents(data); })
-      .catch(() => { if (!controller.signal.aborted) message.error('Не удалось загрузить историю'); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await workspacesApi.getWorkspaceHistory(workspaceId);
+        if (!controller.signal.aborted) setEvents(data);
+      } catch {
+        if (!controller.signal.aborted) message.error('Не удалось загрузить историю');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+    fetchData();
     return () => controller.abort();
   }, [workspaceId]);
 

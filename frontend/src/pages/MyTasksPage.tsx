@@ -84,7 +84,6 @@ export default function MyTasksPage() {
     offsetRef.current = 0;
     const timer = setTimeout(() => { fetchTasks(duePreset, search, true); }, search ? 300 : 0);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [duePreset, search]);
 
   // Group by workspace → board

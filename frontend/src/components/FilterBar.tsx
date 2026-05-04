@@ -1,18 +1,8 @@
 import { useState } from 'react';
 import { useThemeStore } from '../store/theme.store';
-import type { WorkflowStatus, WorkspaceMember, Label } from '../types';
+import type { FilterState, WorkflowStatus, WorkspaceMember, Label } from '../types';
 
-// ── Public types ───────────────────────────────────────────────────────────────
-export interface FilterState {
-  search: string;
-  statusId: string;
-  priority: string;
-  assigneeId: string;
-  labelId: string;
-  duePreset: string;
-}
-
-export const EMPTY_FILTERS: FilterState = {
+const EMPTY_FILTERS: FilterState = {
   search: '', statusId: '', priority: '', assigneeId: '', labelId: '', duePreset: '',
 };
 

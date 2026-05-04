@@ -175,12 +175,13 @@ export default function WorkspaceSettingsPage() {
     setName(workspace.name);
     setDescription(workspace.description ?? '');
     setIsPrivate(workspace.isPrivate ?? false);
+    const wsId = workspace.id;
     Promise.all([
-      workspacesApi.listMembers(workspace.id),
-      labelsApi.listLabels(workspace.id),
-      wfApi.listWorkflows(workspace.id),
+      workspacesApi.listMembers(wsId),
+      labelsApi.listLabels(wsId),
+      wfApi.listWorkflows(wsId),
     ]).then(([m, l, wfs]) => { setMembers(m); setLabels(l); setWorkflows(wfs); }).catch(() => {});
-  }, [workspace?.id]);
+  }, [workspace]);
 
   const myRole = members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';

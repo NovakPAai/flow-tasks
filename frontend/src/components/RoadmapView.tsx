@@ -297,19 +297,29 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     const r = zoomRange(zoom);
     const from = r.start.toISOString().slice(0, 10);
     const to   = r.end.toISOString().slice(0, 10);
-    boardsApi.getRoadmapTasks(boardId, from, to)
-      .then(data => {
-        setTasks(data);
-        // expand all parents by default
-        const ids = new Set(data.filter(t => (t._count?.children ?? 0) > 0).map(t => t.id));
-        setExpanded(ids);
-      })
-      .catch(() => { message.error('Не удалось загрузить дорожную карту'); })
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await boardsApi.getRoadmapTasks(boardId, from, to);
+        if (active) {
+          setTasks(data);
+          const ids = new Set(data.filter(t => (t._count?.children ?? 0) > 0).map(t => t.id));
+          setExpanded(ids);
+          setLoading(false);
+        }
+      } catch {
+        if (active) {
+          message.error('Не удалось загрузить дорожную карту');
+          setLoading(false);
+        }
+      }
+    };
+    fetchData();
+    return () => { active = false; };
   }, [boardId, zoom]);
 
   // ── Scroll sync ────────────────────────────────────────────────────────────
