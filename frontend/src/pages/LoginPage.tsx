@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { message, Modal, Form, Input, Button } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
 import { useBreakpoint, useResponsiveValue } from '../utils/useBreakpoint';
@@ -336,6 +336,16 @@ export default function LoginPage() {
   const { login, register } = useAuthStore();
   const emailPrefix = useMemo(() => buildEmailPrefix(firstName, lastName), [firstName, lastName]);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if ((location.state as { timedOut?: boolean } | null)?.timedOut) {
+      message.warning('Время сессии истекло. Войдите снова.');
+      // Clear the flag so Back/Forward navigation doesn't replay the toast.
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run once on mount
 
   useEffect(() => {
     authApi.getRegistrationDomain().then(setRegistrationDomain).catch(() => {});

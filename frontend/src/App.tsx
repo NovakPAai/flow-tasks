@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useCallback, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
 import { useThemeStore } from './store/theme.store';
+import { useIdleTimeout } from './hooks/useIdleTimeout';
 import AppLayout from './components/AppLayout';
 import OnboardingProvider from './components/OnboardingProvider';
+import SessionTimeoutModal from './components/SessionTimeoutModal';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import WorkspacesPage from './pages/WorkspacesPage';
@@ -19,10 +21,56 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import RoadmapsPage from './pages/RoadmapsPage';
 import FeedbackFAB from './components/FeedbackFAB';
 
+const WARN_SECONDS = 60;
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
+  const logout = useAuthStore((s) => s.logout);
   const mode = useThemeStore((s) => s.mode);
+  const navigate = useNavigate();
+  const [showWarning, setShowWarning] = useState(false);
+  const [countdown, setCountdown] = useState(WARN_SECONDS);
+
+  const handleIdle = useCallback(() => {
+    setShowWarning(false);
+    void logout().catch(() => {});
+    navigate('/login', { state: { timedOut: true } });
+  }, [logout, navigate]);
+
+  const handleWarn = useCallback(() => {
+    setShowWarning(true);
+    setCountdown(WARN_SECONDS);
+  }, []);
+
+  const handleActivityReset = useCallback(() => {
+    setShowWarning(false);
+  }, []);
+
+  const resetTimer = useIdleTimeout(handleIdle, {
+    onWarn: handleWarn,
+    onActivityReset: handleActivityReset,
+  });
+
+  // Countdown tick while warning modal is open
+  useEffect(() => {
+    if (!showWarning) return;
+    const tick = setInterval(() => {
+      setCountdown((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [showWarning]);
+
+  const handleStay = useCallback(() => {
+    setShowWarning(false);
+    resetTimer();
+  }, [resetTimer]);
+
+  const handleLogoutNow = useCallback(() => {
+    setShowWarning(false);
+    void logout().catch(() => {});
+    navigate('/login');
+  }, [logout, navigate]);
 
   if (loading) {
     return (
@@ -33,9 +81,17 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   }
   if (!user) return <Navigate to="/login" replace />;
   return (
-    <OnboardingProvider>
-      <AppLayout>{children}</AppLayout>
-    </OnboardingProvider>
+    <>
+      <SessionTimeoutModal
+        open={showWarning}
+        countdown={countdown}
+        onStay={handleStay}
+        onLogout={handleLogoutNow}
+      />
+      <OnboardingProvider>
+        <AppLayout>{children}</AppLayout>
+      </OnboardingProvider>
+    </>
   );
 }
 

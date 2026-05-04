@@ -437,7 +437,7 @@ export default function WorkspacesPage() {
 
       {/* Cards grid */}
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: 24 }}>
           {[0, 1].map(i => (
             <div key={i} style={{ backgroundColor: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, height: 200, opacity: 0.4 }}/>
           ))}
