@@ -443,7 +443,7 @@ export default function WorkspacesPage() {
           ))}
         </div>
       ) : (
-        <div data-testid="workspaces-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 24 }}>
+        <div data-testid="workspaces-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: 24 }}>
           {workspaces.map((ws: Workspace, idx: number) => (
             <WorkspaceCard key={ws.id} ws={ws} idx={idx} C={C} isDark={mode !== 'light'} onClick={() => navigate(`/w/${ws.slug}`)}/>
           ))}
@@ -479,13 +479,13 @@ export default function WorkspacesPage() {
               const ws = workspaces.find(w => w.id === ev.workspaceId);
               const time = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
               return (
-                <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0 }} />
-                  <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, color: C.actText }}>
+                <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0, marginTop: 5 }} />
+                  <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, color: C.actText, flex: 1, overflow: 'hidden' }}>
                     <span style={{ fontWeight: 600 }}>{name}</span>
                     {' '}{label}{ws ? ` «${ws.name}»` : ''}
                   </span>
-                  <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, color: C.actTime, marginLeft: 'auto', flexShrink: 0 }}>{time}</span>
+                  <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, color: C.actTime, flexShrink: 0, whiteSpace: 'nowrap' }}>{time}</span>
                 </div>
               );
             })}

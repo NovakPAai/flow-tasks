@@ -214,7 +214,9 @@ export default function AppLayout({ children }: Props) {
         {/* Logo */}
         <div
           onClick={() => navigate('/workspaces')}
-          style={{ alignItems: 'center', cursor: 'pointer', display: 'flex', gap: 8 }}
+          style={{ alignItems: 'center', borderRadius: 8, cursor: 'pointer', display: 'flex', gap: 8, padding: '4px 6px', transition: 'background 0.15s' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = ''; }}
         >
           <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 8, display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}>
             <GridIcon/>

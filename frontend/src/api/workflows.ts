@@ -23,6 +23,7 @@ export async function getWorkflow(workflowId: string): Promise<Workflow> {
 export async function updateWorkflow(workflowId: string, payload: {
   name?: string;
   mode?: 'FORWARD_ONLY' | 'BIDIRECTIONAL' | 'CUSTOM';
+  isDefault?: boolean;
 }): Promise<Workflow> {
   const { data } = await api.patch<Workflow>(`/workflows/${workflowId}`, payload);
   return data;

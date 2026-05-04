@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
+import { useWorkspaceStore } from '../store/workspace.store';
+import { useBreakpoint } from '../utils/useBreakpoint';
 import * as tasksApi from '../api/tasks';
 import type { MyTask } from '../api/tasks';
 
@@ -47,6 +49,8 @@ export default function MyTasksPage() {
   const navigate = useNavigate();
   const mode = useThemeStore((s) => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
+  const bp = useBreakpoint();
+  const current = useWorkspaceStore((s) => s.current);
 
   const [allTasks, setAllTasks] = useState<MyTask[]>([]);
   const [total, setTotal] = useState(0);
@@ -124,17 +128,37 @@ export default function MyTasksPage() {
     { value: 'no_date', label: 'Без даты' },
   ];
 
+  const handleBack = () => {
+    if (current) {
+      navigate(`/w/${current.slug}`);
+    } else {
+      navigate('/workspaces');
+    }
+  };
+
   return (
     <div style={{
       background: c.bg, minHeight: '100%',
       display: 'flex', flexDirection: 'column',
-      padding: '32px 40px', fontFamily: '"Inter",system-ui,sans-serif',
+      padding: bp === 'mobile' ? '20px 16px' : '32px 40px',
+      fontFamily: '"Inter",system-ui,sans-serif',
     }}>
+      {/* ── Back ── */}
+      <div
+        onClick={handleBack}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: 16, width: 'fit-content' }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M9 2.5L4.5 7L9 11.5" stroke={c.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.muted, letterSpacing: '0.02em' }}>Назад</span>
+      </div>
+
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
         <h1 style={{
           margin: 0, fontFamily: '"Space Grotesk",system-ui,sans-serif',
-          fontSize: 26, fontWeight: 700, color: c.text, letterSpacing: '-0.02em',
+          fontSize: bp === 'mobile' ? 20 : 26, fontWeight: 700, color: c.text, letterSpacing: '-0.02em',
         }}>
           Мои задачи
         </h1>
@@ -199,7 +223,9 @@ export default function MyTasksPage() {
             placeholder="Поиск по задачам..."
             style={{
               paddingLeft: 30, paddingRight: 12, paddingBlock: 6,
-              width: 220, fontSize: 12, color: c.text,
+              width: bp === 'mobile' ? '100%' : 220,
+              minWidth: bp === 'mobile' ? 0 : 180,
+              fontSize: 12, color: c.text,
               background: c.searchBg, border: `1px solid ${c.searchBorder}`,
               borderRadius: 8, outline: 'none',
               fontFamily: '"Inter",system-ui,sans-serif',
@@ -293,8 +319,9 @@ export default function MyTasksPage() {
                             key={task.id}
                             onClick={() => navigate(`/w/${ws.wsSlug}/boards/${board.boardSlug}`)}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: 12,
-                              padding: '11px 16px',
+                              display: 'flex', alignItems: 'center', gap: bp === 'mobile' ? 8 : 12,
+                              padding: bp === 'mobile' ? '10px 12px' : '11px 16px',
+                              minWidth: 0,
                               background: isOverdue
                                 ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
                                 : c.rowBg,
@@ -347,8 +374,8 @@ export default function MyTasksPage() {
 
                             {/* Right side: status + priority + due */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              {/* Status badge */}
-                              {task.status && (
+                              {/* Status badge — hidden on mobile to save space */}
+                              {task.status && bp !== 'mobile' && (
                                 <span style={{
                                   fontSize: 11, fontWeight: 500,
                                   color: task.status.color,
@@ -359,8 +386,8 @@ export default function MyTasksPage() {
                                 </span>
                               )}
 
-                              {/* Priority badge */}
-                              {prio && (
+                              {/* Priority badge — hidden on mobile */}
+                              {prio && bp !== 'mobile' && (
                                 <span style={{
                                   fontSize: 10, fontWeight: 600,
                                   color: prio.text, background: prio.bg,
@@ -371,13 +398,14 @@ export default function MyTasksPage() {
                                 </span>
                               )}
 
-                              {/* Due date */}
+                              {/* Due date — compact on mobile */}
                               {due ? (
                                 <span style={{
                                   fontSize: 11,
                                   color: isOverdue ? '#EF4444' : c.muted,
+                                  whiteSpace: 'nowrap',
                                 }}>
-                                  {isOverdue ? 'Просрочено · ' : ''}
+                                  {isOverdue && bp !== 'mobile' ? 'Просрочено · ' : ''}
                                   {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                                 </span>
                               ) : null}

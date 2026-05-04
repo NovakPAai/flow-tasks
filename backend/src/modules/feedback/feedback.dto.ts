@@ -9,7 +9,7 @@ export const feedbackDto = z.object({
     ua:         z.string().max(500),
     screen:     z.string().max(50),
     viewport:   z.string().max(50),
-    url:        z.string().max(500),
+    url:        z.string().max(500).url().optional().or(z.literal('')),
     language:   z.string().max(20),
     deviceType: z.enum(['mobile', 'tablet', 'desktop']).optional(),
     os:         z.string().max(50).optional(),

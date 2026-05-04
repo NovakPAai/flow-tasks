@@ -285,6 +285,16 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
+  const handleSetDefaultWorkflow = async (wfId: string) => {
+    try {
+      const updated = await wfApi.updateWorkflow(wfId, { isDefault: true });
+      setWorkflows((prev) => prev.map((w) => ({ ...w, isDefault: w.id === updated.id })));
+      message.success('Дефолтный workflow обновлён');
+    } catch {
+      message.error('Не удалось обновить дефолтный workflow');
+    }
+  };
+
   const handleDeleteWorkspace = async () => {
     if (!confirm(`Удалить workspace "${workspace.name}"? Это действие необратимо.`)) return;
     try {
@@ -456,6 +466,14 @@ export default function WorkspaceSettingsPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  {!wf.isDefault && isOwner && (
+                    <button
+                      onClick={() => handleSetDefaultWorkflow(wf.id)}
+                      style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+                    >
+                      По умолчанию
+                    </button>
+                  )}
                   <button
                     onClick={() => setEditingWfId(editingWfId === wf.id ? null : wf.id)}
                     style={{ fontSize: 12, color: c.text, background: c.inputBg, border: `1px solid ${c.border}`, borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}

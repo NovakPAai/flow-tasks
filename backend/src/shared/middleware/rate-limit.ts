@@ -21,16 +21,19 @@ export interface RateLimitOptions {
   scope: string;
   limit: number;
   windowMs: number;
+  // Optional: custom key extractor. Defaults to req.ip for unauthenticated routes.
+  // Use keyFn to key by userId on authenticated routes to prevent IP-rotation bypass.
+  keyFn?: (req: Request) => string;
 }
 
 // TRUST_PROXY: req.ip is resolved correctly when app.set('trust proxy', 1) is configured.
-function clientKey(req: Request): string {
+function defaultKey(req: Request): string {
   return req.ip ?? req.socket.remoteAddress ?? 'anonymous';
 }
 
 export function rateLimit(opts: RateLimitOptions) {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    const key = `${opts.scope}:${clientKey(req)}`;
+    const key = `${opts.scope}:${opts.keyFn ? opts.keyFn(req) : defaultKey(req)}`;
     const now = Date.now();
     const existing = store.get(key);
 
@@ -56,7 +59,8 @@ export function rateLimit(opts: RateLimitOptions) {
 }
 
 export const RATE_LIMITS = {
-  auth:   { scope: 'auth',    limit: 10, windowMs: 60_000 },
-  invite: { scope: 'invite',  limit: 20, windowMs: 60_000 },
-  apiKey: { scope: 'api-key', limit: 20, windowMs: 60_000 },
+  auth:     { scope: 'auth',     limit: 10, windowMs: 60_000 },
+  invite:   { scope: 'invite',   limit: 20, windowMs: 60_000 },
+  apiKey:   { scope: 'api-key',  limit: 20, windowMs: 60_000 },
+  feedback: { scope: 'feedback', limit: 5,  windowMs: 60 * 60_000 }, // 5 per hour
 } as const satisfies Record<string, RateLimitOptions>;

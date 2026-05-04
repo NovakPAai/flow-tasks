@@ -8,6 +8,7 @@ const Z_FAB = 300;
 
 export default function FeedbackFAB() {
   const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(false);
   const mode = useThemeStore(s => s.mode);
   const user = useAuthStore(s => s.user);
   const isDark = mode !== 'light';
@@ -28,8 +29,9 @@ export default function FeedbackFAB() {
         aria-label="Оставить обратную связь"
         style={{
           position: 'fixed',
-          bottom: 24,
-          right: 24,
+          // Honor iOS Safari home indicator and notch safe areas
+          bottom: 'max(24px, calc(env(safe-area-inset-bottom) + 16px))',
+          right: 'max(24px, env(safe-area-inset-right))',
           zIndex: Z_FAB,
           width: 48,
           height: 48,
@@ -41,16 +43,12 @@ export default function FeedbackFAB() {
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: shadow,
-          transition: 'filter .15s, transform .12s',
+          filter: hover ? 'brightness(1.12)' : undefined,
+        transform: hover ? 'scale(1.08)' : undefined,
+        transition: 'filter .15s, transform .12s',
         }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.12)';
-          (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)';
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLButtonElement).style.filter = '';
-          (e.currentTarget as HTMLButtonElement).style.transform = '';
-        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
       >
         <svg
           aria-hidden="true"
