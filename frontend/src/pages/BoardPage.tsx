@@ -11,7 +11,7 @@ import * as boardsApi from '../api/boards';
 import * as tasksApi from '../api/tasks';
 import * as workspacesApi from '../api/workspaces';
 import * as labelsApi from '../api/labels';
-import { useBreakpoint } from '../utils/useBreakpoint';
+import { useBreakpoint, useIsLandscape } from '../utils/useBreakpoint';
 import TaskCard from '../components/TaskCard';
 import TaskDrawer from '../components/TaskDrawer';
 import BoardListView from '../components/BoardListView';
@@ -128,8 +128,10 @@ function BoardSettingsBtn({ onClick, border, addText, isPrivate }: {
 export default function BoardPage() {
   const { slug, boardSlug } = useParams<{ slug: string; boardSlug: string }>();
   const navigate = useNavigate();
-  const bp      = useBreakpoint();
-  const isMobile = bp === 'mobile';
+  const bp         = useBreakpoint();
+  const isMobile   = bp === 'mobile';
+  const isLandscape = useIsLandscape();
+  const isCompact   = isMobile && isLandscape;
 
   const mode = useThemeStore(s => s.mode);
   const workspaces = useWorkspaceStore(s => s.workspaces);
@@ -389,7 +391,7 @@ export default function BoardPage() {
       {/* ── Board header ─────────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12,
-        padding: isMobile ? '12px 16px' : '16px 24px',
+        padding: isCompact ? '6px 16px' : isMobile ? '12px 16px' : '16px 24px',
         background: headerBg, borderBottom: `1px solid ${border}`,
         flexShrink: 0, minWidth: 0, overflow: 'hidden',
       }}>
@@ -406,7 +408,7 @@ export default function BoardPage() {
         {/* Board name + task count */}
         <h1 style={{
           fontFamily: '"Space Grotesk",system-ui,sans-serif',
-          fontSize: isMobile ? 16 : 18, fontWeight: 700, color: nameColor,
+          fontSize: isCompact ? 14 : isMobile ? 16 : 18, fontWeight: 700, color: nameColor,
           margin: 0, letterSpacing: '-0.3px',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           minWidth: 0, flex: isMobile ? '1 1 0' : undefined,
