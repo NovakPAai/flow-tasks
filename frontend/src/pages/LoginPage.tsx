@@ -340,7 +340,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if ((location.state as { timedOut?: boolean } | null)?.timedOut) {
-      message.warning('Сессия завершена из-за неактивности. Войдите снова.');
+      message.warning('Время сессии истекло. Войдите снова.');
     }
   }, [location.state]);
 
