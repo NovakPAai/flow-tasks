@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ConfigProvider, theme, Spin } from 'antd';
 import { useAuthStore } from './store/auth.store';
@@ -101,7 +101,12 @@ export default function App() {
   const mode = useThemeStore((s) => s.mode);
   const isDark = mode !== 'light';
 
-  useEffect(() => { loadUser(); }, [loadUser]);
+  const hasLoadedUser = useRef(false);
+  useEffect(() => {
+    if (hasLoadedUser.current) return;
+    hasLoadedUser.current = true;
+    loadUser();
+  }, [loadUser]);
 
   return (
     <ConfigProvider

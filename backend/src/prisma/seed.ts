@@ -11,8 +11,8 @@ async function main() {
   // ─── Users ────────────────────────────────────────────────────────────────
   const superadmin = await prisma.user.upsert({
     where: { email: 'novak.pavel@flowtask.dev' },
-    update: {},
-    create: { email: 'novak.pavel@flowtask.dev', password, name: 'Pavel Novak' },
+    update: { isSuperadmin: true },
+    create: { email: 'novak.pavel@flowtask.dev', password, name: 'Pavel Novak', isSuperadmin: true },
   });
 
   const admin = await prisma.user.upsert({
