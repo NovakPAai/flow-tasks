@@ -27,7 +27,6 @@ function safeClientMeta(meta?: Record<string, unknown>) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ error: err.message, code: err.code, ...safeClientMeta(err.meta) });

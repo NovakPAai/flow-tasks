@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'feat/**', 'fix/**']
+    branches: [main, 'feat/**', 'fix/**', 'claude/**', 'cursor/**']
   pull_request:
     branches: [main]
 
@@ -45,8 +45,12 @@ jobs:
         run: npm run lint
         working-directory: frontend
 
+      - name: RBAC static check
+        run: npm run check:rbac
+        working-directory: backend
+
   test:
-    name: Tests
+    name: Tests + Coverage
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
 
@@ -99,9 +103,16 @@ jobs:
         env:
           DATABASE_URL: postgresql://flowtask:flowtask@localhost:5432/flowtask_test
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage
+        run: npm run test:coverage
         working-directory: backend
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: backend/coverage/
 
   build-frontend:
     name: Build Frontend
@@ -124,3 +135,104 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [test, build-frontend]
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: flowtask
+          POSTGRES_PASSWORD: flowtask
+          POSTGRES_DB: flowtask_e2e
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6380:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://flowtask:flowtask@localhost:5434/flowtask_e2e
+      JWT_SECRET: e2e-secret-at-least-32-chars-long-ok
+      JWT_REFRESH_SECRET: e2e-refresh-secret-at-least-32-chars-ok
+      REDIS_URL: redis://localhost:6380
+      NODE_ENV: test
+      PORT: 3101
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend deps
+        run: npm ci
+        working-directory: backend
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Run migrations + seed
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://flowtask:flowtask@localhost:5434/flowtask_e2e
+          SEED_ENV: e2e
+
+      - name: Start backend
+        run: npm run dev &
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://flowtask:flowtask@localhost:5434/flowtask_e2e
+          REDIS_URL: redis://localhost:6380
+
+      - name: Build and serve frontend
+        run: |
+          npm run build
+          npx serve -s dist -l 5174 &
+        working-directory: frontend
+
+      - name: Wait for services
+        run: |
+          npx wait-on http://localhost:3101/api/health http://localhost:5174 --timeout 30000
+
+      - name: Run E2E tests
+        run: npx playwright test
+        working-directory: frontend
+        env:
+          E2E_AUTO_FILE: 0
+
+      - name: Upload E2E artifacts on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/

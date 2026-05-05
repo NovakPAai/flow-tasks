@@ -1,60 +1,72 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AppError } from './error-handler.js';
+import { redisRateLimit } from '../redis.js';
 
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
+// ─── In-memory fallback (single-instance only) ────────────────────────────────
 
-const store = new Map<string, Bucket>();
+interface Bucket { count: number; resetAt: number }
+const fallbackStore = new Map<string, Bucket>();
 
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
-    for (const [key, bucket] of store) {
-      if (bucket.resetAt < now) store.delete(key);
+    for (const [key, bucket] of fallbackStore) {
+      if (bucket.resetAt < now) fallbackStore.delete(key);
     }
   }, 60_000).unref?.();
 }
+
+function fallbackCheck(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const existing = fallbackStore.get(key);
+  if (!existing || existing.resetAt < now) {
+    if (fallbackStore.size >= 100_000) {
+      let evicted = 0;
+      for (const [k] of fallbackStore) {
+        fallbackStore.delete(k);
+        if (++evicted >= 10_000) break;
+      }
+    }
+    fallbackStore.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  existing.count += 1;
+  return existing.count <= limit;
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export interface RateLimitOptions {
   scope: string;
   limit: number;
   windowMs: number;
-  // Optional: custom key extractor. Defaults to req.ip for unauthenticated routes.
-  // Use keyFn to key by userId on authenticated routes to prevent IP-rotation bypass.
   keyFn?: (req: Request) => string;
 }
 
-// TRUST_PROXY: req.ip is resolved correctly when app.set('trust proxy', 1) is configured.
 function defaultKey(req: Request): string {
   return req.ip ?? req.socket.remoteAddress ?? 'anonymous';
 }
 
 export function rateLimit(opts: RateLimitOptions) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
-    const key = `${opts.scope}:${opts.keyFn ? opts.keyFn(req) : defaultKey(req)}`;
-    const now = Date.now();
-    const existing = store.get(key);
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    const identity = opts.keyFn ? opts.keyFn(req) : defaultKey(req);
+    const key = `rl:${opts.scope}:${identity}`;
 
-    if (!existing || existing.resetAt < now) {
-      if (store.size >= 100_000) {
-        let evicted = 0;
-        for (const [k] of store) {
-          store.delete(k);
-          if (++evicted >= 10_000) break;
-        }
+    try {
+      const result = await redisRateLimit(key, opts.limit, opts.windowMs);
+      if (!result.allowed) {
+        const retryAfter = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
+        return next(new AppError(429, 'Too many requests', { retryAfter, scope: opts.scope }));
       }
-      store.set(key, { count: 1, resetAt: now + opts.windowMs });
+      return next();
+    } catch {
+      // Redis unavailable — degrade gracefully to in-memory
+      const allowed = fallbackCheck(key, opts.limit, opts.windowMs);
+      if (!allowed) {
+        return next(new AppError(429, 'Too many requests', { scope: opts.scope }));
+      }
       return next();
     }
-
-    existing.count += 1;
-    if (existing.count > opts.limit) {
-      const retryAfter = Math.max(1, Math.ceil((existing.resetAt - now) / 1000));
-      return next(new AppError(429, 'Too many requests', { retryAfter, scope: opts.scope }));
-    }
-    next();
   };
 }
 
@@ -62,5 +74,5 @@ export const RATE_LIMITS = {
   auth:     { scope: 'auth',     limit: 10, windowMs: 60_000 },
   invite:   { scope: 'invite',   limit: 20, windowMs: 60_000 },
   apiKey:   { scope: 'api-key',  limit: 20, windowMs: 60_000 },
-  feedback: { scope: 'feedback', limit: 5,  windowMs: 60 * 60_000 }, // 5 per hour
+  feedback: { scope: 'feedback', limit: 5,  windowMs: 60 * 60_000 },
 } as const satisfies Record<string, RateLimitOptions>;

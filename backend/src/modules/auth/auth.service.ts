@@ -4,6 +4,7 @@ import { hashPassword, comparePassword } from '../../shared/utils/password.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../shared/utils/jwt.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { setUserSession, deleteUserSession, getCachedJson, setCachedJson, isRedisAvailable } from '../../shared/redis.js';
+import { sendPasswordResetEmail } from '../../shared/utils/email.js';
 import { config } from '../../config.js';
 import type { RegisterDto, LoginDto, UpdateProfileDto } from './auth.dto.js';
 
@@ -102,13 +103,26 @@ export async function login(dto: LoginDto) {
   const accessToken = signAccessToken(tokenPayload);
   const refreshToken = signRefreshToken(tokenPayload);
 
-  await prisma.refreshToken.deleteMany({ where: { userId: user.id } });
   await prisma.refreshToken.create({
     data: {
       token: crypto.createHash('sha256').update(refreshToken).digest('hex'),
       userId: user.id,
       expiresAt: generateRefreshExpiry(),
     },
+  });
+
+  // LRU session eviction (atomic): keep at most MAX_SESSIONS per user, drop oldest.
+  // Done inside a transaction to prevent race conditions with concurrent logins.
+  await prisma.$transaction(async (tx) => {
+    const all = await tx.refreshToken.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+    if (all.length > config.MAX_SESSIONS) {
+      const toDelete = all.slice(0, all.length - config.MAX_SESSIONS).map((t) => t.id);
+      await tx.refreshToken.deleteMany({ where: { id: { in: toDelete } } });
+    }
   });
 
   await prisma.user.update({
@@ -231,19 +245,24 @@ export async function requestPasswordReset(email: string) {
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
 
   const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
+  // Store only the hash — raw token is sent via email and never persisted
   await prisma.passwordResetToken.create({
-    data: { userId: user.id, token, expiresAt },
+    data: { userId: user.id, tokenHash, expiresAt },
   });
 
-  // TODO: integrate email provider to send reset link (token stored in DB above)
+  void sendPasswordResetEmail(normalizedEmail, token).catch(() => {
+    // Email failure is non-fatal: token hash is in DB, admin can resend manually
+  });
 
   return { message: 'Если аккаунт с таким email существует, вы получите ссылку для сброса пароля.' };
 }
 
 export async function resetPassword(token: string, password: string) {
-  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
 
   if (!resetToken || resetToken.usedAt !== null || resetToken.expiresAt < new Date()) {
     throw new AppError(400, 'Ссылка для сброса пароля недействительна или истекла');
@@ -253,7 +272,7 @@ export async function resetPassword(token: string, password: string) {
 
   await prisma.$transaction([
     prisma.user.update({ where: { id: resetToken.userId }, data: { password: passwordHash } }),
-    prisma.passwordResetToken.update({ where: { token }, data: { usedAt: new Date() } }),
+    prisma.passwordResetToken.update({ where: { tokenHash }, data: { usedAt: new Date() } }),
     prisma.refreshToken.deleteMany({ where: { userId: resetToken.userId } }),
   ]);
 
