@@ -64,23 +64,31 @@ export default function RoadmapsPage() {
   const { workspaces, current, setCurrent, load } = useWorkspaceStore();
   const [boards, setBoards]   = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentId = current?.id;
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
 
   useEffect(() => {
     if (!slug || workspaces.length === 0) return;
     const ws = workspaces.find(w => w.slug === slug);
-    if (ws && ws.id !== current?.id) setCurrent(ws);
-  }, [slug, workspaces, current?.id, setCurrent]);
+    if (ws && ws.id !== currentId) setCurrent(ws);
+  }, [slug, workspaces, currentId, setCurrent]);
 
   useEffect(() => {
-    if (!current) return;
-    setLoading(true);
-    boardsApi.listBoards(current.id)
-      .then(setBoards)
-      .catch(() => setBoards([]))
-      .finally(() => setLoading(false));
-  }, [current?.id]);
+    if (!currentId) return;
+    const fetchBoards = async () => {
+      setLoading(true);
+      try {
+        const data = await boardsApi.listBoards(currentId);
+        setBoards(data);
+      } catch {
+        setBoards([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBoards();
+  }, [currentId]);
 
   const padding = isMobile ? '20px 16px' : bp === 'tablet' ? '24px 32px' : '36px 48px';
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { Workflow, WorkflowMode, StatusCategory } from '../types';
@@ -94,15 +94,15 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
     color: c.text, outline: 'none', fontFamily: '"Inter",system-ui,sans-serif',
   };
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     wfApi.getWorkflow(workflowId)
       .then((wf) => { setWorkflow(wf); setWfName(wf.name); })
       .catch(() => message.error('Не удалось загрузить workflow'))
       .finally(() => setLoading(false));
-  };
+  }, [workflowId]);
 
-  useEffect(() => { load(); }, [workflowId]);
+  useEffect(() => { load(); }, [load]);
 
   if (loading) return (
     <div style={{ padding: 20, color: c.muted, fontSize: 13, fontFamily: '"Inter",system-ui,sans-serif' }}>

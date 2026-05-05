@@ -1,3 +1,18 @@
+// ─── Board filters ─────────────────────────────────────────────────────────────
+
+export interface FilterState {
+  search: string;
+  statusId: string;
+  priority: string;
+  assigneeId: string;
+  labelId: string;
+  duePreset: string;
+}
+
+export const EMPTY_FILTERS: FilterState = {
+  search: '', statusId: '', priority: '', assigneeId: '', labelId: '', duePreset: '',
+};
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface User {

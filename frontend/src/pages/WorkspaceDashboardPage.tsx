@@ -238,17 +238,18 @@ export default function WorkspaceDashboardPage() {
     workspacesApi.getWorkspace(foundId).then(setCurrent).catch(() => null);
   }, [foundId, setCurrent]);
 
+  const currentId = current?.id;
   useEffect(() => {
-    if (!current) return;
+    if (!currentId) return;
     setBoardsLoading(true);
-    boardsApi.listBoards(current.id)
+    boardsApi.listBoards(currentId)
       .then(setBoards)
       .catch(() => setBoards([]))
       .finally(() => setBoardsLoading(false));
-    workspacesApi.getWorkspaceHistory(current.id)
+    workspacesApi.getWorkspaceHistory(currentId)
       .then(evs => setActivity(evs.slice(0, 6)))
       .catch(() => {});
-  }, [current?.id]);
+  }, [currentId]);
 
   const onCreateBoard = async () => {
     if (!current || !form.name.trim() || !form.prefix.trim()) return;
