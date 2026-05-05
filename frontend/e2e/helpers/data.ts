@@ -52,7 +52,7 @@ export async function createBoard(
   workspaceId: string,
   name: string,
   prefix: string,
-): Promise<{ id: string; name: string }> {
+): Promise<{ id: string; name: string; prefix: string }> {
   const res = await authFetch(token, `/workspaces/${workspaceId}/boards`, {
     method: 'POST',
     body: JSON.stringify({ name, prefix }),

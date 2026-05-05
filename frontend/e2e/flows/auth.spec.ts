@@ -51,27 +51,17 @@ test.describe('Аутентификация', () => {
     // Кнопка "Зарегистрироваться" переключает форму
     await page.getByText('Зарегистрироваться').last().click();
     await expect(page.getByText('Регистрация')).toBeVisible();
-    await expect(page.locator('input[autocomplete="name"]')).toBeVisible();
+    // Форма регистрации имеет два поля: Имя и Фамилия
+    await expect(page.locator('input[autocomplete="given-name"]')).toBeVisible();
   });
 
   test('регистрация нового пользователя', async ({ page }) => {
     await page.goto('/login');
     await page.getByText('Зарегистрироваться').last().click();
     await expect(page.getByText('Регистрация')).toBeVisible();
-    await page.locator('input[autocomplete="name"]').fill('Тест Юзер');
-    // Поле email в режиме регистрации — либо full email (type="email"), либо prefix-only
-    // input[autocomplete="email"] работает в обоих случаях
-    const emailInput = page.locator('input[autocomplete="email"]');
-    await expect(emailInput).toBeVisible({ timeout: 3000 });
-    // Если рядом есть @flowtask.dev суффикс — поле prefix-only, иначе — полный email
-    const domainSpan = page.locator('form span').filter({ hasText: /^@[a-z]+\.[a-z]+$/ });
-    const hasDomain = await domainSpan.isVisible();
-    if (hasDomain) {
-      // Вводим только локальную часть (домен добавляется автоматически)
-      await emailInput.fill(`testuser${uid()}`);
-    } else {
-      await emailInput.fill(`test+${uid()}@example.com`);
-    }
+    // Форма регистрации разделена на два поля: Имя + Фамилия
+    await page.locator('input[autocomplete="given-name"]').fill('Тест');
+    await page.locator('input[autocomplete="family-name"]').fill('Юзер');
     await page.locator('input[type="password"]').fill(PASSWORD);
     await page.locator('button[type="submit"]').click();
     // Backend создаёт PENDING заявку → frontend переключается обратно на логин

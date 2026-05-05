@@ -6,6 +6,7 @@ test.describe('FilterBar — фильтрация задач', () => {
   let wsSlug: string;
   let wsId: string;
   let boardId: string;
+  let boardPrefix: string;
   let token: string;
   let firstStatusId: string;
   let secondStatusId: string;
@@ -18,6 +19,7 @@ test.describe('FilterBar — фильтрация задач', () => {
     const prefix = `F${uid().slice(0, 3).toUpperCase()}`;
     const board = await createBoard(token, wsId, `Filter Board ${uid()}`, prefix);
     boardId = board.id;
+    boardPrefix = board.prefix.toLowerCase();
 
     const wsData = await getWorkspace(token, wsId);
     const statuses = wsData.workflows?.[0]?.statuses ?? [];
@@ -35,7 +37,7 @@ test.describe('FilterBar — фильтрация задач', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/w/${wsSlug}/boards/${boardId}`);
+    await page.goto(`/w/${wsSlug}/boards/${boardPrefix}`);
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });
 

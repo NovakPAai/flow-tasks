@@ -56,7 +56,7 @@ test.describe('Доски', () => {
     await expect(page.getByText(board.name).first()).toBeVisible({ timeout: 8_000 });
 
     await page.getByText(board.name).first().click();
-    await expect(page).toHaveURL(new RegExp(`/boards/${board.id}`), { timeout: 8000 });
+    await expect(page).toHaveURL(new RegExp(`/boards/${board.prefix.toLowerCase()}`), { timeout: 8000 });
   });
 
   test('boardCount обновляется после создания доски', async ({ page }) => {
@@ -71,13 +71,13 @@ test.describe('Доски', () => {
 
   test('заголовок страницы доски отображает имя доски', async ({ page }) => {
     const board = await createBoard(token, wsId, `Header Board ${uid()}`, `HB${uid().slice(0,3).toUpperCase()}`);
-    await page.goto(`/w/${wsSlug}/boards/${board.id}`);
+    await page.goto(`/w/${wsSlug}/boards/${board.prefix.toLowerCase()}`);
     await expect(page.getByText(board.name)).toBeVisible({ timeout: 8000 });
   });
 
   test('кнопка назад на доске возвращает на дашборд', async ({ page }) => {
     const board = await createBoard(token, wsId, `Back Board ${uid()}`, `BB${uid().slice(0,3).toUpperCase()}`);
-    await page.goto(`/w/${wsSlug}/boards/${board.id}`);
+    await page.goto(`/w/${wsSlug}/boards/${board.prefix.toLowerCase()}`);
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 8_000 });
 
     // Кнопка со стрелкой назад (SVG path d="M10 3L5 8L10 13")
@@ -87,7 +87,7 @@ test.describe('Доски', () => {
 
   test('канбан отображает колонки workflow', async ({ page }) => {
     const board = await createBoard(token, wsId, `Cols Board ${uid()}`, `CO${uid().slice(0,3).toUpperCase()}`);
-    await page.goto(`/w/${wsSlug}/boards/${board.id}`);
+    await page.goto(`/w/${wsSlug}/boards/${board.prefix.toLowerCase()}`);
     // Default workflow имеет хотя бы одну колонку
     // Ищем кнопку "Быстрое добавление" которая появляется в каждой колонке
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 8000 });
