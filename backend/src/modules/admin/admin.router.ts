@@ -19,18 +19,22 @@ router.get('/users', async (_req, res, next) => {
   }
 });
 
-router.post('/users', validate(createUserDto), async (req, res, next) => {
+router.post('/users', validate(createUserDto), async (req: AuthRequest, res, next) => {
   try {
-    const result = await adminService.createUser(req.body);
+    const result = await adminService.createUser(req.user!.userId, req.body);
     res.status(201).json(result);
   } catch (err) {
     next(err);
   }
 });
 
-router.patch('/users/:id', validate(updateUserDto), async (req, res, next) => {
+router.patch('/users/:id', validate(updateUserDto), async (req: AuthRequest, res, next) => {
   try {
-    const user = await adminService.setUserSuperadmin(req.params.id as string, req.body.isSuperadmin);
+    const user = await adminService.setUserSuperadmin(
+      req.user!.userId,
+      req.params.id as string,
+      req.body.isSuperadmin,
+    );
     res.json(user);
   } catch (err) {
     next(err);
@@ -50,6 +54,17 @@ router.patch('/registration-requests/:id', validate(reviewRequestDto), async (re
   try {
     await adminService.reviewRegistrationRequest(req.params.id as string, req.body, req.user!.userId);
     res.json({ message: 'Заявка обработана' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/audit-log', async (req, res, next) => {
+  try {
+    const rawLimit = parseInt(String(req.query.limit ?? '100'), 10);
+    const limit = Number.isNaN(rawLimit) ? 100 : Math.min(rawLimit, 500);
+    const logs = await adminService.listAuditLogs(limit);
+    res.json(logs);
   } catch (err) {
     next(err);
   }

@@ -34,7 +34,7 @@ router.get('/workspaces', authHandler(async (req, res) => {
 router.post('/tasks/:taskId/pulsar-label', authHandler(async (req, res) => {
   const { workspaceId } = req.body as { workspaceId?: string };
   if (!workspaceId) return res.status(400).json({ error: 'workspaceId required' });
-  await svc.attachPulsarLabel(String(req.params.taskId), workspaceId);
+  await svc.attachPulsarLabel(String(req.params.taskId), workspaceId, req.user!.userId);
   res.status(204).end();
 }));
 

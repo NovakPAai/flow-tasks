@@ -56,7 +56,7 @@ model RefreshToken {
 model PasswordResetToken {
   id        String    @id @default(uuid())
   userId    String
-  token     String    @unique
+  tokenHash String    @unique @map("token_hash") // SHA-256 of the raw token; raw token never stored
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -69,8 +69,8 @@ model PasswordResetToken {
 model ApiKey {
   id         String    @id @default(uuid())
   userId     String
-  key        String    @unique
   keyHash    String    @unique @map("key_hash")
+  keyPrefix  String    @map("key_prefix") // first 12 chars of raw key, safe for display
   label      String
   isActive   Boolean   @default(true)
   expiresAt  DateTime?
@@ -394,6 +394,21 @@ model WorkspaceEvent {
 
   @@index([workspaceId, createdAt])
   @@map("workspace_events")
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String   // userId who performed the action
+  action    String   // e.g. "user.create", "user.set_superadmin", "request.approve"
+  targetId  String?  // userId or requestId being acted upon
+  meta      Json?    // additional context (safe, no secrets)
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 // ─── Feedback ─────────────────────────────────────────────────────────────────

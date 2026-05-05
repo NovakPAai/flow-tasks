@@ -8,7 +8,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   PORT: z.coerce.number().default(3101),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test', 'e2e']).default('development'),
   CORS_ORIGIN: z.string().default('http://localhost:5174'),
   REDIS_URL: z.string().optional(),
   REDIS_CACHE_TTL_SECONDS: z.coerce.number().min(1).max(3600).default(30),
@@ -26,6 +26,14 @@ const envSchema = z.object({
   OIDC_CLIENT_SECRET: z.string().optional(),
   OIDC_REDIRECT_URI: z.string().url().optional(),
   OIDC_SCOPE: z.string().default('openid profile email'),
+  // Email (SMTP) — optional; password reset is functional only when configured
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('no-reply@flowtask.dev'),
+  APP_URL: z.string().default('http://localhost:5174'),
+  MAX_SESSIONS: z.coerce.number().int().min(1).max(20).default(5),
 });
 
 export const config = envSchema.parse(process.env);

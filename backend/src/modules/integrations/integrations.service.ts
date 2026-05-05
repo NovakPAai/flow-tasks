@@ -5,7 +5,7 @@ import { AppError } from '../../shared/middleware/error-handler.js';
 export async function listApiKeys(userId: string) {
   return prisma.apiKey.findMany({
     where: { userId },
-    select: { id: true, label: true, lastUsedAt: true, createdAt: true },
+    select: { id: true, label: true, keyPrefix: true, lastUsedAt: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -13,11 +13,12 @@ export async function listApiKeys(userId: string) {
 export async function createApiKey(userId: string, label: string) {
   const raw = `ft_${crypto.randomBytes(32).toString('hex')}`;
   const keyHash = crypto.createHash('sha256').update(raw).digest('hex');
+  const keyPrefix = raw.slice(0, 12); // safe prefix for display only, never stored in full
   const apiKey = await prisma.apiKey.create({
-    data: { userId, key: raw, keyHash, label },
-    select: { id: true, label: true, createdAt: true },
+    data: { userId, keyHash, keyPrefix, label },
+    select: { id: true, label: true, keyPrefix: true, createdAt: true },
   });
-  // Return raw key only once — caller must store it
+  // Raw key returned once — never persisted after this point
   return { ...apiKey, key: raw };
 }
 
@@ -42,7 +43,15 @@ export async function getWorkspacesForIntegration(userId: string) {
 
 const PULSAR_LABEL = { name: 'Pulsar', color: '#4F6EF7' } as const;
 
-export async function attachPulsarLabel(taskId: string, workspaceId: string): Promise<void> {
+export async function attachPulsarLabel(taskId: string, workspaceId: string, userId: string): Promise<void> {
+  // Verify task belongs to workspaceId AND requesting user is a workspace member (IDOR guard)
+  const [task, member] = await Promise.all([
+    prisma.task.findFirst({ where: { id: taskId, board: { workspaceId } }, select: { id: true } }),
+    prisma.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId } } }),
+  ]);
+  if (!task) throw new AppError(404, 'Task not found');
+  if (!member) throw new AppError(403, 'Access denied');
+
   const label = await prisma.label.upsert({
     where: { workspaceId_name: { workspaceId, name: PULSAR_LABEL.name } },
     create: { workspaceId, name: PULSAR_LABEL.name, color: PULSAR_LABEL.color },
