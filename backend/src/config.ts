@@ -8,7 +8,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   PORT: z.coerce.number().default(3101),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'test', 'e2e']).default('development'),
   CORS_ORIGIN: z.string().default('http://localhost:5174'),
   REDIS_URL: z.string().optional(),
   REDIS_CACHE_TTL_SECONDS: z.coerce.number().min(1).max(3600).default(30),
