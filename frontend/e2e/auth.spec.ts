@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { login, logout, ADMIN_EMAIL, ADMIN_PASSWORD } from './helpers';
 
+// These tests exercise the login/logout UI — start unauthenticated.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Authentication', () => {
   test('redirects unauthenticated user to /login', async ({ page }) => {
     await page.goto('/workspaces');

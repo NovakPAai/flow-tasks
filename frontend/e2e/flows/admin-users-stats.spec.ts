@@ -23,6 +23,9 @@
 
 import { test, expect, type Page } from '@playwright/test';
 
+// Admin stats tests use loginAsSuperadmin() directly — start unauthenticated.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 // ── credentials ───────────────────────────────────────────────────────────────
 
 const SUPERADMIN_EMAIL =

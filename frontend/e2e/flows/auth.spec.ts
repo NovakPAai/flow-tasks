@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test';
 import { loginAs, ADMIN_EMAIL, USER_EMAIL, PASSWORD } from '../fixtures/auth';
 import { uid } from '../helpers/data';
 
+// These tests validate the login/registration UI — start unauthenticated.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Аутентификация', () => {
 
   test('успешный логин admin → редирект на /workspaces', async ({ page }) => {

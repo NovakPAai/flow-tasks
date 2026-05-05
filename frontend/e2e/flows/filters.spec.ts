@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
 import { getAdminToken, createWorkspace, createBoard, createTask, getWorkspace, uid } from '../helpers/data';
 
 test.describe('FilterBar — фильтрация задач', () => {
@@ -36,9 +35,7 @@ test.describe('FilterBar — фильтрация задач', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
     await page.goto(`/w/${wsSlug}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });
 

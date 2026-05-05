@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
 import { getAdminToken, createWorkspace, createBoard, createTask, getWorkspace, uid } from '../helpers/data';
 
 /**
@@ -65,9 +64,7 @@ test.describe('Kanban drag-and-drop', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
     await page.goto(`/w/${wsSlug}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });
 
@@ -80,7 +77,6 @@ test.describe('Kanban drag-and-drop', () => {
     const taskTitle = `DnD Task ${uid()}`;
     const task = await createTask(token, boardId, taskTitle, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const sourceSelector = `text="${task.title}"`;
@@ -103,7 +99,6 @@ test.describe('Kanban drag-and-drop', () => {
     const taskTitle = `Blocked DnD ${uid()}`;
     const task = await createTask(token, boardId, taskTitle, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const sourceSelector = `text="${task.title}"`;
@@ -131,8 +126,6 @@ test.describe('Kanban drag-and-drop', () => {
     const task1 = await createTask(token, boardId, `Order Task A ${uid()}`, statuses[0].id);
     const task2 = await createTask(token, boardId, `Order Task B ${uid()}`, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
-
     await expect(page.getByText(task1.title)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(task2.title)).toBeVisible({ timeout: 10_000 });
 
@@ -155,7 +148,6 @@ test.describe('Kanban drag-and-drop', () => {
     const taskTitle = `Opacity Task ${uid()}`;
     const task = await createTask(token, boardId, taskTitle, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const card = page.getByText(task.title).first();

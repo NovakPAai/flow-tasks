@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
 import { getAdminToken, createWorkspace, createBoard, uid } from '../helpers/data';
 
 test.describe('Создание задач (Kanban)', () => {
@@ -20,9 +19,7 @@ test.describe('Создание задач (Kanban)', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
     await page.goto(`/w/${wsSlug}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
     // Дождёмся появления хотя бы одной колонки
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });

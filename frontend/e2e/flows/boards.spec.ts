@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
 import { getAdminToken, createWorkspace, createBoard, uid } from '../helpers/data';
 
 test.describe('Доски', () => {
@@ -16,9 +15,8 @@ test.describe('Доски', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
     await page.goto(`/w/${wsSlug}`);
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading').first()).toBeVisible({ timeout: 10_000 });
   });
 
   test('дашборд воркспейса загружается', async ({ page }) => {
@@ -46,9 +44,7 @@ test.describe('Доски', () => {
     }
 
     await page.getByRole('button', { name: 'Создать' }).last().click();
-    // После создания navigate → /w/${slug}/boards/${id} — ждём URL + networkidle
     await page.waitForURL(/\/boards\//, { timeout: 12_000 });
-    await page.waitForLoadState('networkidle', { timeout: 8_000 });
     // Доска создана — проверяем что мы на правильной доске (имя в h1) и канбан загружен
     await expect(page.getByText(boardName)).toBeVisible({ timeout: 8000 });
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 8000 });
@@ -57,7 +53,7 @@ test.describe('Доски', () => {
   test('навигация на доску — открывает канбан', async ({ page }) => {
     const board = await createBoard(token, wsId, `Kanban Board ${uid()}`, `KB${uid().slice(0,3).toUpperCase()}`);
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText(board.name).first()).toBeVisible({ timeout: 8_000 });
 
     await page.getByText(board.name).first().click();
     await expect(page).toHaveURL(new RegExp(`/boards/${board.id}`), { timeout: 8000 });
@@ -82,7 +78,7 @@ test.describe('Доски', () => {
   test('кнопка назад на доске возвращает на дашборд', async ({ page }) => {
     const board = await createBoard(token, wsId, `Back Board ${uid()}`, `BB${uid().slice(0,3).toUpperCase()}`);
     await page.goto(`/w/${wsSlug}/boards/${board.id}`);
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 8_000 });
 
     // Кнопка со стрелкой назад (SVG path d="M10 3L5 8L10 13")
     await page.locator('button').filter({ has: page.locator('svg') }).first().click();
@@ -92,7 +88,6 @@ test.describe('Доски', () => {
   test('канбан отображает колонки workflow', async ({ page }) => {
     const board = await createBoard(token, wsId, `Cols Board ${uid()}`, `CO${uid().slice(0,3).toUpperCase()}`);
     await page.goto(`/w/${wsSlug}/boards/${board.id}`);
-    await page.waitForLoadState('networkidle');
     // Default workflow имеет хотя бы одну колонку
     // Ищем кнопку "Быстрое добавление" которая появляется в каждой колонке
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 8000 });

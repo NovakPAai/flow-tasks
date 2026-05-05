@@ -6,6 +6,9 @@
 import { test, expect } from '@playwright/test';
 import { login, logout, uniqueName } from './helpers';
 
+// Smoke tests perform an explicit login/logout flow — start unauthenticated.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test('CIO demo smoke: full user journey', async ({ page }) => {
   // ── 1. Login ────────────────────────────────────────────────────────────────
   await login(page);

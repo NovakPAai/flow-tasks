@@ -12,6 +12,9 @@
 
 import { test, expect } from '@playwright/test';
 
+// Registration tests navigate to /login unauthenticated — start with empty state.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 /** Click the link that switches to registration mode. */
