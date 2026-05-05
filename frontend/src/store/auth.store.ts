@@ -42,7 +42,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadUser: async () => {
     try {
-      // Try to restore session via HttpOnly refresh token cookie
+      // Try to restore session via HttpOnly refresh token cookie.
+      // Also used by the SSO callback flow (sso_return=1).
       const { accessToken } = await authApi.refreshToken();
       setAccessToken(accessToken);
       const user = await authApi.getMe();

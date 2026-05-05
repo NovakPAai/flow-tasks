@@ -85,6 +85,11 @@ export async function login(dto: LoginDto) {
     throw new AppError(401, 'Неверный email или пароль');
   }
 
+  // Block local login for SSO-only users (except superadmins who always retain local access)
+  if (user.ssoOnly && !user.isSuperadmin) {
+    throw new AppError(403, 'Вход по паролю недоступен. Используйте SSO.');
+  }
+
   const valid = await comparePassword(dto.password, user.password);
   if (!valid) {
     await recordFailedAttempt(normalizedEmail);

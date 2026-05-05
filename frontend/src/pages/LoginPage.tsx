@@ -333,6 +333,7 @@ export default function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotDone, setForgotDone] = useState(false);
+  const [ssoStatus, setSsoStatus] = useState<{ enabled: boolean; provider: string | null; ssoOnly: boolean } | null>(null);
   const { login, register } = useAuthStore();
   const emailPrefix = useMemo(() => buildEmailPrefix(firstName, lastName), [firstName, lastName]);
   const navigate = useNavigate();
@@ -349,6 +350,25 @@ export default function LoginPage() {
 
   useEffect(() => {
     authApi.getRegistrationDomain().then(setRegistrationDomain).catch(() => {});
+    authApi.getSsoStatus().then(setSsoStatus).catch(() => {});
+  }, []);
+
+  // Handle SSO return: the backend sets a refreshToken cookie and redirects here.
+  // We call /auth/refresh to exchange it for an access token — no token in the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('error') === 'sso_failed') {
+      message.error('Ошибка SSO-аутентификации. Попробуйте ещё раз.');
+      window.history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+
+    if (!params.get('sso_return')) return;
+
+    window.history.replaceState(null, '', window.location.pathname);
+    useAuthStore.getState().loadUser().then(() => navigate('/'));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -527,6 +547,37 @@ export default function LoginPage() {
               {loading ? '...' : showRegister ? 'Отправить заявку' : 'Войти'}
             </div>
           </button>
+
+          {/* SSO button — only on the login tab, only when SSO is configured */}
+          {!showRegister && ssoStatus?.enabled && (
+            <>
+              <div style={{
+                alignItems: 'center', display: 'flex', gap: 10, marginBottom: 20,
+              }}>
+                <div style={{ flex: 1, height: 1, backgroundColor: C.inputBorder }} />
+                <span style={{ color: C.muted, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12 }}>или</span>
+                <div style={{ flex: 1, height: 1, backgroundColor: C.inputBorder }} />
+              </div>
+              <a
+                href={`/api/auth/sso/login?returnUrl=${encodeURIComponent('/')}`}
+                style={{
+                  alignItems: 'center', backgroundColor: C.inputBg,
+                  border: `1px solid ${C.inputBorder}`, borderRadius: 8, boxSizing: 'border-box',
+                  color: C.title, cursor: 'pointer', display: 'flex',
+                  fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, fontWeight: 500,
+                  gap: 10, justifyContent: 'center', marginBottom: 20,
+                  paddingBlock: '12px', paddingInline: '16px',
+                  textDecoration: 'none', transition: 'border-color 0.15s',
+                  width: '100%',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Войти через {ssoStatus.provider === 'keycloak' ? 'Keycloak' : ssoStatus.provider === 'avanpost' ? 'Avanpost' : 'SSO'}
+              </a>
+            </>
+          )}
 
           {/* Toggle login/register */}
           <div style={{ textAlign: 'center' }}>

@@ -5,6 +5,7 @@ import { registerDto, loginDto, updateProfileDto, forgotPasswordDto, resetPasswo
 import * as authService from './auth.service.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { config } from '../../config.js';
+import ssoRouter from './sso/sso.router.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
 const REFRESH_COOKIE_OPTS = {
@@ -98,5 +99,7 @@ router.post('/reset-password', validate(resetPasswordDto), async (req, res, next
     next(err);
   }
 });
+
+router.use('/sso', ssoRouter);
 
 export default router;
