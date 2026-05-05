@@ -17,9 +17,27 @@ const envSchema = z.object({
   GITHUB_ISSUES_TOKEN: z.string().optional(),
   GITHUB_REPO_OWNER: z.string().default('NovakPAai'),
   GITHUB_REPO_NAME: z.string().default('flow-tasks'),
+  // SSO / OIDC
+  SSO_ENABLED: z.coerce.boolean().default(false),
+  SSO_ONLY: z.coerce.boolean().default(false),
+  OIDC_PROVIDER: z.enum(['keycloak', 'avanpost']).optional(),
+  OIDC_ISSUER_URL: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().optional(),
+  OIDC_CLIENT_SECRET: z.string().optional(),
+  OIDC_REDIRECT_URI: z.string().url().optional(),
+  OIDC_SCOPE: z.string().default('openid profile email'),
 });
 
 export const config = envSchema.parse(process.env);
+
+if (config.SSO_ENABLED) {
+  const ssoRequired = ['OIDC_ISSUER_URL', 'OIDC_CLIENT_ID', 'OIDC_CLIENT_SECRET', 'OIDC_REDIRECT_URI', 'OIDC_PROVIDER'] as const;
+  const missing = ssoRequired.filter((k) => !config[k]);
+  if (missing.length) {
+    console.error(`FATAL: SSO_ENABLED=true but missing required vars: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 if (config.NODE_ENV === 'production') {
   const weakPatterns = ['change-me', 'changeme', 'replace', 'secret', 'password'];

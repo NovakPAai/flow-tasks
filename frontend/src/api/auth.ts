@@ -34,3 +34,14 @@ export async function getRegistrationDomain(): Promise<string> {
   const { data } = await api.get<{ domain: string }>('/auth/registration-domain');
   return data.domain;
 }
+
+export interface SsoStatus {
+  enabled: boolean;
+  provider: string | null;
+  ssoOnly: boolean;
+}
+
+export async function getSsoStatus(): Promise<SsoStatus> {
+  const { data } = await api.get<SsoStatus>('/auth/sso/status');
+  return data;
+}

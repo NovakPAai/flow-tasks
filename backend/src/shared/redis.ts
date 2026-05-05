@@ -1,5 +1,6 @@
 import { createClient, type RedisClientType } from 'redis';
 import { config } from '../config.js';
+import { logger } from './utils/logger.js';
 
 type RedisClient = RedisClientType;
 
@@ -45,7 +46,7 @@ export async function getCachedJson<T>(key: string): Promise<T | null> {
     if (!raw) return null;
     return JSON.parse(raw) as T;
   } catch (err) {
-    console.error('Redis read error:', err);
+    logger.error('Redis read error', { key, error: String(err) });
     return null;
   }
 }
@@ -56,7 +57,22 @@ export async function setCachedJson<T>(key: string, value: T, ttlSeconds = confi
   try {
     await redis.set(key, JSON.stringify(value), { EX: ttlSeconds });
   } catch (err) {
-    console.error('Redis write error:', err);
+    logger.error('Redis write error', { key, error: String(err) });
+  }
+}
+
+// Atomic get-and-delete — used for one-time-use state tokens (SSO PKCE, exchange codes).
+// Returns null when key is absent, expired, or Redis is unavailable.
+export async function getAndDeleteCachedJson<T>(key: string): Promise<T | null> {
+  const redis = await getRedisClientInternal();
+  if (!redis) return null;
+  try {
+    const raw = await redis.getDel(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as T;
+  } catch (err) {
+    logger.error('Redis getdel error', { key, error: String(err) });
+    return null;
   }
 }
 
@@ -77,7 +93,7 @@ export async function setUserSession(userId: string, session: Omit<UserSession, 
   try {
     await redis.set(buildSessionKey(userId), JSON.stringify({ userId, ...session }), { EX: SESSION_TTL_SECONDS });
   } catch (err) {
-    console.error('Redis session write error:', err);
+    logger.error('Redis session write error', { userId, error: String(err) });
   }
 }
 
@@ -87,6 +103,6 @@ export async function deleteUserSession(userId: string): Promise<void> {
   try {
     await redis.del(buildSessionKey(userId));
   } catch (err) {
-    console.error('Redis session delete error:', err);
+    logger.error('Redis session delete error', { userId, error: String(err) });
   }
 }
