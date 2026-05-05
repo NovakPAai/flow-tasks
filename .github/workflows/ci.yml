@@ -170,7 +170,7 @@ jobs:
       JWT_SECRET: e2e-secret-at-least-32-chars-long-ok
       JWT_REFRESH_SECRET: e2e-refresh-secret-at-least-32-chars-ok
       REDIS_URL: redis://localhost:6380
-      NODE_ENV: test
+      NODE_ENV: e2e
       PORT: 3101
 
     steps:
@@ -212,10 +212,8 @@ jobs:
           DATABASE_URL: postgresql://flowtask:flowtask@localhost:5434/flowtask_e2e
           REDIS_URL: redis://localhost:6380
 
-      - name: Build and serve frontend
-        run: |
-          npm run build
-          npx serve -s dist -l 5174 &
+      - name: Start frontend dev server
+        run: npm run dev &
         working-directory: frontend
 
       - name: Wait for services
