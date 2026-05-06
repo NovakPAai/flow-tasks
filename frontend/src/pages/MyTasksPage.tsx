@@ -5,7 +5,19 @@ import { useThemeStore } from '../store/theme.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useBreakpoint } from '../utils/useBreakpoint';
 import * as tasksApi from '../api/tasks';
+import * as boardsApi from '../api/boards';
+import * as workspacesApi from '../api/workspaces';
+import * as labelsApi from '../api/labels';
 import type { MyTask } from '../api/tasks';
+import type { WorkflowStatus, WorkspaceMember, Label } from '../types';
+import TaskDrawer from '../components/TaskDrawer';
+
+interface BoardContext {
+  statuses: WorkflowStatus[];
+  members: WorkspaceMember[];
+  labels: Label[];
+  workspaceId: string;
+}
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -60,6 +72,14 @@ export default function MyTasksPage() {
   const [search, setSearch] = useState('');
   const offsetRef = useRef(0);
 
+  // Drawer state
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [drawerCtx, setDrawerCtx] = useState<BoardContext | null>(null);
+  const [drawerBoardId, setDrawerBoardId] = useState<string | null>(null);
+  const boardCtxCache = useRef<Map<string, BoardContext>>(new Map());
+  // Tracks the boardId of the in-flight fetch; used to discard stale responses on rapid clicks
+  const fetchingBoardIdRef = useRef<string | null>(null);
+
   const fetchTasks = useCallback(async (preset: DuePreset, q: string, replace: boolean) => {
     const offset = replace ? 0 : offsetRef.current;
     if (replace) setLoading(true); else setLoadingMore(true);
@@ -85,6 +105,48 @@ export default function MyTasksPage() {
     const timer = setTimeout(() => { fetchTasks(duePreset, search, true); }, search ? 300 : 0);
     return () => clearTimeout(timer);
   }, [duePreset, search, fetchTasks]);
+
+  const openDrawer = useCallback(async (task: MyTask) => {
+    const { id: boardId, workspace } = task.board;
+
+    const cached = boardCtxCache.current.get(boardId);
+    if (cached) {
+      setDrawerCtx(cached);
+      setDrawerBoardId(boardId);
+      setSelectedTaskId(task.id);
+      return;
+    }
+
+    // Mark this boardId as in-flight; any concurrent click will overwrite this ref
+    fetchingBoardIdRef.current = boardId;
+    try {
+      const [board, members, labels] = await Promise.all([
+        boardsApi.getBoard(boardId),
+        workspacesApi.listMembers(workspace.id),
+        labelsApi.listLabels(workspace.id),
+      ]);
+      // Discard result if another click started a newer fetch
+      if (fetchingBoardIdRef.current !== boardId) return;
+      const ctx: BoardContext = {
+        statuses: board.workflow.statuses,
+        members,
+        labels,
+        workspaceId: workspace.id,
+      };
+      boardCtxCache.current.set(boardId, ctx);
+      setDrawerCtx(ctx);
+      setDrawerBoardId(boardId);
+      setSelectedTaskId(task.id);
+    } catch {
+      if (fetchingBoardIdRef.current === boardId) {
+        message.error('Не удалось загрузить данные задачи');
+      }
+    } finally {
+      if (fetchingBoardIdRef.current === boardId) {
+        fetchingBoardIdRef.current = null;
+      }
+    }
+  }, []);
 
   // Group by workspace → board
   const grouped = useMemo(() => {
@@ -316,7 +378,7 @@ export default function MyTasksPage() {
                         return (
                           <div
                             key={task.id}
-                            onClick={() => navigate(`/w/${ws.wsSlug}/boards/${board.boardSlug}`)}
+                            onClick={() => openDrawer(task)}
                             style={{
                               display: 'flex', alignItems: 'center', gap: bp === 'mobile' ? 8 : 12,
                               padding: bp === 'mobile' ? '10px 12px' : '11px 16px',
@@ -439,6 +501,30 @@ export default function MyTasksPage() {
           </button>
         </div>
       )}
+
+      <TaskDrawer
+        taskId={selectedTaskId}
+        statuses={drawerCtx?.statuses ?? []}
+        members={drawerCtx?.members ?? []}
+        workspaceId={drawerCtx?.workspaceId}
+        boardId={drawerBoardId ?? undefined}
+        workspaceLabels={drawerCtx?.labels ?? []}
+        onClose={() => {
+          setSelectedTaskId(null);
+          setDrawerBoardId(null);
+          setDrawerCtx(null);
+        }}
+        onUpdated={(updated) =>
+          setAllTasks((prev) =>
+            prev.map((t) =>
+              t.id === updated.id ? { ...t, ...updated, board: t.board } : t,
+            ),
+          )
+        }
+        onDeleted={(id) =>
+          setAllTasks((prev) => prev.filter((t) => t.id !== id))
+        }
+      />
     </div>
   );
 }
