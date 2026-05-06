@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { MyTask } from '../api/tasks';
+import type { Breakpoint } from '../utils/useBreakpoint';
+import './TaskAccordionPanel.css';
+
+const DESCRIPTION_PREVIEW_LIMIT = 500;
+const HEX_COLOR_RE = /^#[0-9a-f]{3,8}$/i;
 
 function isSafeAvatarUrl(url: string): boolean {
   try {
@@ -11,18 +16,21 @@ function isSafeAvatarUrl(url: string): boolean {
   }
 }
 
-const DESCRIPTION_PREVIEW_LIMIT = 500;
+function safeColor(color: string, fallback: string): string {
+  return HEX_COLOR_RE.test(color) ? color : fallback;
+}
 
 interface TaskAccordionPanelProps {
   id: string;
   task: MyTask;
   colors: Record<string, string>;
   isDark: boolean;
+  bp: Breakpoint;
   now: Date;
   onOpenInBoard: (task: MyTask) => void;
 }
 
-export default function TaskAccordionPanel({ id, task, colors: c, isDark, now, onOpenInBoard }: TaskAccordionPanelProps) {
+export default function TaskAccordionPanel({ id, task, colors: c, isDark, bp, now, onOpenInBoard }: TaskAccordionPanelProps) {
   const [descExpanded, setDescExpanded] = useState(false);
 
   const description = task.description ?? undefined;
@@ -35,28 +43,29 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, now, o
   const isDone = task.status?.category === 'DONE';
   const isOverdue = due !== null && due < now && !isDone;
 
-  const labelStyle: CSSProperties = {
+  const panelBg = isDark ? '#0D1025' : 'rgba(79,110,247,0.03)';
+
+  const labelStyle = useMemo<CSSProperties>(() => ({
     fontSize: 10, fontWeight: 600, color: c.muted,
     textTransform: 'uppercase', letterSpacing: '0.08em',
     fontFamily: '"Inter",system-ui,sans-serif',
     marginBottom: 4,
-  };
+  }), [c.muted]);
 
-  const valueStyle: CSSProperties = {
+  const valueStyle = useMemo<CSSProperties>(() => ({
     fontSize: 12, color: c.text,
     fontFamily: '"Inter",system-ui,sans-serif',
-  };
+  }), [c.text]);
 
-  const mutedValueStyle: CSSProperties = {
-    ...valueStyle, color: c.muted, fontStyle: 'italic',
-  };
-
-  // Slightly elevated surface relative to the row background
-  const panelBg = isDark ? '#0D1025' : 'rgba(79,110,247,0.03)';
+  const mutedValueStyle = useMemo<CSSProperties>(() => ({
+    fontSize: 12, color: c.muted, fontStyle: 'italic',
+    fontFamily: '"Inter",system-ui,sans-serif',
+  }), [c.muted]);
 
   return (
     <div
       id={id}
+      className="accordion-panel"
       onClick={(e) => e.stopPropagation()}
       style={{
         padding: '14px 16px 14px 38px',
@@ -65,11 +74,8 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, now, o
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
         gap: '14px 24px',
-        animation: 'accordionFadeIn 0.15s ease',
       }}
     >
-      <style>{`@keyframes accordionFadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}`}</style>
-
       {/* Description — full width */}
       <div style={{ gridColumn: '1 / -1' }}>
         <div style={labelStyle}>Описание</div>
@@ -144,43 +150,48 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, now, o
         )}
       </div>
 
-      {/* Status — shown here for mobile where row header hides it */}
-      <div>
-        <div style={labelStyle}>Статус</div>
-        {task.status ? (
-          <span style={{
-            fontSize: 11, fontWeight: 500,
-            color: task.status.color,
-            background: `${task.status.color}18`,
-            borderRadius: 5, padding: '2px 7px',
-            fontFamily: '"Inter",system-ui,sans-serif',
-          }}>
-            {task.status.name}
-          </span>
-        ) : (
-          <span style={mutedValueStyle}>Не задан</span>
-        )}
-      </div>
+      {/* Status — only on mobile; desktop row header already shows it */}
+      {bp === 'mobile' && (
+        <div>
+          <div style={labelStyle}>Статус</div>
+          {task.status ? (
+            <span style={{
+              fontSize: 11, fontWeight: 500,
+              color: safeColor(task.status.color, c.muted),
+              background: `${safeColor(task.status.color, c.border)}18`,
+              borderRadius: 5, padding: '2px 7px',
+              fontFamily: '"Inter",system-ui,sans-serif',
+            }}>
+              {task.status.name}
+            </span>
+          ) : (
+            <span style={mutedValueStyle}>Не задан</span>
+          )}
+        </div>
+      )}
 
       {/* Labels */}
       <div>
         <div style={labelStyle}>Теги</div>
         {task.labels && task.labels.length > 0 ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {task.labels.map(({ label }) => (
-              <span
-                key={label.id}
-                style={{
-                  fontSize: 11, fontWeight: 500,
-                  color: label.color,
-                  background: `${label.color}18`,
-                  borderRadius: 4, padding: '2px 6px',
-                  fontFamily: '"Inter",system-ui,sans-serif',
-                }}
-              >
-                {label.name}
-              </span>
-            ))}
+            {task.labels.map(({ label }) => {
+              const color = safeColor(label.color, c.muted);
+              return (
+                <span
+                  key={label.id}
+                  style={{
+                    fontSize: 11, fontWeight: 500,
+                    color,
+                    background: `${color}18`,
+                    borderRadius: 4, padding: '2px 6px',
+                    fontFamily: '"Inter",system-ui,sans-serif',
+                  }}
+                >
+                  {label.name}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <span style={mutedValueStyle}>Нет тегов</span>

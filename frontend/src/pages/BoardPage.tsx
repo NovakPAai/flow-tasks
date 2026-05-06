@@ -24,6 +24,8 @@ import FilterBar from '../components/FilterBar';
 import BulkActionBar from '../components/BulkActionBar';
 
 type ViewMode = 'board' | 'list' | 'calendar' | 'roadmap';
+
+const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
 type Columns = Record<string, Task[]>;
 
 function groupByStatus(tasks: Task[], statuses: WorkflowStatus[]): Columns {
@@ -187,8 +189,6 @@ export default function BoardPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const fromMyTasks = searchParams.get('from') === 'my-tasks';
-  // Validate task ID format before round-tripping in back-navigation URL
-  const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
   const rawMyTasksOpen = searchParams.get('open');
   const myTasksOpenId = rawMyTasksOpen && TASK_ID_RE.test(rawMyTasksOpen) ? rawMyTasksOpen : null;
   const [viewMode, setViewMode] = useState<ViewMode>(() => {

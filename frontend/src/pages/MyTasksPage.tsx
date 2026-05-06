@@ -39,6 +39,9 @@ const PRIO: Record<string, { bg: string; text: string }> = {
 // ── Due preset helpers ─────────────────────────────────────────────────────────
 type DuePreset = '' | 'today' | 'this_week' | 'overdue' | 'no_date';
 
+// Task IDs are cuid/cuid2 — validated before trusting URL params
+const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
+
 // ── Workspace icon colors ──────────────────────────────────────────────────────
 const WS_COLORS = ['#22C55E', '#4F6EF7', '#8B5CF6', '#F59E0B', '#EC4899', '#0EA5E9'];
 function wsColor(name: string): string {
@@ -63,12 +66,13 @@ export default function MyTasksPage() {
   const offsetRef = useRef(0);
 
   // Accordion state — one open at a time; restored from ?open= URL param on mount
-  // Validated against task-ID format to prevent param injection
-  const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
   const rawOpen = searchParams.get('open');
   const [openAccordionId, setOpenAccordionId] = useState<string | null>(
     () => rawOpen && TASK_ID_RE.test(rawOpen) ? rawOpen : null,
   );
+
+  // Ref map for scroll-to-open after tasks load
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const fetchTasks = useCallback(async (preset: DuePreset, q: string, replace: boolean) => {
     const offset = replace ? 0 : offsetRef.current;
@@ -94,7 +98,15 @@ export default function MyTasksPage() {
     offsetRef.current = 0;
     const timer = setTimeout(() => { fetchTasks(duePreset, search, true); }, search ? 300 : 0);
     return () => clearTimeout(timer);
-  }, [duePreset, search, fetchTasks]);
+  }, [duePreset, search]); // fetchTasks is stable (empty useCallback deps)
+
+  // Scroll to restored accordion after tasks load
+  useEffect(() => {
+    if (!loading && openAccordionId) {
+      const el = rowRefs.current.get(openAccordionId);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [loading, openAccordionId]);
 
   // Capture "now" once per render cycle to avoid per-task Date allocation and clock drift
   const now = useMemo(() => new Date(), []);
@@ -344,7 +356,7 @@ export default function MyTasksPage() {
                         const isOpen = openAccordionId === task.id;
 
                         return (
-                          <div key={task.id}>
+                          <div key={task.id} ref={(el) => { if (el) rowRefs.current.set(task.id, el); else rowRefs.current.delete(task.id); }}>
                             {/* Task row */}
                             <div
                               role="button"
@@ -386,19 +398,6 @@ export default function MyTasksPage() {
                                 }
                               }}
                             >
-                              {/* Chevron */}
-                              <svg
-                                width="12" height="12" viewBox="0 0 12 12" fill="none"
-                                style={{
-                                  flexShrink: 0,
-                                  transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                                  transition: 'transform 0.15s',
-                                  color: isOpen ? '#4F6EF7' : c.muted,
-                                }}
-                              >
-                                <path d="M4 2.5L7.5 6L4 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-
                               {/* Status circle */}
                               <div style={{
                                 width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
@@ -463,6 +462,20 @@ export default function MyTasksPage() {
                                     {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                                   </span>
                                 )}
+
+                                {/* Chevron — far right, standard accordion position */}
+                                <svg
+                                  aria-hidden="true"
+                                  width="12" height="12" viewBox="0 0 12 12" fill="none"
+                                  style={{
+                                    flexShrink: 0, marginLeft: 4,
+                                    transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                                    transition: 'transform 0.15s',
+                                    color: isOpen ? '#4F6EF7' : c.muted,
+                                  }}
+                                >
+                                  <path d="M4 2.5L7.5 6L4 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
                               </div>
                             </div>
 
@@ -473,6 +486,7 @@ export default function MyTasksPage() {
                                 task={task}
                                 colors={c}
                                 isDark={mode === 'dark'}
+                                bp={bp}
                                 now={now}
                                 onOpenInBoard={openInBoard}
                               />
