@@ -59,8 +59,8 @@ describe('Comments', () => {
       await api.post(`/api/tasks/${taskId}/comments`).set(auth(ownerToken)).send({ body: 'Comment 1' });
       const res = await api.get(`/api/tasks/${taskId}/comments`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(Array.isArray(res.body.comments)).toBe(true);
+      expect(res.body.comments.length).toBeGreaterThan(0);
     });
 
     it('VIEWER can read comments', async () => {

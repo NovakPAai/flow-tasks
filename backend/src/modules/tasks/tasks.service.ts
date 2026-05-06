@@ -222,13 +222,18 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
   });
 
   if (dto.description) {
-    const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
+    const [author, ws] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } }),
+      prisma.workspace.findUniqueOrThrow({ where: { id: board.workspaceId }, select: { slug: true } }),
+    ]);
     await emitMentionNotifications(dto.description, {
       taskId: task.id,
       taskTitle: task.title,
       taskKey: task.issueKey,
       mentionedBy: author,
       context: 'task',
+      workspaceSlug: ws.slug,
+      boardSlug: board.prefix.toLowerCase(),
     }, userId);
   }
 
@@ -368,13 +373,18 @@ export async function updateTask(taskId: string, userId: string, dto: UpdateTask
   });
 
   if (dto.description !== undefined) {
-    const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
+    const [author, ws] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } }),
+      prisma.workspace.findUniqueOrThrow({ where: { id: current.board.workspaceId }, select: { slug: true } }),
+    ]);
     await emitMentionNotifications(dto.description, {
       taskId,
       taskTitle: updated.title,
       taskKey: updated.issueKey,
       mentionedBy: author,
       context: 'task',
+      workspaceSlug: ws.slug,
+      boardSlug: current.board.prefix.toLowerCase(),
     }, userId);
   }
 

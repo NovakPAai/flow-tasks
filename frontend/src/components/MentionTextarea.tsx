@@ -8,7 +8,11 @@ interface Props {
   members: WorkspaceMember[];
   placeholder?: string;
   rows?: number;
+  maxLength?: number;
   style?: React.CSSProperties;
+  onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>;
+  onFocus?: React.FocusEventHandler<HTMLTextAreaElement>;
+  onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
 }
 
 const MENTION_RE = /@\[([^\]]+)\]\([^)]+\)/g;
@@ -60,7 +64,7 @@ export function renderMentions(text: string): React.ReactNode[] {
   return parts;
 }
 
-export default function MentionTextarea({ value, onChange, members, placeholder, rows = 4, style }: Props) {
+export default function MentionTextarea({ value, onChange, members, placeholder, rows = 4, maxLength, style, onKeyDown, onFocus, onBlur }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
   const inputBg = isDark ? '#1C2236' : '#FAFAFA';
@@ -98,6 +102,7 @@ export default function MentionTextarea({ value, onChange, members, placeholder,
     if (dropdownOpen && e.key === 'Escape') {
       setDropdownOpen(false);
     }
+    onKeyDown?.(e);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -192,8 +197,11 @@ export default function MentionTextarea({ value, onChange, members, placeholder,
         value={displayValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         placeholder={placeholder}
         rows={rows}
+        maxLength={maxLength}
         style={{
           width: '100%', resize: 'vertical',
           background: inputBg, border: `1px solid ${inputBorder}`,

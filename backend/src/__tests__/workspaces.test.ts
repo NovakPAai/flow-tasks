@@ -125,7 +125,7 @@ describe('Workspaces', () => {
     it('returns workspace event history for OWNER', async () => {
       const res = await api.get(`/api/workspaces/${workspaceId}/history`).set(auth(ownerToken));
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.events)).toBe(true);
     });
 
     it('returns 403 for VIEWER', async () => {
