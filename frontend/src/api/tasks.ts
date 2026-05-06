@@ -72,6 +72,25 @@ export async function getTaskHistory(taskId: string): Promise<TaskHistory[]> {
   return data;
 }
 
+export interface BulkUpdatePayload {
+  ids: string[];
+  patch: {
+    statusId?: string;
+    assigneeId?: string | null;
+    priority?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
+  };
+}
+
+export async function bulkUpdateTasks(boardId: string, payload: BulkUpdatePayload): Promise<{ updated: number }> {
+  const { data } = await api.patch<{ updated: number }>(`/boards/${boardId}/tasks/bulk`, payload);
+  return data;
+}
+
+export async function bulkDeleteTasks(boardId: string, ids: string[]): Promise<{ deleted: number }> {
+  const { data } = await api.post<{ deleted: number }>(`/boards/${boardId}/tasks/bulk-delete`, { ids });
+  return data;
+}
+
 export async function listMyTasks(params?: {
   priority?: string;
   duePreset?: string;

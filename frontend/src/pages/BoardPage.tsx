@@ -21,6 +21,7 @@ import BoardListView from '../components/BoardListView';
 import BoardCalendarView from '../components/BoardCalendarView';
 import RoadmapView from '../components/RoadmapView';
 import FilterBar from '../components/FilterBar';
+import BulkActionBar from '../components/BulkActionBar';
 
 type ViewMode = 'board' | 'list' | 'calendar' | 'roadmap';
 type Columns = Record<string, Task[]>;
@@ -204,6 +205,7 @@ export default function BoardPage() {
   const [labels, setLabels] = useState<Label[]>([]);
   const [wfEditorOpen, setWfEditorOpen] = useState(false);
   const [draggingFromStatusId, setDraggingFromStatusId] = useState<string | null>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [columnOffsets, setColumnOffsets] = useState<Record<string, number>>({});
   const [columnTotals, setColumnTotals] = useState<Record<string, number>>({});
   const [loadingMoreCols, setLoadingMoreCols] = useState<Set<string>>(new Set());
@@ -433,6 +435,81 @@ export default function BoardPage() {
       }
       return newCols;
     });
+  };
+
+  // ── Selection ─────────────────────────────────────────────────────────────
+  const toggleSelect = (id: string) => {
+    setSelectedTaskIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = (ids: string[]) => {
+    setSelectedTaskIds(ids.length === 0 ? new Set() : new Set(ids));
+  };
+
+  // ── Bulk operations ───────────────────────────────────────────────────────
+  const handleBulkUpdate = async (patch: { statusId?: string; assigneeId?: string | null; priority?: 'HIGH' | 'MEDIUM' | 'LOW' | null }) => {
+    if (!board || selectedTaskIds.size === 0) return;
+    const ids = [...selectedTaskIds];
+    try {
+      await tasksApi.bulkUpdateTasks(board.id, { ids, patch });
+
+      setColumns(prev => {
+        const idSet = new Set(ids);
+        // Apply patch to all selected tasks
+        const allUpdated: Task[] = [];
+        for (const tasks of Object.values(prev)) {
+          for (const t of tasks) {
+            if (!idSet.has(t.id)) {
+              allUpdated.push(t);
+            } else {
+              const updated = { ...t };
+              if (patch.statusId !== undefined) updated.statusId = patch.statusId!;
+              if (patch.priority !== undefined) updated.priority = patch.priority ?? undefined;
+              if (patch.assigneeId !== undefined) {
+                if (patch.assigneeId === null) {
+                  updated.assignee = undefined;
+                } else {
+                  const m = members.find(mb => mb.userId === patch.assigneeId);
+                  updated.assignee = m ? { id: m.userId, name: m.user.name, avatar: m.user.avatar } : undefined;
+                }
+              }
+              allUpdated.push(updated);
+            }
+          }
+        }
+        // Redistribute into columns by current statusId
+        const newCols: Columns = {};
+        for (const sid of Object.keys(prev)) newCols[sid] = [];
+        for (const t of allUpdated) {
+          if (!newCols[t.statusId]) newCols[t.statusId] = [];
+          newCols[t.statusId].push(t);
+        }
+        return newCols;
+      });
+
+      setSelectedTaskIds(new Set());
+      message.success(`Обновлено ${ids.length} задач`);
+    } catch {
+      message.error('Не удалось обновить задачи');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!board || selectedTaskIds.size === 0) return;
+    const ids = [...selectedTaskIds];
+    try {
+      await tasksApi.bulkDeleteTasks(board.id, ids);
+      setSelectedTaskIds(new Set());
+      message.success(`Удалено ${ids.length} задач`);
+      // Reload to remove deleted subtasks that aren't in selection
+      loadBoard();
+    } catch {
+      message.error('Не удалось удалить задачи');
+    }
   };
 
   // ── Filtered data ─────────────────────────────────────────────────────────
@@ -698,7 +775,12 @@ export default function BoardPage() {
                                     {...drag.dragHandleProps}
                                     style={{ marginBottom: 8, opacity: snap.isDragging ? 0.85 : 1, ...drag.draggableProps.style }}
                                   >
-                                    <TaskCard task={task} onClick={() => setSelectedTaskId(task.id)} />
+                                    <TaskCard
+                                      task={task}
+                                      onClick={() => setSelectedTaskId(task.id)}
+                                      isSelected={selectedTaskIds.has(task.id)}
+                                      onSelect={toggleSelect}
+                                    />
                                   </div>
                                 )}
                               </Draggable>
@@ -743,6 +825,9 @@ export default function BoardPage() {
             onQuickAddStart={sid => { setAddingTo(sid); setAddTitle(''); }}
             onQuickAddChange={setAddTitle}
             onQuickAddSubmit={submitAdd}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelect={toggleSelect}
+            onSelectAll={selectAll}
           />
         )}
 
@@ -763,6 +848,18 @@ export default function BoardPage() {
           />
         )}
       </div>
+
+      {/* Bulk action bar */}
+      {selectedTaskIds.size > 0 && (
+        <BulkActionBar
+          count={selectedTaskIds.size}
+          statuses={statuses}
+          members={members}
+          onBulkUpdate={handleBulkUpdate}
+          onBulkDelete={handleBulkDelete}
+          onClose={() => setSelectedTaskIds(new Set())}
+        />
+      )}
 
       {/* Task drawer */}
       <TaskDrawer

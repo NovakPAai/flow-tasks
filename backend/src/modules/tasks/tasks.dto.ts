@@ -25,6 +25,22 @@ export const moveTaskDto = z.object({
   statusId: z.string().uuid(),
 });
 
+export const bulkUpdateDto = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+  patch: z.object({
+    statusId: z.string().uuid().optional(),
+    assigneeId: z.string().uuid().nullable().optional(),
+    priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).nullable().optional(),
+  }).refine(
+    d => d.statusId !== undefined || d.assigneeId !== undefined || d.priority !== undefined,
+    'At least one field must be provided',
+  ),
+});
+
+export const bulkDeleteDto = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+});
+
 export const reorderTasksDto = z.object({
   updates: z.array(
     z.object({
@@ -59,5 +75,6 @@ export const myTasksFiltersDto = z.object({
 
 export type CreateTaskDto = z.infer<typeof createTaskDto>;
 export type UpdateTaskDto = z.infer<typeof updateTaskDto>;
+export type BulkUpdateDto = z.infer<typeof bulkUpdateDto>;
 export type TaskFiltersDto = z.infer<typeof taskFiltersDto>;
 export type MyTasksFiltersDto = z.infer<typeof myTasksFiltersDto>;

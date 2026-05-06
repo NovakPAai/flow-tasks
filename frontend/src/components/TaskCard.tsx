@@ -28,9 +28,14 @@ function avatarInitials(name: string): string {
   return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 }
 
-interface Props { task: Task; onClick?: () => void }
+interface Props {
+  task: Task;
+  onClick?: () => void;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
+}
 
-export default function TaskCard({ task, onClick }: Props) {
+export default function TaskCard({ task, onClick, isSelected = false, onSelect }: Props) {
   const mode = useThemeStore(s => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
 
@@ -45,18 +50,40 @@ export default function TaskCard({ task, onClick }: Props) {
     <div
       onClick={onClick}
       style={{
-        background: c.bg, border: `1px solid ${c.border}`,
+        background: c.bg,
+        border: `1px solid ${isSelected ? '#4F6EF7' : c.border}`,
         borderRadius: 10, padding: '12px 14px',
         cursor: 'pointer', userSelect: 'none', transition: 'border-color 0.15s',
+        outline: isSelected ? '2px solid rgba(79,110,247,0.25)' : 'none',
       }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = c.borderHover)}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = c.border)}
+      onMouseEnter={e => { (e.currentTarget.style.borderColor = isSelected ? '#4F6EF7' : c.borderHover); }}
+      onMouseLeave={e => { (e.currentTarget.style.borderColor = isSelected ? '#4F6EF7' : c.border); }}
     >
       {/* Key + priority badge */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.key, letterSpacing: '0.02em' }}>
-          {task.issueKey}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {onSelect && (
+            <div
+              onClick={e => { e.stopPropagation(); onSelect(task.id); }}
+              style={{
+                width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                border: `1.5px solid ${isSelected ? '#4F6EF7' : c.key}`,
+                background: isSelected ? '#4F6EF7' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'all 0.12s',
+              }}
+            >
+              {isSelected && (
+                <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                  <path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+          )}
+          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.key, letterSpacing: '0.02em' }}>
+            {task.issueKey}
+          </span>
+        </div>
         {prio && (
           <span style={{
             fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, fontWeight: 600,
