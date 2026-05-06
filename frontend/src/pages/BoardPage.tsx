@@ -713,15 +713,18 @@ export default function BoardPage() {
           }}
         >
           <div style={{
-            width: '75vw', maxWidth: '75vw', maxHeight: '85vh', overflow: 'auto',
+            width: 'min(92vw, 1200px)',
+            height: 'min(88vh, 860px)',
+            display: 'flex', flexDirection: 'column',
             background: isDark ? '#0F1320' : '#FDFCFF',
             borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '16px 20px', borderBottom: `1px solid ${border}`,
+              padding: '18px 24px', borderBottom: `1px solid ${border}`,
+              flexShrink: 0,
             }}>
-              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 15, fontWeight: 700, color: isDark ? '#E2E8F8' : '#1A1A2E' }}>
+              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: isDark ? '#E2E8F8' : '#1A1A2E' }}>
                 Колонки доски
               </span>
               <button
@@ -733,11 +736,13 @@ export default function BoardPage() {
                 </svg>
               </button>
             </div>
-            <WorkflowEditor
-              workflowId={board.workflow.id}
-              isOwner={isOwner}
-              onClose={() => { setWfEditorOpen(false); loadBoard(); }}
-            />
+            <div style={{ flex: 1, overflow: 'hidden', padding: '24px 28px' }}>
+              <WorkflowEditor
+                workflowId={board.workflow.id}
+                isOwner={isOwner}
+                onClose={() => { setWfEditorOpen(false); loadBoard(); }}
+              />
+            </div>
           </div>
         </div>
       )}

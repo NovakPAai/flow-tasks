@@ -209,10 +209,10 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
   };
 
   return (
-    <div style={{ display: 'flex', gap: 24, minHeight: 400 }}>
+    <div style={{ display: 'flex', gap: 28, height: '100%', overflow: 'hidden' }}>
 
       {/* ── Left panel ────────────────────────────────────────────────────── */}
-      <div style={{ width: 400, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ width: 460, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden' }}>
 
         {/* Name */}
         <div>
@@ -262,8 +262,8 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
         </div>
 
         {/* Statuses */}
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexShrink: 0 }}>
             <span style={{ ...sectionLabel, marginBottom: 0 }}>Статусы</span>
             {wfMode === 'FORWARD_ONLY' && (
               <span style={{ fontSize: 10, color: c.muted, fontFamily: '"Inter",system-ui,sans-serif' }}>
@@ -272,7 +272,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', flex: 1, paddingRight: 4 }}>
             {statuses.map((status, idx) => {
               const catCfg = CATEGORY_CFG[status.category] ?? CATEGORY_CFG.OPEN;
               const isEditing = editingId === status.id;
@@ -437,7 +437,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
       </div>
 
       {/* ── Right panel: transition matrix ────────────────────────────────── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0, overflow: 'hidden' }}>
         <div>
           <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>
             Матрица переходов
@@ -452,7 +452,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
         {statuses.length > 1 && (
           <div style={{
             background: c.panelBg, border: `1px solid ${c.border}`,
-            borderRadius: 10, overflow: 'auto', flex: 1,
+            borderRadius: 10, overflow: 'auto', flex: 1, minHeight: 0,
           }}>
             <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 11 }}>
               <thead>
@@ -536,7 +536,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
         )}
 
         {/* Buttons */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0, paddingTop: 4 }}>
           {onClose && (
             <button
               onClick={onClose}
