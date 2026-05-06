@@ -2,6 +2,14 @@
  * Playwright Global Setup
  * Runs once before all tests. Resets the database and applies fresh seed
  * so every test run starts from a clean, predictable state.
+ *
+ * Auth is no longer handled here.  Previously we saved a storageState file
+ * with the admin refresh cookie, but the backend uses rotating refresh tokens —
+ * the second worker to call /api/auth/refresh would get a 401 because the
+ * first already rotated the shared token away.
+ *
+ * Authenticated tests now use the auth-test.ts fixture which intercepts
+ * /api/auth/refresh and serves a fresh access token obtained via the API.
  */
 
 import { execSync } from 'child_process';
@@ -16,7 +24,6 @@ async function globalSetup() {
   try {
     execSync('make db-reset', { cwd: ROOT, stdio: 'inherit', timeout: 60_000 });
   } catch {
-    // db-reset might not exist — try manual approach
     console.warn('[global-setup] make db-reset failed, trying manual seed...');
     try {
       execSync('npm run db:seed', {
@@ -26,10 +33,9 @@ async function globalSetup() {
       });
     } catch (seedErr) {
       console.warn('[global-setup] Seed also failed:', seedErr);
-      // Don't throw — let tests run anyway, they may have existing data
     }
   }
-  console.log('[global-setup] Done.\n');
+  console.log('[global-setup] DB ready.\n');
 }
 
 export default globalSetup;

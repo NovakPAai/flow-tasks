@@ -1,11 +1,10 @@
-import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
+import { test, expect } from '../fixtures/auth-test';
 import { getAdminToken, createWorkspace, uid } from '../helpers/data';
 
 test.describe('Рабочие пространства', () => {
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
+    await page.goto('/workspaces');
   });
 
   test('страница отображает существующие воркспейсы', async ({ page }) => {

@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
+import { test, expect } from '../fixtures/auth-test';
 import { getAdminToken, createWorkspace, createBoard, createTask, getWorkspace, uid } from '../helpers/data';
 
 /**
@@ -48,6 +47,7 @@ test.describe('Kanban drag-and-drop', () => {
   let wsSlug: string;
   let wsId: string;
   let boardId: string;
+  let boardPrefix: string;
   let token: string;
   let statuses: Array<{ id: string; name: string }>;
 
@@ -59,15 +59,14 @@ test.describe('Kanban drag-and-drop', () => {
     const prefix = `N${uid().slice(0, 3).toUpperCase()}`;
     const board = await createBoard(token, wsId, `DnD Board ${uid()}`, prefix);
     boardId = board.id;
+    boardPrefix = board.prefix.toLowerCase();
 
     const wsData = await getWorkspace(token, wsId);
     statuses = wsData.workflows?.[0]?.statuses ?? [];
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
-    await page.goto(`/w/${wsSlug}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`/w/${wsSlug}/boards/${boardPrefix}`);
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });
 
@@ -80,7 +79,6 @@ test.describe('Kanban drag-and-drop', () => {
     const taskTitle = `DnD Task ${uid()}`;
     const task = await createTask(token, boardId, taskTitle, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const sourceSelector = `text="${task.title}"`;
@@ -103,7 +101,6 @@ test.describe('Kanban drag-and-drop', () => {
     const taskTitle = `Blocked DnD ${uid()}`;
     const task = await createTask(token, boardId, taskTitle, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const sourceSelector = `text="${task.title}"`;
@@ -131,8 +128,6 @@ test.describe('Kanban drag-and-drop', () => {
     const task1 = await createTask(token, boardId, `Order Task A ${uid()}`, statuses[0].id);
     const task2 = await createTask(token, boardId, `Order Task B ${uid()}`, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
-
     await expect(page.getByText(task1.title)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(task2.title)).toBeVisible({ timeout: 10_000 });
 
@@ -155,7 +150,6 @@ test.describe('Kanban drag-and-drop', () => {
     const taskTitle = `Opacity Task ${uid()}`;
     const task = await createTask(token, boardId, taskTitle, statuses[0].id);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
 
     const card = page.getByText(task.title).first();

@@ -1,9 +1,8 @@
-import { test, expect } from '@playwright/test';
-import { login, uniqueName } from './helpers';
+import { test, expect } from './fixtures/auth-test';
+import { uniqueName } from './helpers';
 
 test.describe('Workspaces', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
     await page.goto('/workspaces');
   });
 

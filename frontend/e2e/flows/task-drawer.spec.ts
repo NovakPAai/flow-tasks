@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
+import { test, expect } from '../fixtures/auth-test';
 import { getAdminToken, createWorkspace, createBoard, createTask, getWorkspace, uid } from '../helpers/data';
 
 test.describe('TaskDrawer — редактирование задачи', () => {
@@ -7,6 +6,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   let wsSlug: string;
   let wsId: string;
   let boardId: string;
+  let boardPrefix: string;
   let token: string;
   let firstStatusId: string;
 
@@ -18,6 +18,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     const prefix = `D${uid().slice(0, 3).toUpperCase()}`;
     const board = await createBoard(token, wsId, `Drawer Board ${uid()}`, prefix);
     boardId = board.id;
+    boardPrefix = board.prefix.toLowerCase();
 
     const wsData = await getWorkspace(token, wsId);
     firstStatusId = wsData.workflows?.[0]?.statuses?.[0]?.id ?? '';
@@ -27,7 +28,6 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   async function openDrawer(page: import('@playwright/test').Page, title: string) {
     const task = await createTask(token, boardId, title, firstStatusId);
     await page.reload();
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(task.title)).toBeVisible({ timeout: 10_000 });
     // dispatchEvent на inner div TaskCard — надёжнее force:true при DnD (@hello-pangea/dnd)
     // DnD wrapper: [data-rfd-draggable-id] > div === TaskCard outer div с onClick
@@ -37,9 +37,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   }
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
-    await page.goto(`/w/${wsSlug}/boards/${boardId}`);
-    await page.waitForLoadState('networkidle');
+    await page.goto(`/w/${wsSlug}/boards/${boardPrefix}`);
     if (firstStatusId) {
       await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
     }
@@ -343,7 +341,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     // Открываем другую задачу и назначаем туже метку
     const task2 = await createTask(token, boardId, `Label Target ${uid()}`, firstStatusId);
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText(task2.title)).toBeVisible({ timeout: 10_000 });
     await page.locator(`[data-rfd-draggable-id="${task2.id}"] > div`).first().dispatchEvent('click');
     await expect(page.getByText('Детали')).toBeVisible({ timeout: 5000 });
 

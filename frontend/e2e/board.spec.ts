@@ -1,12 +1,11 @@
-import { test, expect } from '@playwright/test';
-import { login, uniqueName } from './helpers';
+import { test, expect } from './fixtures/auth-test';
+import { uniqueName } from './helpers';
 
 // Uses the seeded "demo" workspace — always exists after `make setup`
 const DEMO_SLUG = 'demo';
 
 test.describe('Boards & Tasks', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
     await page.goto(`/w/${DEMO_SLUG}`);
     await expect(page).toHaveURL(new RegExp(`/w/${DEMO_SLUG}`), { timeout: 8000 });
   });

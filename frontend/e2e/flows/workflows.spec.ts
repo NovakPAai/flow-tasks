@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
+import { test, expect } from '../fixtures/auth-test';
 import { getAdminToken, createWorkspace, uid } from '../helpers/data';
 
 test.describe('Workflow editor в настройках', () => {
@@ -14,9 +13,8 @@ test.describe('Workflow editor в настройках', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
     await page.goto(`/w/${wsSlug}/settings`);
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8_000 });
   });
 
   test('страница настроек загружается', async ({ page }) => {
@@ -86,7 +84,7 @@ test.describe('Workflow editor в настройках', () => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8_000 });
     // Нет критических ошибок
     const criticalErrors = errors.filter(e => !e.includes('favicon') && !e.includes('font'));
     expect(criticalErrors.length).toBe(0);

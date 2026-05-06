@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { loginAs } from '../fixtures/auth';
+import { test, expect } from '../fixtures/auth-test';
 import { getAdminToken, createWorkspace, createBoard, createTask, getWorkspace, uid } from '../helpers/data';
 
 test.describe('My Tasks — мои задачи', () => {
@@ -20,9 +19,8 @@ test.describe('My Tasks — мои задачи', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
     await page.goto('/my-tasks');
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8_000 });
   });
 
   test('страница My Tasks загружается', async ({ page }) => {
@@ -95,7 +93,7 @@ test.describe('My Tasks — мои задачи', () => {
 
   test('навигация к My Tasks через sidebar', async ({ page }) => {
     await page.goto('/workspaces');
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Мои рабочие пространства')).toBeVisible({ timeout: 8_000 });
     // Кнопка "Мои задачи" в AppLayout sidebar
     const myTasksLink = page.getByRole('link', { name: /Мои задачи/i })
       .or(page.getByText('Мои задачи').first());
@@ -111,7 +109,7 @@ test.describe('My Tasks — мои задачи', () => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 8_000 });
     const criticalErrors = errors.filter(e =>
       !e.includes('favicon') && !e.includes('font') && !e.includes('404')
     );
