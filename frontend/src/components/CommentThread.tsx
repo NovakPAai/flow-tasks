@@ -4,7 +4,7 @@ import { useThemeStore } from '../store/theme.store';
 import type { Comment, WorkspaceMember } from '../types';
 import * as commentsApi from '../api/comments';
 import { useAuthStore } from '../store/auth.store';
-import MentionTextarea from './MentionTextarea';
+import MentionTextarea, { renderMentions } from './MentionTextarea';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -165,7 +165,7 @@ export default function CommentThread({ taskId, comments, onCommentsChanged, mem
                   fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
                   color: c.bodyText, whiteSpace: 'pre-wrap', flex: 1, lineHeight: '18px',
                 }}>
-                  {comment.body}
+                  {renderMentions(comment.body)}
                 </span>
                 {currentUser?.id === comment.authorId && (
                   <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
