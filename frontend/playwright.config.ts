@@ -20,10 +20,6 @@ export default defineConfig({
     trace: 'on-first-retry',
     locale: 'ru-RU',
     timezoneId: 'Europe/Moscow',
-    // Авторизация admin сохраняется global-setup'ом один раз и переиспользуется
-    // всеми тестами без UI-логина. Тесты, проверяющие сам флоу аутентификации,
-    // сбрасывают это через test.use({ storageState: { cookies: [], origins: [] } }).
-    storageState: 'e2e/.auth/admin.json',
   },
   projects: [
     {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth-test';
 import { uniqueName } from './helpers';
 
 // Uses the seeded "demo" workspace — always exists after `make setup`

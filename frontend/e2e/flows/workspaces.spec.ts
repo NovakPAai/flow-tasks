@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/auth-test';
 import { getAdminToken, createWorkspace, uid } from '../helpers/data';
 
 test.describe('Рабочие пространства', () => {
