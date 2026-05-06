@@ -21,7 +21,8 @@ export interface IdleTimeoutOptions {
  * Fires options.onWarn 60 s before logout, then onIdle at the deadline.
  * Returns a manual reset() for "Stay logged in" buttons.
  * - Any user activity restarts both timers and calls onActivityReset.
- * - Timers pause while the tab is hidden; resume (and reset) on visibility.
+ * - Uses wall-clock deadlines: hiding the tab pauses setTimeout, but on
+ *   tab show we check the absolute deadline and fire immediately if passed.
  */
 export function useIdleTimeout(
   onIdle: () => void,
@@ -41,15 +42,29 @@ export function useIdleTimeout(
   useEffect(() => {
     let idleTimer: ReturnType<typeof setTimeout> | undefined;
     let warnTimer: ReturnType<typeof setTimeout> | undefined;
+    let deadline = 0;
 
-    const schedule = () => {
+    const scheduleFromDeadline = (d: number) => {
       clearTimeout(idleTimer);
       clearTimeout(warnTimer);
-      if (onWarnRef.current && warnBeforeMs < idleMs) {
-        warnTimer = setTimeout(() => onWarnRef.current?.(), idleMs - warnBeforeMs);
+      deadline = d;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        onIdleRef.current();
+        return;
       }
-      idleTimer = setTimeout(() => onIdleRef.current(), idleMs);
+      if (onWarnRef.current && warnBeforeMs < idleMs) {
+        const warnIn = remaining - warnBeforeMs;
+        if (warnIn > 0) {
+          warnTimer = setTimeout(() => onWarnRef.current?.(), warnIn);
+        } else {
+          onWarnRef.current?.();
+        }
+      }
+      idleTimer = setTimeout(() => onIdleRef.current(), remaining);
     };
+
+    const schedule = () => scheduleFromDeadline(Date.now() + idleMs);
 
     const handleActivity = () => {
       onActivityResetRef.current?.();
@@ -58,11 +73,12 @@ export function useIdleTimeout(
 
     const handleVisibility = () => {
       if (document.hidden) {
+        // Pause timers while hidden; wall-clock deadline is preserved in `deadline`
         clearTimeout(idleTimer);
         clearTimeout(warnTimer);
       } else {
-        onActivityResetRef.current?.();
-        schedule();
+        // Resume from the stored deadline — fires immediately if already past
+        scheduleFromDeadline(deadline);
       }
     };
 

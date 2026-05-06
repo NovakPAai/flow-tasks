@@ -23,10 +23,13 @@ import FeedbackFAB from './components/FeedbackFAB';
 
 const WARN_SECONDS = 60;
 
+const VISIBILITY_REFRESH_MS = 5 * 60 * 1000; // refresh token+user after 5 min hidden
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
+  const loadUser = useAuthStore((s) => s.loadUser);
   const mode = useThemeStore((s) => s.mode);
   const navigate = useNavigate();
   const [showWarning, setShowWarning] = useState(false);
@@ -51,6 +54,24 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
     onWarn: handleWarn,
     onActivityReset: handleActivityReset,
   });
+
+  // Refresh access token + user profile when returning to tab after >5 min away
+  const hiddenAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        hiddenAtRef.current = Date.now();
+      } else {
+        const hiddenAt = hiddenAtRef.current;
+        hiddenAtRef.current = null;
+        if (hiddenAt !== null && Date.now() - hiddenAt >= VISIBILITY_REFRESH_MS) {
+          void loadUser().catch(() => {});
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [loadUser]);
 
   // Countdown tick while warning modal is open
   useEffect(() => {
