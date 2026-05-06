@@ -22,8 +22,8 @@ export async function emitMentionNotifications(
   authorId: string,
 ) {
   const userIds = extractMentionedUserIds(text);
-  const recipients = userIds.filter((id) => id !== authorId);
-  if (recipients.length === 0) return;
+  if (userIds.length === 0) return;
+  const recipients = userIds;
 
   // Deduplicate
   const unique = [...new Set(recipients)];
