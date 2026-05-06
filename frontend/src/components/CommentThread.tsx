@@ -46,6 +46,7 @@ function commentCharCounterStyle(len: number, metaColor: string): React.CSSPrope
 interface Props {
   taskId: string;
   comments: Comment[];
+  commentsTotal?: number;
   onCommentsChanged: (comments: Comment[]) => void;
   members?: WorkspaceMember[];
 }
