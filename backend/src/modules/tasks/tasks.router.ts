@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
+import { rateLimit } from '../../shared/middleware/rate-limit.js';
 import {
   createTaskDto,
   updateTaskDto,
@@ -8,9 +9,20 @@ import {
   reorderTasksDto,
   taskFiltersDto,
   myTasksFiltersDto,
+  bulkUpdateDto,
+  bulkDeleteDto,
+  type BulkUpdateDto,
 } from './tasks.dto.js';
 import * as tasks from './tasks.service.js';
 import { authHandler } from '../../shared/utils/async-handler.js';
+import type { AuthRequest } from '../../shared/types/index.js';
+
+const bulkLimit = rateLimit({
+  scope: 'bulk-tasks',
+  limit: 30,
+  windowMs: 60_000,
+  keyFn: (req) => (req as AuthRequest).user?.userId ?? req.ip ?? 'anon',
+});
 
 // ─── /boards/:bid/tasks ───────────────────────────────────────────────────────
 export const boardTasksRouter = Router({ mergeParams: true });
@@ -27,6 +39,16 @@ boardTasksRouter.post('/', validate(createTaskDto), authHandler(async (req, res)
 boardTasksRouter.patch('/reorder', validate(reorderTasksDto), authHandler(async (req, res) => {
   await tasks.reorderTasks(String(req.params.bid), req.user!.userId, req.body.updates);
   res.json({ message: 'Reordered' });
+}));
+
+boardTasksRouter.patch('/bulk', bulkLimit, validate(bulkUpdateDto), authHandler(async (req, res) => {
+  const { ids, patch } = req.body as BulkUpdateDto;
+  res.json(await tasks.bulkUpdateTasks(String(req.params.bid), req.user!.userId, ids, patch));
+}));
+
+boardTasksRouter.post('/bulk-delete', bulkLimit, validate(bulkDeleteDto), authHandler(async (req, res) => {
+  const { ids } = req.body as { ids: string[] };
+  res.json(await tasks.bulkDeleteTasks(String(req.params.bid), req.user!.userId, ids));
 }));
 
 // ─── /tasks/:id ───────────────────────────────────────────────────────────────

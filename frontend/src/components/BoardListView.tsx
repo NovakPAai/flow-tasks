@@ -61,7 +61,7 @@ function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCo
 function avatarInitials(name: string): string { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
 // ── Column widths ──────────────────────────────────────────────────────────────
-const W = { key: 120, status: 140, priority: 100, assignee: 140, due: 100, labels: 160 };
+const W = { checkbox: 36, key: 120, status: 140, priority: 100, assignee: 140, due: 100, labels: 160 };
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 interface Props {
@@ -74,12 +74,16 @@ interface Props {
   onQuickAddStart: (statusId: string) => void;
   onQuickAddChange: (title: string) => void;
   onQuickAddSubmit: (statusId: string) => void;
+  selectedTaskIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onSelectAll?: (ids: string[]) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function BoardListView({
   statuses, tasks, onTaskClick, onTaskUpdated,
   quickAddStatusId, quickAddTitle, onQuickAddStart, onQuickAddChange, onQuickAddSubmit,
+  selectedTaskIds, onToggleSelect, onSelectAll,
 }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
@@ -113,6 +117,32 @@ export default function BoardListView({
         color: c.headerText, letterSpacing: '0.04em', textTransform: 'uppercase',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
+        {onToggleSelect && (
+          <div style={{ width: W.checkbox, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            {onSelectAll && (() => {
+              const allIds = tasks.map(t => t.id);
+              const allSelected = allIds.length > 0 && allIds.every(id => selectedTaskIds?.has(id));
+              return (
+                <div
+                  onClick={() => onSelectAll(allSelected ? [] : allIds)}
+                  style={{
+                    width: 14, height: 14, borderRadius: 3,
+                    border: `1.5px solid ${allSelected ? '#4F6EF7' : c.headerText}`,
+                    background: allSelected ? '#4F6EF7' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}
+                >
+                  {allSelected && (
+                    <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                      <path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
         <div style={{ width: W.key, flexShrink: 0 }}>Ключ</div>
         <div style={{ flex: 1 }}>Задача</div>
         <div style={{ width: W.status, flexShrink: 0 }}>Статус</div>
@@ -188,24 +218,50 @@ export default function BoardListView({
                   const prio = prioKey ? (PRIO[prioKey] ?? null) : null;
                   const prioCfg = prio ? prio[isDark ? 0 : 1] : null;
 
+                  const isRowSelected = selectedTaskIds?.has(task.id) ?? false;
                   return (
                     <div
                       key={task.id}
                       style={{
                         display: 'flex', alignItems: 'center',
-                        background: isActive ? c.rowActiveBg : c.rowBg,
+                        background: isRowSelected
+                          ? (isDark ? '#111A30' : '#F0F1FF')
+                          : (isActive ? c.rowActiveBg : c.rowBg),
                         borderBottom: `1px solid ${c.rowBorder}`,
-                        borderLeft: (!isDark && isActive) ? '3px solid #4F6EF7' : 'none',
+                        borderLeft: isRowSelected
+                          ? '3px solid #4F6EF7'
+                          : (!isDark && isActive) ? '3px solid #4F6EF7' : 'none',
                         padding: '12px 24px',
                         opacity: isDoneRow ? 0.65 : 1,
                         transition: 'background 0.1s',
                       }}
-                      onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = isDark ? '#0D1017' : '#F7F5FD'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isActive ? c.rowActiveBg : c.rowBg; }}
+                      onMouseEnter={e => { if (!isActive && !isRowSelected) (e.currentTarget as HTMLDivElement).style.background = isDark ? '#0D1017' : '#F7F5FD'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isRowSelected ? (isDark ? '#111A30' : '#F0F1FF') : (isActive ? c.rowActiveBg : c.rowBg); }}
                     >
+                      {/* Checkbox */}
+                      {onToggleSelect && (
+                        <div style={{ width: W.checkbox, flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                          <div
+                            onClick={e => { e.stopPropagation(); onToggleSelect(task.id); }}
+                            style={{
+                              width: 14, height: 14, borderRadius: 3,
+                              border: `1.5px solid ${isRowSelected ? '#4F6EF7' : c.keyText}`,
+                              background: isRowSelected ? '#4F6EF7' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0,
+                            }}
+                          >
+                            {isRowSelected && (
+                              <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                                <path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       {/* Key */}
                       <div style={{
-                        width: W.key - ((!isDark && isActive) ? 3 : 0),
+                        width: W.key - (isRowSelected || (!isDark && isActive) ? 3 : 0),
                         flexShrink: 0,
                         fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 600,
                         color: isActive ? c.keyActiveText : c.keyText,

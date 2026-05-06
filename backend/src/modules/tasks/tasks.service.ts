@@ -490,6 +490,109 @@ export async function deleteTask(taskId: string, userId: string) {
   ]);
 }
 
+// ─── Bulk update tasks ────────────────────────────────────────────────────────
+
+export async function bulkUpdateTasks(
+  boardId: string,
+  userId: string,
+  ids: string[],
+  patch: { statusId?: string; assigneeId?: string | null; priority?: 'HIGH' | 'MEDIUM' | 'LOW' | null },
+) {
+  const { board, member } = await getBoardWithAccess(boardId, userId);
+  if (member.role === 'VIEWER') throw new AppError(403, 'Viewers cannot update tasks');
+
+  if (patch.statusId) {
+    const valid = board.workflow.statuses.find(s => s.id === patch.statusId);
+    if (!valid) throw new AppError(400, 'Status does not belong to this board workflow');
+  }
+
+  if (patch.assigneeId) {
+    const isMember = await prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId: board.workspaceId, userId: patch.assigneeId } },
+    });
+    if (!isMember) throw new AppError(400, 'Assignee is not a member of this workspace');
+  }
+
+  // Fetch current state to compute history and status transitions
+  const current = await prisma.task.findMany({
+    where: { id: { in: ids }, boardId },
+    select: { id: true, statusId: true, assigneeId: true, priority: true },
+  });
+  if (current.length === 0) return { updated: 0 };
+
+  const validIds = current.map(t => t.id);
+  const historyEntries: HistoryRecord[] = [];
+  const statusChangedIds: string[] = [];
+
+  for (const t of current) {
+    if (patch.statusId !== undefined && patch.statusId !== t.statusId) {
+      historyEntries.push({ taskId: t.id, userId, field: 'statusId', oldValue: t.statusId, newValue: patch.statusId });
+      statusChangedIds.push(t.id);
+    }
+    if (patch.assigneeId !== undefined && patch.assigneeId !== t.assigneeId) {
+      historyEntries.push({ taskId: t.id, userId, field: 'assigneeId', oldValue: t.assigneeId, newValue: patch.assigneeId });
+    }
+    if (patch.priority !== undefined && patch.priority !== t.priority) {
+      historyEntries.push({ taskId: t.id, userId, field: 'priority', oldValue: t.priority ?? null, newValue: patch.priority ?? null });
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.task.updateMany({
+      where: { id: { in: validIds }, boardId },
+      data: {
+        ...(patch.statusId !== undefined && { statusId: patch.statusId }),
+        ...(patch.assigneeId !== undefined && { assigneeId: patch.assigneeId }),
+        ...(patch.priority !== undefined && { priority: patch.priority }),
+      },
+    });
+
+    if (historyEntries.length > 0) {
+      await tx.taskHistory.createMany({ data: historyEntries });
+    }
+
+    if (statusChangedIds.length > 0) {
+      await tx.taskStatusHistory.updateMany({
+        where: { taskId: { in: statusChangedIds }, endedAt: null },
+        data: { endedAt: new Date() },
+      });
+      await tx.taskStatusHistory.createMany({
+        data: statusChangedIds.map(id => ({ taskId: id, statusId: patch.statusId! })),
+      });
+    }
+  });
+
+  return { updated: validIds.length };
+}
+
+// ─── Bulk delete tasks ────────────────────────────────────────────────────────
+
+export async function bulkDeleteTasks(boardId: string, userId: string, ids: string[]) {
+  const { member } = await getBoardWithAccess(boardId, userId);
+  if (member.role === 'VIEWER') throw new AppError(403, 'Viewers cannot delete tasks');
+
+  const tasksToDelete = await prisma.task.findMany({
+    where: { id: { in: ids }, boardId },
+    select: { id: true, path: true },
+  });
+  if (tasksToDelete.length === 0) return { deleted: 0 };
+
+  const validIds = tasksToDelete.map(t => t.id);
+
+  await prisma.$transaction(async (tx) => {
+    // Delete descendants before the selected tasks (materialized path cascade)
+    await tx.task.deleteMany({
+      where: {
+        boardId,
+        OR: tasksToDelete.map(t => ({ path: { startsWith: `${t.path}${t.id}/` } })),
+      },
+    });
+    await tx.task.deleteMany({ where: { id: { in: validIds } } });
+  });
+
+  return { deleted: validIds.length };
+}
+
 // ─── My Tasks (cross-workspace) ───────────────────────────────────────────────
 
 export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
@@ -545,7 +648,8 @@ export async function reorderTasks(
   userId: string,
   updates: { id: string; statusId: string; orderIndex: number }[],
 ) {
-  const { board } = await getBoardWithAccess(boardId, userId);
+  const { board, member } = await getBoardWithAccess(boardId, userId);
+  if (member.role === 'VIEWER') throw new AppError(403, 'Viewers cannot reorder tasks');
   const validStatusIds = new Set(board.workflow.statuses.map((s) => s.id));
 
   for (const u of updates) {
