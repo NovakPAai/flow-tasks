@@ -246,8 +246,8 @@ export default function WorkspaceDashboardPage() {
       .then(setBoards)
       .catch(() => setBoards([]))
       .finally(() => setBoardsLoading(false));
-    workspacesApi.getWorkspaceHistory(currentId)
-      .then(evs => setActivity(evs.slice(0, 6)))
+    workspacesApi.getWorkspaceHistory(currentId, { limit: 6 })
+      .then(({ events }) => setActivity(events))
       .catch(() => {});
   }, [currentId]);
 

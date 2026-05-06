@@ -68,7 +68,11 @@ router.get('/:id/boards/by-prefix/:prefix', authHandler(async (req, res) => {
 }));
 
 router.get('/:id/history', authHandler(async (req, res) => {
-  res.json(await ws.getWorkspaceHistory(String(req.params.id), req.user!.userId));
+  const rawLimit  = parseInt(String(req.query.limit  ?? '50'), 10);
+  const rawOffset = parseInt(String(req.query.offset ?? '0'),  10);
+  const limit  = Math.min(Number.isNaN(rawLimit)  ? 50 : rawLimit,  200);
+  const offset = Math.max(Number.isNaN(rawOffset) ? 0  : rawOffset, 0);
+  res.json(await ws.getWorkspaceHistory(String(req.params.id), req.user!.userId, limit, offset));
 }));
 
 export default router;

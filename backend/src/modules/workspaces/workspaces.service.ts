@@ -273,15 +273,24 @@ export async function searchMembers(workspaceId: string, query: string) {
 
 // ─── Workspace History ────────────────────────────────────────────────────────
 
-export async function getWorkspaceHistory(workspaceId: string, userId: string) {
+export async function getWorkspaceHistory(
+  workspaceId: string,
+  userId: string,
+  limit = 50,
+  offset = 0,
+) {
   await assertOwner(workspaceId, userId);
 
-  return prisma.workspaceEvent.findMany({
-    where: { workspaceId },
-    include: {
-      user: { select: { id: true, name: true, avatar: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  });
+  const where = { workspaceId };
+  const [events, total] = await prisma.$transaction([
+    prisma.workspaceEvent.findMany({
+      where,
+      include: { user: { select: { id: true, name: true, avatar: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.workspaceEvent.count({ where }),
+  ]);
+  return { events, total };
 }

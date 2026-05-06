@@ -141,9 +141,14 @@ export async function reviewRegistrationRequest(
   }
 }
 
-export async function listAuditLogs(limit = 100) {
-  return prisma.auditLog.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
+export async function listAuditLogs(limit = 100, offset = 0) {
+  const [logs, total] = await prisma.$transaction([
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.auditLog.count(),
+  ]);
+  return { logs, total };
 }

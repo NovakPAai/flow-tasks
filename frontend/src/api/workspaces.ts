@@ -68,7 +68,13 @@ export async function inviteByEmail(
   return data;
 }
 
-export async function getWorkspaceHistory(workspaceId: string): Promise<WorkspaceEvent[]> {
-  const { data } = await api.get<WorkspaceEvent[]>(`/workspaces/${workspaceId}/history`);
+export async function getWorkspaceHistory(
+  workspaceId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<{ events: WorkspaceEvent[]; total: number }> {
+  const { data } = await api.get<{ events: WorkspaceEvent[]; total: number }>(
+    `/workspaces/${workspaceId}/history`,
+    { params },
+  );
   return data;
 }

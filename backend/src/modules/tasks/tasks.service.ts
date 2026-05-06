@@ -231,8 +231,10 @@ export async function getTask(taskId: string, userId: string) {
       },
       comments: {
         orderBy: { createdAt: 'asc' },
+        take: 50,
         include: { author: { select: { id: true, name: true, avatar: true } } },
       },
+      _count: { select: { comments: true, children: true } },
       checklists: {
         orderBy: { orderIndex: 'asc' },
         include: { items: { orderBy: { orderIndex: 'asc' } } },

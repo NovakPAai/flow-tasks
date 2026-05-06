@@ -63,8 +63,9 @@ router.get('/audit-log', async (req, res, next) => {
   try {
     const rawLimit = parseInt(String(req.query.limit ?? '100'), 10);
     const limit = Number.isNaN(rawLimit) ? 100 : Math.min(rawLimit, 500);
-    const logs = await adminService.listAuditLogs(limit);
-    res.json(logs);
+    const rawOffset = parseInt(String(req.query.offset ?? '0'), 10);
+    const offset = Number.isNaN(rawOffset) ? 0 : Math.max(rawOffset, 0);
+    res.json(await adminService.listAuditLogs(limit, offset));
   } catch (err) {
     next(err);
   }

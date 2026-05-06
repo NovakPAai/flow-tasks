@@ -10,7 +10,11 @@ export const taskCommentsRouter = Router({ mergeParams: true });
 taskCommentsRouter.use(authenticate);
 
 taskCommentsRouter.get('/', authHandler(async (req, res) => {
-  res.json(await comments.listComments(String(req.params.tid), req.user!.userId));
+  const rawLimit  = parseInt(String(req.query.limit  ?? '50'), 10);
+  const rawOffset = parseInt(String(req.query.offset ?? '0'),  10);
+  const limit  = Math.min(Number.isNaN(rawLimit)  ? 50 : rawLimit,  200);
+  const offset = Math.max(Number.isNaN(rawOffset) ? 0  : rawOffset, 0);
+  res.json(await comments.listComments(String(req.params.tid), req.user!.userId, limit, offset));
 }));
 
 taskCommentsRouter.post('/', validate(createCommentDto), authHandler(async (req, res) => {
