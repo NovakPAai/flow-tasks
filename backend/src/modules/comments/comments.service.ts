@@ -69,7 +69,6 @@ export async function createComment(taskId: string, userId: string, dto: CreateC
     context: 'comment',
     workspaceSlug: task.board.workspace.slug,
     boardSlug: task.board.prefix.toLowerCase(),
-    body: dto.body,
   }, userId);
 
   return comment;
@@ -103,7 +102,6 @@ export async function updateComment(commentId: string, userId: string, dto: Upda
     context: 'comment',
     workspaceSlug: task.board.workspace.slug,
     boardSlug: task.board.prefix.toLowerCase(),
-    body: dto.body,
   }, userId);
 
   return updated;
