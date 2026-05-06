@@ -2,10 +2,16 @@
 id: gap-01-my-tasks-drawer
 type: gap-fix
 priority: P1
-status: draft
+status: superseded
+superseded_by: gap-11-my-tasks-accordion
 ---
 
 # Spec: My Tasks — открывать TaskDrawer вместо перехода на доску
+
+> **SUPERSEDED** — заменён на gap-11 (аккордеон). Клик по задаче теперь раскрывает
+> inline-аккордеон с read-only полями; переход в полный TaskDrawer происходит через
+> кнопку "Открыть" внутри аккордеона (открывает BoardPage с дровером).
+> TaskDrawer и весь lazy-load контекста доски удалены из MyTasksPage.
 
 ## Intent
 Клик по задаче в My Tasks должен открывать TaskDrawer прямо на странице, а не делать навигацию на доску.

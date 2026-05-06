@@ -186,6 +186,8 @@ export default function BoardPage() {
   const [addTitle, setAddTitle] = useState('');
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const fromMyTasks = searchParams.get('from') === 'my-tasks';
+  const myTasksOpenId = searchParams.get('open');
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const v = searchParams.get('view');
     return (v === 'roadmap' || v === 'list' || v === 'calendar') ? v : 'board';
@@ -579,12 +581,20 @@ export default function BoardPage() {
       }}>
         {/* Back */}
         <button
-          onClick={() => navigate(-1)}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: addText, flexShrink: 0 }}
+          onClick={() => fromMyTasks
+            ? navigate(`/my-tasks${myTasksOpenId ? `?open=${myTasksOpenId}` : ''}`)
+            : navigate(-1)
+          }
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', gap: 4, color: addText, flexShrink: 0 }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
+          {fromMyTasks && (
+            <span style={{ fontSize: 12, fontFamily: '"Inter",system-ui,sans-serif', color: addText }}>
+              Мои задачи
+            </span>
+          )}
         </button>
 
         {/* Board name + task count */}
