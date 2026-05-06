@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Form, Input, Radio, Button, message } from 'antd';
 import api from '../api/client';
 import { formatApiError } from '../utils/apiError';
@@ -17,6 +17,8 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   function collectDeviceMeta() {
     const ua = navigator.userAgent;

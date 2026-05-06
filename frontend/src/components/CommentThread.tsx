@@ -46,17 +46,15 @@ function commentCharCounterStyle(len: number, metaColor: string): React.CSSPrope
 interface Props {
   taskId: string;
   comments: Comment[];
-  commentsTotal?: number;
   onCommentsChanged: (comments: Comment[]) => void;
   members?: WorkspaceMember[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function CommentThread({ taskId, comments, commentsTotal, onCommentsChanged, members = [] }: Props) {
+export default function CommentThread({ taskId, comments, onCommentsChanged, members = [] }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
   const c = isDark ? DARK : LIGHT;
-  const [loadingMore, setLoadingMore] = useState(false);
 
   const currentUser = useAuthStore(s => s.user);
   const [newBody, setNewBody]     = useState('');
@@ -139,15 +137,13 @@ export default function CommentThread({ taskId, comments, commentsTotal, onComme
             {editingId === comment.id ? (
               /* Edit mode */
               <div>
-                <textarea
+                <MentionTextarea
                   value={editBody}
-                  onChange={e => setEditBody(e.target.value)}
-                  autoFocus
+                  onChange={setEditBody}
+                  members={members}
                   rows={2}
                   maxLength={COMMENT_MAX}
-                  style={textareaStyle(false)}
-                  onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorderFocus; }}
-                  onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorder; }}
+                  style={{ ...textareaStyle(true), marginBottom: 0 }}
                 />
                 {editBody.length > 0 && (
                   <div style={commentCharCounterStyle(editBody.length, c.metaText)}>{editBody.length} / {COMMENT_MAX}</div>
@@ -258,32 +254,6 @@ export default function CommentThread({ taskId, comments, commentsTotal, onComme
           </div>
         </div>
       ))}
-
-      {/* Load more comments */}
-      {commentsTotal !== undefined && comments.length < commentsTotal && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-          <button
-            onClick={async () => {
-              setLoadingMore(true);
-              try {
-                const { comments: more } = await commentsApi.listComments(taskId, { offset: comments.length });
-                onCommentsChanged([...comments, ...more]);
-              } catch { message.error('Не удалось загрузить комментарии'); }
-              finally { setLoadingMore(false); }
-            }}
-            disabled={loadingMore}
-            style={{
-              fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
-              color: '#4F6EF7', background: 'transparent',
-              border: '1px solid #4F6EF7', borderRadius: 7,
-              padding: '4px 14px', cursor: 'pointer',
-              opacity: loadingMore ? 0.5 : 1,
-            }}
-          >
-            {loadingMore ? 'Загрузка...' : `Ещё комментарии (${commentsTotal - comments.length})`}
-          </button>
-        </div>
-      )}
 
       {/* New comment input */}
       <div style={{ display: 'flex', gap: 10 }}>

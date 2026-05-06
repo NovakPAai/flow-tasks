@@ -605,6 +605,7 @@ export default function TaskDrawer({
                       parentId={task.id}
                       boardId={boardId}
                       statuses={statuses}
+                      parentDepth={task.depth}
                       onRefresh={refreshTask}
                       onOpenTask={setSubtaskId}
                     />

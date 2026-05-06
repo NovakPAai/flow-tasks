@@ -22,14 +22,13 @@ export function extractMentionedUserIds(text: string | null | undefined): string
 export async function emitMentionNotifications(
   text: string | null | undefined,
   payload: MentionPayload,
-  authorId: string,
+  authorId?: string,
 ) {
   const userIds = extractMentionedUserIds(text);
   if (userIds.length === 0) return;
-  const recipients = userIds;
 
-  // Deduplicate
-  const unique = [...new Set(recipients)];
+  // Deduplicate; optionally exclude author (pass authorId to suppress self-notifications)
+  const unique = [...new Set(authorId ? userIds.filter((id) => id !== authorId) : userIds)];
 
   // Verify users exist (avoid FK violation on stale mentions)
   const existing = await prisma.user.findMany({
