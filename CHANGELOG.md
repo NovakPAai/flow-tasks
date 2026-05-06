@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.5.0] — 2026-05-06 — Gap Analysis: 10 фичей и улучшений
+## [v1.5.0] — 2026-05-06 — Gap Analysis: 11 фичей и улучшений
 
 ### Новые возможности
 
@@ -60,6 +60,14 @@
 - Backend: `PATCH /api/boards/:id/tasks/bulk`, `POST /api/boards/:id/tasks/bulk-delete`
 - RBAC: VIEWER получает 403, не-участник — 404
 
+#### Gap-11 — Аккордеон в «Мои задачи» (#145)
+- **TaskAccordionPanel** — встроенная read-only панель деталей прямо в строке списка: описание, статус, дедлайн, исполнитель, теги
+- Один аккордеон открыт за раз; повторный клик по открытой строке — закрывает
+- **URL-синхронизация**: `?open=<taskId>` — состояние восстанавливается при возврате со страницы доски (Browser Back)
+- **BoardPage**: кнопка «← Мои задачи» при переходе с `from=my-tasks`
+- **Безопасность**: `isSafeAvatarUrl` — разрешён только `https:` для src аватара
+- Drawer «Мои задачи» (gap-01) заменён аккордеоном; gap-01 помечен superseded
+
 ### Исправления и улучшения
 
 - **Activity feed**: человекочитаемые описания событий вместо технических полей (#135)
@@ -67,6 +75,8 @@
 - **@Упоминания**: синтаксис `@[Имя](userId)` в задачах и комментариях (#135)
 - **Колокольчик уведомлений**: дропдаун с превью и форматированием (#135)
 - **VIEWER-роль**: добавлена проверка в `reorderTasks` (ранее отсутствовала) (#141)
+- **TypeScript** (#144): `emitMentionNotifications` в `tasks.service.ts` — добавлены обязательные поля `workspaceSlug` и `boardSlug`; `MentionTextarea.Props` — `maxLength`, `onKeyDown`, `onFocus`, `onBlur`; `CommentThread.Props` — `commentsTotal`
+- **Тесты** (#144): `comments.test.ts` и `workspaces.test.ts` обновлены под paginated-ответ (`{ comments, total }` / `{ events, total }`)
 
 ---
 
