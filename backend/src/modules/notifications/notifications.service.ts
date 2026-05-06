@@ -8,6 +8,7 @@ export interface MentionPayload {
   context: 'task' | 'comment';
   workspaceSlug: string;
   boardSlug: string;
+  body?: string;
 }
 
 // Extract user IDs from mention markers: @[Display Name](userId)

@@ -194,11 +194,20 @@ export default function BoardPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const v = searchParams.get('view');
     return (v === 'roadmap' || v === 'list' || v === 'calendar') ? v : 'board';
   });
+
+  // Auto-open drawer when navigated from a notification (?taskId=...)
+  useEffect(() => {
+    const tid = searchParams.get('taskId');
+    if (tid) {
+      setSelectedTaskId(tid);
+      setSearchParams(p => { p.delete('taskId'); return p; }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
