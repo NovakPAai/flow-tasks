@@ -6,6 +6,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   let wsSlug: string;
   let wsId: string;
   let boardId: string;
+  let boardPrefix: string;
   let token: string;
   let firstStatusId: string;
 
@@ -17,6 +18,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     const prefix = `D${uid().slice(0, 3).toUpperCase()}`;
     const board = await createBoard(token, wsId, `Drawer Board ${uid()}`, prefix);
     boardId = board.id;
+    boardPrefix = board.prefix.toLowerCase();
 
     const wsData = await getWorkspace(token, wsId);
     firstStatusId = wsData.workflows?.[0]?.statuses?.[0]?.id ?? '';
@@ -35,7 +37,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   }
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/w/${wsSlug}/boards/${boardId}`);
+    await page.goto(`/w/${wsSlug}/boards/${boardPrefix}`);
     if (firstStatusId) {
       await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
     }

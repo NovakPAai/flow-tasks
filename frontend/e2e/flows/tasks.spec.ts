@@ -6,6 +6,7 @@ test.describe('Создание задач (Kanban)', () => {
   let wsSlug: string;
   let wsId: string;
   let boardId: string;
+  let boardPrefix: string;
   let token: string;
 
   test.beforeAll(async () => {
@@ -16,10 +17,11 @@ test.describe('Создание задач (Kanban)', () => {
     const prefix = `T${uid().slice(0, 3).toUpperCase()}`;
     const board = await createBoard(token, wsId, `Tasks Board ${uid()}`, prefix);
     boardId = board.id;
+    boardPrefix = board.prefix.toLowerCase();
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/w/${wsSlug}/boards/${boardId}`);
+    await page.goto(`/w/${wsSlug}/boards/${boardPrefix}`);
     // Дождёмся появления хотя бы одной колонки
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });

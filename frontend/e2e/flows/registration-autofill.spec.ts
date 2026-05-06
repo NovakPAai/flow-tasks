@@ -44,8 +44,8 @@ test.describe('Форма регистрации — авто-заполнени
     // There must be NO manual email-prefix input in registration mode.
     // The email field (autocomplete="email") is only shown when registrationDomain
     // is absent, which never happens in the seeded environment.
-    // We verify the label "Email (заполняется автоматически)" is present instead.
-    await expect(page.getByText('Email (заполняется автоматически)')).toBeVisible();
+    // We verify the read-only email preview input (aria-label) is present.
+    await expect(page.getByLabel('Email (заполняется автоматически)')).toBeVisible();
     // And no editable email input (autocomplete="email") is visible
     await expect(page.locator('input[autocomplete="email"]')).not.toBeVisible();
   });
@@ -59,9 +59,8 @@ test.describe('Форма регистрации — авто-заполнени
     await firstInput.fill('Иван');
     await lastInput.fill('Петров');
 
-    // The email preview span is inside the read-only email display block
-    const emailPreview = page.locator('span').filter({ hasText: 'ivan.petrov@flowtask.dev' });
-    await expect(emailPreview).toBeVisible({ timeout: 3_000 });
+    const emailPreview = page.getByLabel('Email (заполняется автоматически)');
+    await expect(emailPreview).toHaveValue('ivan.petrov@flowtask.dev', { timeout: 3_000 });
   });
 
   test('Maria + Smith → maria.smith@flowtask.dev', async ({ page }) => {
@@ -70,8 +69,8 @@ test.describe('Форма регистрации — авто-заполнени
     await page.locator('input[autocomplete="given-name"]').fill('Maria');
     await page.locator('input[autocomplete="family-name"]').fill('Smith');
 
-    const emailPreview = page.locator('span').filter({ hasText: 'maria.smith@flowtask.dev' });
-    await expect(emailPreview).toBeVisible({ timeout: 3_000 });
+    const emailPreview = page.getByLabel('Email (заполняется автоматически)');
+    await expect(emailPreview).toHaveValue('maria.smith@flowtask.dev', { timeout: 3_000 });
   });
 
   test('кириллица → корректная транслитерация в email', async ({ page }) => {
@@ -81,8 +80,8 @@ test.describe('Форма регистрации — авто-заполнени
     await page.locator('input[autocomplete="family-name"]').fill('Козлов');
 
     // transliterate('Александр') = 'aleksandr', transliterate('Козлов') = 'kozlov'
-    const emailPreview = page.locator('span').filter({ hasText: 'aleksandr.kozlov@flowtask.dev' });
-    await expect(emailPreview).toBeVisible({ timeout: 3_000 });
+    const emailPreview = page.getByLabel('Email (заполняется автоматически)');
+    await expect(emailPreview).toHaveValue('aleksandr.kozlov@flowtask.dev', { timeout: 3_000 });
   });
 
   test('кнопка Submit отключена когда поля Имя/Фамилия пустые', async ({ page }) => {
@@ -135,14 +134,15 @@ test.describe('Форма регистрации — авто-заполнени
     // First combination
     await firstInput.fill('Иван');
     await lastInput.fill('Петров');
-    await expect(page.locator('span').filter({ hasText: 'ivan.petrov@flowtask.dev' })).toBeVisible({ timeout: 3_000 });
+    const emailInput = page.getByLabel('Email (заполняется автоматически)');
+    await expect(emailInput).toHaveValue('ivan.petrov@flowtask.dev', { timeout: 3_000 });
 
     // Clear and type second combination
     await firstInput.clear();
     await lastInput.clear();
     await firstInput.fill('Maria');
     await lastInput.fill('Smith');
-    await expect(page.locator('span').filter({ hasText: 'maria.smith@flowtask.dev' })).toBeVisible({ timeout: 3_000 });
+    await expect(emailInput).toHaveValue('maria.smith@flowtask.dev', { timeout: 3_000 });
   });
 
   test('переключение обратно на форму входа скрывает поля регистрации', async ({ page }) => {
