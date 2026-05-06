@@ -40,30 +40,19 @@ function columnsToList(columns: Columns): Task[] {
   return Object.values(columns).flat();
 }
 
-function applyFilters(tasks: Task[], f: FilterState): Task[] {
-  return tasks.filter(t => {
-    if (f.search && !t.title.toLowerCase().includes(f.search.toLowerCase())) return false;
-    if (f.statusId && t.statusId !== f.statusId) return false;
-    if (f.priority && t.priority !== f.priority) return false;
-    if (f.assigneeId && t.assigneeId !== f.assigneeId) return false;
-    if (f.labelId && !(t.labels ?? []).some(tl => tl.labelId === f.labelId)) return false;
-    if (f.duePreset) {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-      const nextWeek = new Date(today); nextWeek.setDate(nextWeek.getDate() + 7);
-      const nextWeekEnd = new Date(nextWeek); nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
-      const due = t.dueDate ? new Date(t.dueDate) : null;
-      if (f.duePreset === 'no_date' && due) return false;
-      if (f.duePreset === 'no_date' && !due) return true;
-      if (!due) return false;
-      if (f.duePreset === 'today' && !(due >= today && due < tomorrow)) return false;
-      if (f.duePreset === 'this_week' && !(due >= today && due < nextWeek)) return false;
-      if (f.duePreset === 'next_week' && !(due >= nextWeek && due < nextWeekEnd)) return false;
-      if (f.duePreset === 'overdue' && !(due < today)) return false;
-    }
-    return true;
-  });
+/** Map non-empty filter fields to API query params (statusId omitted — columns have it) */
+function toApiParams(f: FilterState): Record<string, string> {
+  const p: Record<string, string> = {};
+  if (f.search)     p.search     = f.search;
+  if (f.priority)   p.priority   = f.priority;
+  if (f.assigneeId) p.assigneeId = f.assigneeId;
+  if (f.labelId)    p.labelId    = f.labelId;
+  if (f.duePreset)  p.duePreset  = f.duePreset;
+  return p;
+}
+
+function isFilterActive(f: FilterState): boolean {
+  return !!(f.search || f.priority || f.assigneeId || f.labelId || f.duePreset);
 }
 
 // ── View icons ─────────────────────────────────────────────────────────────────
@@ -207,6 +196,10 @@ export default function BoardPage() {
   const [columnOffsets, setColumnOffsets] = useState<Record<string, number>>({});
   const [columnTotals, setColumnTotals] = useState<Record<string, number>>({});
   const [loadingMoreCols, setLoadingMoreCols] = useState<Set<string>>(new Set());
+  const [filterLoading, setFilterLoading] = useState(false);
+  const hadActiveFiltersRef = useRef(false);
+  const filterFetchIdRef = useRef(0);
+  const lastBoardIdRef = useRef<string | null>(null);
   const addInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentUserId = useAuthStore(s => s.user?.id);
@@ -262,6 +255,62 @@ export default function BoardPage() {
     if (addingTo) setTimeout(() => addInputRef.current?.focus(), 50);
   }, [addingTo]);
 
+  // ── Server-side filters ───────────────────────────────────────────────────
+  const fetchFilteredColumns = useCallback(async (f: FilterState, b: Board) => {
+    const fetchId = ++filterFetchIdRef.current;
+    const params = toApiParams(f);
+    setFilterLoading(true);
+    try {
+      const results = await Promise.all(
+        b.workflow.statuses.map(s =>
+          tasksApi.listTasks(b.id, { ...params, statusId: s.id, rootOnly: 'true', limit: '100', offset: '0' })
+            .then(r => [s.id, r] as const),
+        ),
+      );
+      if (fetchId !== filterFetchIdRef.current) return; // discard stale response
+      const newCols: Columns = {};
+      const newOffsets: Record<string, number> = {};
+      const newTotals: Record<string, number> = {};
+      for (const [sid, { tasks, total }] of results) {
+        newCols[sid] = tasks;
+        newOffsets[sid] = tasks.length;
+        if (total > tasks.length) newTotals[sid] = total;
+      }
+      setColumns(newCols);
+      setColumnOffsets(newOffsets);
+      setColumnTotals(newTotals);
+    } catch {
+      if (fetchId === filterFetchIdRef.current) {
+        message.error('Не удалось применить фильтры');
+      }
+    } finally {
+      if (fetchId === filterFetchIdRef.current) setFilterLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!board) return;
+    // Reset guard when navigating to a different board
+    if (board.id !== lastBoardIdRef.current) {
+      lastBoardIdRef.current = board.id;
+      hadActiveFiltersRef.current = false;
+    }
+    const active = isFilterActive(filters);
+    if (!active) {
+      if (hadActiveFiltersRef.current) {
+        hadActiveFiltersRef.current = false;
+        loadBoard();
+      }
+      return;
+    }
+    hadActiveFiltersRef.current = true;
+    const timer = setTimeout(
+      () => { fetchFilteredColumns(filters, board); },
+      filters.search ? 300 : 0,
+    );
+    return () => clearTimeout(timer);
+  }, [filters, board, loadBoard, fetchFilteredColumns]);
+
   // ── DnD ───────────────────────────────────────────────────────────────────
   const onDragStart = (start: DragStart) => {
     setDraggingFromStatusId(start.source.droppableId);
@@ -313,11 +362,16 @@ export default function BoardPage() {
 
   // ── Load more (column pagination) ────────────────────────────────────────
   const loadMoreColumn = async (statusId: string) => {
-    if (!board || loadingMoreCols.has(statusId)) return;
+    if (!board || loadingMoreCols.has(statusId) || filterLoading) return;
     const offset = columnOffsets[statusId] ?? 0;
+    // Snapshot active filters so a mid-flight filter change doesn't corrupt results
+    const snapshotParams = toApiParams(filters);
+    const snapshotFetchId = filterFetchIdRef.current;
     setLoadingMoreCols(prev => new Set(prev).add(statusId));
     try {
-      const { tasks: more, total } = await tasksApi.listTasks(board.id, { statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      const { tasks: more, total } = await tasksApi.listTasks(board.id, { ...snapshotParams, statusId, offset: String(offset), limit: '100', rootOnly: 'true' });
+      // Discard if a new filter fetch has started since we began
+      if (filterFetchIdRef.current !== snapshotFetchId) return;
       setColumns(prev => ({ ...prev, [statusId]: [...(prev[statusId] ?? []), ...more] }));
       setColumnOffsets(prev => ({ ...prev, [statusId]: offset + more.length }));
       setColumnTotals(prev => ({ ...prev, [statusId]: total }));
@@ -371,20 +425,25 @@ export default function BoardPage() {
   };
 
   // ── Filtered data ─────────────────────────────────────────────────────────
+  // Server already applied search/priority/assignee/label/due filters.
+  // Only statusId is applied client-side (column visibility / list view).
   const allTasks = useMemo(() => columnsToList(columns), [columns]);
-  const filteredTasks = useMemo(() => applyFilters(allTasks, filters), [allTasks, filters]);
+  const filteredTasks = useMemo(
+    () => filters.statusId ? allTasks.filter(t => t.statusId === filters.statusId) : allTasks,
+    [allTasks, filters.statusId],
+  );
   const hasMoreTasks = useMemo(
     () => Object.entries(columnTotals).some(([sid, total]) => (columns[sid]?.length ?? 0) < total),
     [columnTotals, columns],
   );
   const filteredColumns = useMemo(() => {
-    const ids = new Set(filteredTasks.map(t => t.id));
+    if (!filters.statusId) return columns;
     const result: Columns = {};
-    for (const [sid, tasks] of Object.entries(columns)) {
-      result[sid] = tasks.filter(t => ids.has(t.id));
+    for (const sid of Object.keys(columns)) {
+      result[sid] = sid === filters.statusId ? columns[sid] : [];
     }
     return result;
-  }, [columns, filteredTasks]);
+  }, [columns, filters.statusId]);
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
@@ -513,6 +572,12 @@ export default function BoardPage() {
         labels={labels}
         onChange={setFilters}
       />
+      {filterLoading && (
+        <>
+          <style>{`@keyframes ft-shimmer{0%{background-position:-200% center}100%{background-position:200% center}}`}</style>
+          <div style={{ height: 2, backgroundImage: 'linear-gradient(90deg,#4F6EF7,#7C3AED,#4F6EF7)', backgroundSize: '200% 100%', borderRadius: 1, animation: 'ft-shimmer 1.2s linear infinite' }} />
+        </>
+      )}
 
       {/* ── View content ─────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflow: viewMode === 'board' || viewMode === 'roadmap' ? 'hidden' : 'auto', display: 'flex', flexDirection: 'column' }}>
