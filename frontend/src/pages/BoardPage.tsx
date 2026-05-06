@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import {
   DragDropContext, Droppable, Draggable, type DropResult, type DragStart,
 } from '@hello-pangea/dnd';
@@ -183,20 +183,22 @@ export default function BoardPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [addTitle, setAddTitle] = useState('');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const v = searchParams.get('view');
     return (v === 'roadmap' || v === 'list' || v === 'calendar') ? v : 'board';
   });
 
-  // Auto-open drawer when navigated from a notification (?taskId=...)
+  // Auto-open drawer when navigated from a notification (via router state)
   useEffect(() => {
-    const tid = searchParams.get('taskId');
-    if (tid) {
-      setSelectedTaskId(tid);
-      setSearchParams(p => { p.delete('taskId'); return p; }, { replace: true });
+    const state = location.state as { openTaskId?: string } | null;
+    if (state?.openTaskId) {
+      setSelectedTaskId(state.openTaskId);
+      // Clear state so back navigation doesn't re-trigger
+      window.history.replaceState({}, '', location.pathname + location.search);
     }
-  }, [searchParams, setSearchParams]);
+  }, [location.state, location.pathname, location.search]);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);

@@ -266,7 +266,7 @@ export default function CommentThread({ taskId, comments, commentsTotal, onComme
             onClick={async () => {
               setLoadingMore(true);
               try {
-                const { comments: more } = await commentsApi.listComments(taskId, { offset: comments.length });
+                const more = await commentsApi.listComments(taskId);
                 onCommentsChanged([...comments, ...more]);
               } catch { message.error('Не удалось загрузить комментарии'); }
               finally { setLoadingMore(false); }

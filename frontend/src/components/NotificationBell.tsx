@@ -72,7 +72,7 @@ export default function NotificationBell() {
     setOpen(false);
     const { workspaceSlug, boardSlug, taskId } = n.payload;
     if (workspaceSlug && boardSlug) {
-      navigate(`/w/${workspaceSlug}/boards/${boardSlug}?taskId=${taskId}`);
+      navigate(`/w/${workspaceSlug}/boards/${boardSlug}`, { state: { openTaskId: taskId } });
     }
   };
 
