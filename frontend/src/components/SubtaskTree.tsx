@@ -36,6 +36,9 @@ function findFirstStatusId(statuses: WorkflowStatus[]): string | undefined {
   return statuses[0]?.id;
 }
 
+// Must match MAX_SUBTASK_DEPTH in backend/src/modules/tasks/tasks.service.ts
+const MAX_SUBTASK_DEPTH = 5;
+
 // ── Props ──────────────────────────────────────────────────────────────────────
 interface Props {
   tasks: Task[];
@@ -43,13 +46,14 @@ interface Props {
   boardId: string;
   statuses: WorkflowStatus[];
   depth?: number;
+  parentDepth?: number; // absolute depth of the parent task — used to enforce depth limit
   onRefresh: () => void;
   onOpenTask?: (taskId: string) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function SubtaskTree({
-  tasks, parentId, boardId, statuses, depth = 0, onRefresh, onOpenTask,
+  tasks, parentId, boardId, statuses, depth = 0, parentDepth, onRefresh, onOpenTask,
 }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
@@ -101,9 +105,14 @@ export default function SubtaskTree({
     try {
       await tasksApi.createTask(boardId, { title: addTitle.trim(), parentId, statusId: findFirstStatusId(statuses) });
       setAddTitle(''); setAdding(false); onRefresh();
-    } catch { message.error('Не удалось создать подзадачу'); }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      message.error(msg ?? 'Не удалось создать подзадачу');
+    }
     finally { setSaving(false); }
   };
+
+  const canAddSubtask = parentDepth === undefined || parentDepth + 1 < MAX_SUBTASK_DEPTH;
 
   return (
     <div style={{ position: 'relative' }}>
@@ -266,6 +275,7 @@ export default function SubtaskTree({
                   boardId={boardId}
                   statuses={statuses}
                   depth={depth + 1}
+                  parentDepth={task.depth}
                   onRefresh={() => { fetchSubtree(task.id); onRefresh(); }}
                   onOpenTask={onOpenTask}
                 />
@@ -275,8 +285,8 @@ export default function SubtaskTree({
         );
       })}
 
-      {/* Add subtask row */}
-      {adding ? (
+      {/* Add subtask row — hidden when parent is at max allowed depth */}
+      {canAddSubtask && adding ? (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           paddingLeft: indent + (depth > 0 ? 12 : 0), paddingTop: 4,
@@ -320,7 +330,7 @@ export default function SubtaskTree({
             Отмена
           </button>
         </div>
-      ) : (
+      ) : canAddSubtask ? (
         <div
           role="button"
           tabIndex={0}
@@ -340,7 +350,7 @@ export default function SubtaskTree({
           </svg>
           <span>Добавить подзадачу</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

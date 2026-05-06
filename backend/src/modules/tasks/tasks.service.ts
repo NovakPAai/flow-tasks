@@ -58,6 +58,10 @@ async function generateIssueKey(boardId: string): Promise<{ issueKey: string; is
   throw new AppError(500, 'Could not generate unique issue key after 10 attempts');
 }
 
+// ─── Depth limit ─────────────────────────────────────────────────────────────
+
+const MAX_SUBTASK_DEPTH = 5; // tasks at depth 0-4 allowed; depth 5 is rejected
+
 // ─── Materialized path helpers ────────────────────────────────────────────────
 
 async function buildPath(parentId: string | null | undefined): Promise<{ path: string; depth: number }> {
@@ -160,8 +164,13 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
     }
   }
 
-  const { issueKey, issueNumber } = await generateIssueKey(boardId);
   const { path, depth } = await buildPath(dto.parentId);
+
+  if (depth >= MAX_SUBTASK_DEPTH) {
+    throw new AppError(400, `Maximum subtask nesting depth (${MAX_SUBTASK_DEPTH}) reached`);
+  }
+
+  const { issueKey, issueNumber } = await generateIssueKey(boardId);
 
   // orderIndex = max + 1 in same status
   const maxOrder = await prisma.task.aggregate({
