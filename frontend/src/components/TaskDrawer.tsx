@@ -173,8 +173,10 @@ export default function TaskDrawer({
     } catch { message.error('Ошибка удаления'); }
   };
 
-  const handleLabelsChanged = (labels: TaskLabel[]) =>
+  const handleLabelsChanged = (labels: TaskLabel[]) => {
     setTask((prev) => prev ? { ...prev, labels } : prev);
+    if (task) onUpdated({ ...task, labels });
+  };
   const handleCommentsChanged = (comments: Comment[]) =>
     setTask((prev) => prev ? { ...prev, comments } : prev);
   const handleChecklistsChanged = (checklists: Checklist[]) =>

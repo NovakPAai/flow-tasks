@@ -171,6 +171,11 @@ export async function updateWorkflow(workflowId: string, userId: string, dto: Up
     await generateTransitions(workflowId);
   }
 
+  const meta: Record<string, unknown> = { workflowName: workflow.name };
+  if (dto.name !== undefined && dto.name !== workflow.name) { meta.nameFrom = workflow.name; meta.nameTo = dto.name; }
+  if (dto.mode !== undefined && dto.mode !== oldMode) { meta.modeFrom = oldMode; meta.modeTo = dto.mode; }
+  await logEvent(workflow.workspaceId, userId, 'workflow_updated', 'workflow', workflowId, meta);
+
   return updated;
 }
 
@@ -213,6 +218,11 @@ export async function addStatus(workflowId: string, userId: string, dto: AddStat
     await generateTransitions(workflowId);
   }
 
+  await logEvent(workflow.workspaceId, userId, 'workflow_status_added', 'workflow', workflowId, {
+    workflowName: workflow.name,
+    statusName: dto.name,
+  });
+
   return status;
 }
 
@@ -220,9 +230,19 @@ export async function updateStatus(statusId: string, userId: string, dto: Update
   const status = await prisma.workflowStatus.findUnique({ where: { id: statusId } });
   if (!status) throw new AppError(404, 'Status not found');
 
-  await assertWorkspaceOwner(status.workflowId, userId);
+  const workflow = await assertWorkspaceOwner(status.workflowId, userId);
 
-  return prisma.workflowStatus.update({ where: { id: statusId }, data: dto });
+  const updated = await prisma.workflowStatus.update({ where: { id: statusId }, data: dto });
+
+  if (dto.name !== undefined && dto.name !== status.name) {
+    await logEvent(workflow.workspaceId, userId, 'workflow_status_renamed', 'workflow', status.workflowId, {
+      workflowName: workflow.name,
+      nameFrom: status.name,
+      nameTo: dto.name,
+    });
+  }
+
+  return updated;
 }
 
 export async function deleteStatus(statusId: string, userId: string) {
@@ -249,6 +269,11 @@ export async function deleteStatus(statusId: string, userId: string) {
   if (workflow.mode !== 'CUSTOM') {
     await generateTransitions(status.workflowId);
   }
+
+  await logEvent(workflow.workspaceId, userId, 'workflow_status_deleted', 'workflow', status.workflowId, {
+    workflowName: workflow.name,
+    statusName: status.name,
+  });
 }
 
 export async function reorderStatuses(workflowId: string, userId: string, orderedIds: string[]) {

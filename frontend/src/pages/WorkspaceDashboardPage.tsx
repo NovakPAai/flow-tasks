@@ -516,14 +516,27 @@ export default function WorkspaceDashboardPage() {
                 const name = ev.user?.name ?? 'Кто-то';
                 const nameParts = name.trim().split(/\s+/);
                 const isFem = /[аяАЯ]$/u.test(nameParts[nameParts.length - 1] ?? '');
+                const m = (ev.meta ?? {}) as Record<string, string>;
+
                 const ACTION_LABELS: Record<string, string> = {
-                  workspace_created: isFem ? 'создала пространство' : 'создал пространство',
-                  workspace_updated: isFem ? 'обновила настройки' : 'обновил настройки',
-                  member_added:      isFem ? 'добавила участника' : 'добавил участника',
-                  member_removed:    isFem ? 'удалила участника' : 'удалил участника',
-                  board_created:     isFem ? 'создала доску' : 'создал доску',
-                  board_deleted:     isFem ? 'удалила доску' : 'удалил доску',
-                  member_role_changed: isFem ? 'изменила роль' : 'изменил роль',
+                  workspace_created:       isFem ? 'создала пространство' : 'создал пространство',
+                  workspace_updated:       isFem ? 'обновила настройки пространства' : 'обновил настройки пространства',
+                  member_added:            isFem ? `добавила участника ${m.name ?? ''}` : `добавил участника ${m.name ?? ''}`,
+                  member_removed:          isFem ? `удалила участника ${m.name ?? ''}` : `удалил участника ${m.name ?? ''}`,
+                  member_role_changed:     isFem ? `изменила роль ${m.name ?? ''}` : `изменил роль ${m.name ?? ''}`,
+                  board_created:           isFem ? `создала доску «${m.name ?? ''}»` : `создал доску «${m.name ?? ''}»`,
+                  board_updated:           m.nameFrom
+                    ? (isFem ? `переименовала доску «${m.nameFrom}» → «${m.nameTo ?? ''}»` : `переименовал доску «${m.nameFrom}» → «${m.nameTo ?? ''}»`)
+                    : (isFem ? `обновила доску «${m.boardName ?? ''}»` : `обновил доску «${m.boardName ?? ''}»`),
+                  board_deleted:           isFem ? `удалила доску «${m.name ?? ''}»` : `удалил доску «${m.name ?? ''}»`,
+                  workflow_created:        isFem ? `создала воркфлоу «${m.name ?? ''}»` : `создал воркфлоу «${m.name ?? ''}»`,
+                  workflow_updated:        m.nameFrom
+                    ? (isFem ? `переименовала воркфлоу «${m.nameFrom}» → «${m.nameTo ?? ''}»` : `переименовал воркфлоу «${m.nameFrom}» → «${m.nameTo ?? ''}»`)
+                    : (isFem ? `обновила воркфлоу «${m.workflowName ?? ''}»` : `обновил воркфлоу «${m.workflowName ?? ''}»`),
+                  workflow_deleted:        isFem ? `удалила воркфлоу «${m.name ?? ''}»` : `удалил воркфлоу «${m.name ?? ''}»`,
+                  workflow_status_added:   isFem ? `добавила колонку «${m.statusName ?? ''}» в воркфлоу «${m.workflowName ?? ''}»` : `добавил колонку «${m.statusName ?? ''}» в воркфлоу «${m.workflowName ?? ''}»`,
+                  workflow_status_renamed: isFem ? `переименовала колонку «${m.nameFrom ?? ''}» → «${m.nameTo ?? ''}»` : `переименовал колонку «${m.nameFrom ?? ''}» → «${m.nameTo ?? ''}»`,
+                  workflow_status_deleted: isFem ? `удалила колонку «${m.statusName ?? ''}» из воркфлоу «${m.workflowName ?? ''}»` : `удалил колонку «${m.statusName ?? ''}» из воркфлоу «${m.workflowName ?? ''}»`,
                 };
                 const label = ACTION_LABELS[ev.action] ?? ev.action;
                 const time  = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

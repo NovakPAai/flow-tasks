@@ -1,5 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
+import { logEvent } from '../workspaces/workspaces.service.js';
 import type { CreateBoardDto, UpdateBoardDto } from './boards.dto.js';
 
 async function assertMember(workspaceId: string, userId: string) {
@@ -52,12 +53,16 @@ export async function createBoard(workspaceId: string, userId: string, dto: Crea
   const existing = await prisma.board.findFirst({ where: { workspaceId, prefix } });
   if (existing) throw new AppError(409, `Prefix "${prefix}" already used in this workspace`);
 
-  return prisma.board.create({
+  const board = await prisma.board.create({
     data: { workspaceId, workflowId, name: dto.name, prefix, description: dto.description },
     include: {
       workflow: { include: { statuses: { orderBy: { position: 'asc' } } } },
     },
   });
+
+  await logEvent(workspaceId, userId, 'board_created', 'board', board.id, { name: dto.name, prefix });
+
+  return board;
 }
 
 export async function getBoardByPrefix(workspaceId: string, prefix: string, userId: string) {
@@ -109,7 +114,15 @@ export async function updateBoard(boardId: string, userId: string, dto: UpdateBo
     if (!wf) throw new AppError(404, 'Workflow not found in this workspace');
   }
 
-  return prisma.board.update({ where: { id: boardId }, data: dto });
+  const updated = await prisma.board.update({ where: { id: boardId }, data: dto });
+
+  const meta: Record<string, unknown> = {};
+  if (dto.name !== undefined && dto.name !== board.name) meta.nameFrom = board.name;
+  if (dto.name !== undefined) meta.nameTo = dto.name;
+  if (dto.workflowId !== undefined && dto.workflowId !== board.workflowId) meta.workflowChanged = true;
+  await logEvent(board.workspaceId, userId, 'board_updated', 'board', boardId, { boardName: board.name, ...meta });
+
+  return updated;
 }
 
 export async function deleteBoard(boardId: string, userId: string) {
@@ -117,6 +130,7 @@ export async function deleteBoard(boardId: string, userId: string) {
   if (!board) throw new AppError(404, 'Board not found');
   await assertOwner(board.workspaceId, userId);
   await prisma.board.delete({ where: { id: boardId } });
+  await logEvent(board.workspaceId, userId, 'board_deleted', 'board', boardId, { name: board.name });
 }
 
 // ─── Roadmap ──────────────────────────────────────────────────────────────────

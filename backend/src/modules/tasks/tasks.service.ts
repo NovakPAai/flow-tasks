@@ -310,6 +310,7 @@ export async function updateTask(taskId: string, userId: string, dto: UpdateTask
       include: {
         status: true,
         assignee: { select: { id: true, name: true, avatar: true } },
+        labels: { include: { label: { select: { id: true, name: true, color: true } } } },
         _count: { select: { children: true } },
       },
     }),
@@ -356,6 +357,7 @@ export async function moveTask(taskId: string, userId: string, toStatusId: strin
       include: {
         status: true,
         assignee: { select: { id: true, name: true, avatar: true } },
+        labels: { include: { label: { select: { id: true, name: true, color: true } } } },
         _count: { select: { children: true } },
       },
     }),
