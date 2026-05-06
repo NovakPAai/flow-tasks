@@ -385,8 +385,8 @@ export default function WorkspacesPage() {
     if (workspaces.length === 0) return;
     const ownerWs = workspaces.find(w => w.role === 'OWNER');
     if (!ownerWs) return;
-    workspacesApi.getWorkspaceHistory(ownerWs.id)
-      .then(events => setRecentEvents(events.slice(0, 5)))
+    workspacesApi.getWorkspaceHistory(ownerWs.id, { limit: 5 })
+      .then(({ events }) => setRecentEvents(events))
       .catch(() => {});
   }, [workspaces]);
 

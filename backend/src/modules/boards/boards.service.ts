@@ -91,6 +91,8 @@ export async function getBoard(boardId: string, userId: string) {
         take: 100,
         include: {
           assignee: { select: { id: true, name: true, avatar: true } },
+          status: { select: { id: true, name: true, color: true, category: true } },
+          labels: { include: { label: { select: { id: true, name: true, color: true } } } },
           _count: { select: { children: true } },
         },
       },

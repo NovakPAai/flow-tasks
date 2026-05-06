@@ -1,8 +1,14 @@
 import api from './client';
 import type { Comment } from '../types';
 
-export async function listComments(taskId: string): Promise<Comment[]> {
-  const { data } = await api.get<Comment[]>(`/tasks/${taskId}/comments`);
+export async function listComments(
+  taskId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<{ comments: Comment[]; total: number }> {
+  const { data } = await api.get<{ comments: Comment[]; total: number }>(
+    `/tasks/${taskId}/comments`,
+    { params },
+  );
   return data;
 }
 

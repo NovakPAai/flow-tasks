@@ -642,7 +642,9 @@ export default function TaskDrawer({
               <CommentThread
                 taskId={task.id}
                 comments={task.comments ?? []}
+                commentsTotal={task._count?.comments}
                 onCommentsChanged={handleCommentsChanged}
+                members={members}
               />
             )
 

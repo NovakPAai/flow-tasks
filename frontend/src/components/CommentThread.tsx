@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
-import type { Comment } from '../types';
+import type { Comment, WorkspaceMember } from '../types';
 import * as commentsApi from '../api/comments';
 import { useAuthStore } from '../store/auth.store';
+import MentionTextarea, { renderMentions } from './MentionTextarea';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -35,14 +36,17 @@ function avatarInitials(name: string): string { return name.split(/\s+/).map(w =
 interface Props {
   taskId: string;
   comments: Comment[];
+  commentsTotal?: number;
   onCommentsChanged: (comments: Comment[]) => void;
+  members?: WorkspaceMember[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function CommentThread({ taskId, comments, onCommentsChanged }: Props) {
+export default function CommentThread({ taskId, comments, commentsTotal, onCommentsChanged, members = [] }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
   const c = isDark ? DARK : LIGHT;
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const currentUser = useAuthStore(s => s.user);
   const [newBody, setNewBody]     = useState('');
@@ -163,7 +167,7 @@ export default function CommentThread({ taskId, comments, onCommentsChanged }: P
                   fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
                   color: c.bodyText, whiteSpace: 'pre-wrap', flex: 1, lineHeight: '18px',
                 }}>
-                  {comment.body}
+                  {renderMentions(comment.body)}
                 </span>
                 {currentUser?.id === comment.authorId && (
                   <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
@@ -238,6 +242,32 @@ export default function CommentThread({ taskId, comments, onCommentsChanged }: P
         </div>
       ))}
 
+      {/* Load more comments */}
+      {commentsTotal !== undefined && comments.length < commentsTotal && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <button
+            onClick={async () => {
+              setLoadingMore(true);
+              try {
+                const { comments: more } = await commentsApi.listComments(taskId, { offset: comments.length });
+                onCommentsChanged([...comments, ...more]);
+              } catch { message.error('Не удалось загрузить комментарии'); }
+              finally { setLoadingMore(false); }
+            }}
+            disabled={loadingMore}
+            style={{
+              fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+              color: '#4F6EF7', background: 'transparent',
+              border: '1px solid #4F6EF7', borderRadius: 7,
+              padding: '4px 14px', cursor: 'pointer',
+              opacity: loadingMore ? 0.5 : 1,
+            }}
+          >
+            {loadingMore ? 'Загрузка...' : `Ещё комментарии (${commentsTotal - comments.length})`}
+          </button>
+        </div>
+      )}
+
       {/* New comment input */}
       <div style={{ display: 'flex', gap: 10 }}>
         <div style={{
@@ -250,18 +280,13 @@ export default function CommentThread({ taskId, comments, onCommentsChanged }: P
           </span>
         </div>
         <div style={{ flex: 1 }}>
-          <textarea
+          <MentionTextarea
             value={newBody}
-            onChange={e => setNewBody(e.target.value)}
-            placeholder="Написать комментарий..."
+            onChange={setNewBody}
+            members={members}
+            placeholder="Написать комментарий... (@имя для упоминания)"
             rows={2}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
-            style={{
-              ...textareaStyle(false),
-              color: newBody ? c.inputText : c.inputPlaceholder,
-            }}
-            onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorderFocus; }}
-            onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorder; }}
+            style={textareaStyle(false)}
           />
           {newBody.trim() && (
             <button

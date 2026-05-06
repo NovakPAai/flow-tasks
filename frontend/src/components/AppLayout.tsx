@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/auth.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
 import { useBreakpoint, useIsLandscape } from '../utils/useBreakpoint';
+import NotificationBell from './NotificationBell';
 
 
 interface Props { children: React.ReactNode }
@@ -337,6 +338,9 @@ export default function AppLayout({ children }: Props) {
             </svg>
           )}
         </button>
+
+        {/* Notification Bell */}
+        <NotificationBell />
 
         {/* Avatar */}
         <div style={{ position: 'relative' }}>

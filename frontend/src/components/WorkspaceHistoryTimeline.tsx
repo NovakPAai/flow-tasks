@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { WorkspaceEvent } from '../types';
@@ -75,13 +75,17 @@ function formatDate(iso: string): string {
 interface Props { workspaceId: string; }
 
 // ── Component ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 50;
+
 export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
   const c = isDark ? DARK : LIGHT;
 
   const [events, setEvents] = useState<WorkspaceEvent[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Inject spin keyframe once into document head
   const keyframeInjected = useRef(false);
@@ -102,8 +106,8 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await workspacesApi.getWorkspaceHistory(workspaceId);
-        if (!controller.signal.aborted) setEvents(data);
+        const { events: evs, total: t } = await workspacesApi.getWorkspaceHistory(workspaceId, { limit: PAGE_SIZE });
+        if (!controller.signal.aborted) { setEvents(evs); setTotal(t); }
       } catch {
         if (!controller.signal.aborted) message.error('Не удалось загрузить историю');
       } finally {
@@ -113,6 +117,24 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
     fetchData();
     return () => controller.abort();
   }, [workspaceId]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore) return;
+    const capturedId = workspaceId;
+    const capturedOffset = events.length;
+    setLoadingMore(true);
+    try {
+      const { events: more } = await workspacesApi.getWorkspaceHistory(capturedId, { limit: PAGE_SIZE, offset: capturedOffset });
+      setEvents(prev => {
+        if (workspaceId !== capturedId) return prev; // workspace changed — discard
+        return [...prev, ...more];
+      });
+    } catch {
+      message.error('Не удалось загрузить историю');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [workspaceId, events.length, loadingMore]);
 
   if (loading) {
     return (
@@ -206,6 +228,23 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
           </div>
         );
       })}
+      {events.length < total && (
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12 }}>
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            style={{
+              fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
+              color: '#4F6EF7', background: 'transparent',
+              border: '1px solid #4F6EF7', borderRadius: 7,
+              padding: '5px 18px', cursor: 'pointer',
+              opacity: loadingMore ? 0.5 : 1,
+            }}
+          >
+            {loadingMore ? 'Загрузка...' : `Загрузить ещё (${total - events.length})`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

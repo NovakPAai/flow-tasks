@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Modal, Form, Input, Radio, Button, message } from 'antd';
 import api from '../api/client';
 import { formatApiError } from '../utils/apiError';
@@ -8,9 +8,15 @@ interface FeedbackModalProps {
   onClose: () => void;
 }
 
+const SCREENSHOT_MAX_BYTES = 5 * 1024 * 1024;
+const SCREENSHOT_ALLOWED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+
 export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function collectDeviceMeta() {
     const ua = navigator.userAgent;
@@ -47,12 +53,46 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
     };
   }
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) return;
+    if (!SCREENSHOT_ALLOWED.includes(file.type)) {
+      message.error('Допустимые форматы: PNG, JPG, WEBP, GIF');
+      return;
+    }
+    if (file.size > SCREENSHOT_MAX_BYTES) {
+      message.error('Файл не должен превышать 5 МБ');
+      return;
+    }
+    setScreenshot(file);
+    setPreview(URL.createObjectURL(file));
+  }
+
+  function removeScreenshot() {
+    setScreenshot(null);
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function handleClose() {
+    form.resetFields();
+    removeScreenshot();
+    onClose();
+  }
+
   const onFinish = async (values: { title: string; body: string; type: 'bug' | 'idea' }) => {
     setLoading(true);
     try {
-      const res = await api.post<{ url: string; number: number }>('/feedback', {
-        ...values,
-        meta: collectDeviceMeta(),
+      const formData = new FormData();
+      formData.append('title', values.title);
+      formData.append('body', values.body);
+      formData.append('type', values.type);
+      formData.append('meta', JSON.stringify(collectDeviceMeta()));
+      if (screenshot) formData.append('screenshot', screenshot);
+
+      const res = await api.post<{ url: string; number: number }>('/feedback', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       message.success(
         <span>
@@ -61,8 +101,7 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
         </span>,
         5,
       );
-      form.resetFields();
-      onClose();
+      handleClose();
     } catch (err) {
       message.error(formatApiError(err));
     } finally {
@@ -73,7 +112,7 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
   return (
     <Modal
       open={open}
-      onCancel={() => { form.resetFields(); onClose(); }}
+      onCancel={handleClose}
       footer={null}
       title="Обратная связь"
       width={480}
@@ -91,6 +130,34 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
         <Form.Item name="body" label="Описание" rules={[{ required: true, message: 'Введите описание' }, { min: 10, message: 'Минимум 10 символов' }]}>
           <Input.TextArea rows={4} placeholder="Подробное описание..." />
         </Form.Item>
+
+        <Form.Item label="Скриншот (необязательно)">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
+          {preview ? (
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <img src={preview} alt="Скриншот" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 6, border: '1px solid #d9d9d9', display: 'block' }} />
+              <button
+                type="button"
+                onClick={removeScreenshot}
+                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', color: '#fff', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Удалить скриншот"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <Button type="dashed" onClick={() => fileInputRef.current?.click()} block>
+              Прикрепить скриншот
+            </Button>
+          )}
+        </Form.Item>
+
         <Form.Item style={{ marginBottom: 0 }}>
           <Button type="primary" htmlType="submit" loading={loading} block>
             Отправить

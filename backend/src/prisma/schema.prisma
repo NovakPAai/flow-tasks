@@ -37,6 +37,7 @@ model User {
   workspaceEvents      WorkspaceEvent[]
   reviewedRegistrations RegistrationRequest[] @relation("RegistrationReviewer")
   feedbacks             Feedback[]
+  notifications         Notification[]
 
   @@map("users")
 }
@@ -444,4 +445,20 @@ model TaskHistory {
 
   @@index([taskId, createdAt])
   @@map("task_history")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String                          // recipient
+  type      String                          // "mention"
+  payload   Json                            // { taskId, taskTitle, taskKey, mentionedBy: {id,name}, context: "task"|"comment" }
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@map("notifications")
 }

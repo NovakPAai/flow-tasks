@@ -245,6 +245,6 @@ export interface Task {
   labels?: TaskLabel[];
   comments?: Comment[];
   checklists?: Checklist[];
-  _count?: { children: number };
+  _count?: { children: number; comments?: number };
   statusHistory?: { id: string; statusId: string; startedAt: string; endedAt: string | null }[];
 }
