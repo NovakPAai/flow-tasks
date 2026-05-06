@@ -32,6 +32,16 @@ const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF44
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 function avatarInitials(name: string): string { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
+// ── Character counter ──────────────────────────────────────────────────────────
+const COMMENT_MAX = 10000;
+function commentCharCounterStyle(len: number, metaColor: string): React.CSSProperties {
+  return {
+    fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, textAlign: 'right',
+    marginBottom: 6,
+    color: len >= COMMENT_MAX ? '#EF4444' : len > COMMENT_MAX * 0.9 ? '#F59E0B' : metaColor,
+  };
+}
+
 // ── Props ──────────────────────────────────────────────────────────────────────
 interface Props {
   taskId: string;
@@ -91,9 +101,10 @@ export default function CommentThread({ taskId, comments, commentsTotal, onComme
     borderRadius: 8, padding: '8px 10px',
     fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
     color: c.inputText, outline: 'none',
-    minHeight: 60, marginBottom: 6,
+    minHeight: 60, marginBottom: 4,
     transition: 'border-color 0.15s',
   });
+
 
   return (
     <div>
@@ -133,8 +144,14 @@ export default function CommentThread({ taskId, comments, commentsTotal, onComme
                   onChange={e => setEditBody(e.target.value)}
                   autoFocus
                   rows={2}
-                  style={textareaStyle(true)}
+                  maxLength={COMMENT_MAX}
+                  style={textareaStyle(false)}
+                  onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorderFocus; }}
+                  onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorder; }}
                 />
+                {editBody.length > 0 && (
+                  <div style={commentCharCounterStyle(editBody.length, c.metaText)}>{editBody.length} / {COMMENT_MAX}</div>
+                )}
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button
                     onClick={() => saveEdit(comment.id)}
@@ -286,8 +303,18 @@ export default function CommentThread({ taskId, comments, commentsTotal, onComme
             members={members}
             placeholder="Написать комментарий... (@имя для упоминания)"
             rows={2}
-            style={textareaStyle(false)}
+            maxLength={COMMENT_MAX}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
+            style={{
+              ...textareaStyle(false),
+              color: newBody ? c.inputText : c.inputPlaceholder,
+            }}
+            onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorderFocus; }}
+            onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorder; }}
           />
+          {newBody.length > 0 && (
+            <div style={commentCharCounterStyle(newBody.length, c.metaText)}>{newBody.length} / {COMMENT_MAX}</div>
+          )}
           {newBody.trim() && (
             <button
               onClick={submit}
