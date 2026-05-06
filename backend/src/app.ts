@@ -20,6 +20,7 @@ import adminRouter from './modules/admin/admin.router.js';
 import feedbackRouter from './modules/feedback/feedback.router.js';
 import integrationsRouter from './modules/integrations/integrations.router.js';
 import notificationsRouter from './modules/notifications/notifications.router.js';
+import searchRouter from './modules/search/search.router.js';
 
 export function createApp() {
   const app = express();
@@ -64,6 +65,7 @@ export function createApp() {
   app.use('/api/feedback', feedbackRouter);
   app.use('/api/integrations', integrationsRouter);
   app.use('/api/notifications', notificationsRouter);
+  app.use('/api/search', searchRouter);
 
   // Error handler (must be last)
   app.use(errorHandler);
