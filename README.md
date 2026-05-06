@@ -2,7 +2,7 @@
 
 Лёгкий таск-трекер — аналог YouGile/Trello с Kanban-досками, дорожными картами, рабочими пространствами и workflow-переходами.
 
-**Версия:** v1.3.0 · [Changelog](#changelog)
+**Версия:** v1.4.0 · [Changelog](#changelog)
 
 ## Стек
 
@@ -13,7 +13,7 @@
 | Cache | Redis 7 |
 | Frontend | React 18 · Vite 6 · Ant Design 5 · Zustand |
 | DnD | @hello-pangea/dnd |
-| Auth | JWT (15m access) + Refresh tokens (7d) |
+| Auth | JWT (15m access) + Refresh tokens (7d) + SSO (Keycloak / Avanpost) |
 | Testing | Vitest · Testing Library · Playwright |
 
 ## Возможности
@@ -27,8 +27,9 @@
 - **Обратная связь** — плавающая кнопка FAB на всех страницах, определение устройства
 - **Администрирование** — страница пользователей и статистики, горизонтальный скролл на мобиле
 - **Human-readable URL** — доски по prefix вместо UUID (DEV-1, OPS-42)
+- **SSO** — вход через Keycloak или Avanpost (OIDC/PKCE), JIT-провижининг, режим `SSO_ONLY`
+- **Security Hardening** — rotating refresh tokens, LRU session eviction, rate-limit (Redis sliding window), structured logger с redact PII, audit log
 - **API Keys** — в профиле пользователя
-- **Паттерны безопасности** — asyncHandler, rate-limit, logger (из Pulsar)
 
 ## Быстрый старт
 
@@ -74,6 +75,14 @@ JWT_SECRET=flowtask-dev-secret-change-me
 JWT_REFRESH_SECRET=flowtask-dev-refresh-secret-change-me
 PORT=3101
 NODE_ENV=development
+
+# SSO — опционально (кнопка "Войти через SSO" появляется только при SSO_ENABLED=true)
+# SSO_ENABLED=true
+# SSO_PROVIDER=keycloak          # keycloak | avanpost
+# SSO_CLIENT_ID=flowtask
+# SSO_CLIENT_SECRET=<secret>
+# SSO_ISSUER_URL=https://keycloak.example.com/realms/myrealm
+# SSO_ONLY=false                 # true — отключить локальный вход по паролю
 ```
 
 ## Команды Makefile
@@ -182,6 +191,12 @@ flow-tasks/
 ```
 
 ## Changelog
+
+### v1.4.0 — SSO, Security Hardening & E2E CI (2026-05-05)
+- SSO через Keycloak и Avanpost (OIDC/PKCE), JIT-провижининг, режим SSO_ONLY
+- Security Hardening: rotating refresh tokens + LRU session eviction, rate-limit (Redis sliding window), structured logger с redact PII, audit log, SMTP для сброса пароля
+- E2E CI: Playwright тесты в CI (PR + main), coverage gates (vitest), RBAC static check
+- Исправления: StrictMode double-loadUser, диалог колонок 75vw, seed superadmin flag
 
 ### v1.3.0 — Mobile UX & Admin (2026-04-26)
 - FeedbackFAB плавающая кнопка на всех страницах (включая login/reset), только для авторизованных
