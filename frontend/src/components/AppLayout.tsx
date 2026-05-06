@@ -6,6 +6,7 @@ import { useWorkspaceStore } from '../store/workspace.store';
 import { useThemeStore } from '../store/theme.store';
 import { useBreakpoint, useIsLandscape } from '../utils/useBreakpoint';
 import NotificationBell from './NotificationBell';
+import CommandPalette from './CommandPalette';
 
 
 interface Props { children: React.ReactNode }
@@ -152,6 +153,7 @@ export default function AppLayout({ children }: Props) {
   const topbarH = isLandscape && bp !== 'desktop' ? 40 : 56;
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // ── Design tokens ──────────────────────────────────────────────────────────
   const isDark = mode !== 'light';
@@ -186,6 +188,17 @@ export default function AppLayout({ children }: Props) {
     if (userMenuOpen || wsMenuOpen) document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [userMenuOpen, wsMenuOpen]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const handleLogout = async () => {
     try { await logout(); navigate('/login'); }
@@ -308,6 +321,36 @@ export default function AppLayout({ children }: Props) {
 
         <div style={{ flex: 1 }}/>
 
+        {/* Search trigger */}
+        <button
+          onClick={() => setSearchOpen(true)}
+          title="Поиск (Cmd+K)"
+          style={{
+            alignItems: 'center', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+            border: `1px solid ${isDark ? '#1C2236' : '#E8E5F0'}`, borderRadius: 8,
+            color: tabIdleText, cursor: 'pointer', display: 'flex',
+            gap: 6, padding: '5px 10px', flexShrink: 0,
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.3"/>
+            <path d="M9.5 9.5l2.5 2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+          {bp === 'desktop' && (
+            <>
+              <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, lineHeight: '16px' }}>Поиск</span>
+              <kbd style={{
+                background: isDark ? '#1C2236' : '#EDE9FE',
+                border: `1px solid ${isDark ? '#2D3748' : '#D1C8EC'}`,
+                borderRadius: 4, color: tabIdleText,
+                fontSize: 10, padding: '1px 4px',
+              }}>
+                {typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl+K'}
+              </kbd>
+            </>
+          )}
+        </button>
+
         {/* Theme toggle */}
         <button
           onClick={toggle}
@@ -374,6 +417,7 @@ export default function AppLayout({ children }: Props) {
         {children}
       </div>
 
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
