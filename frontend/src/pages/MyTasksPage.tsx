@@ -48,7 +48,7 @@ function wsColor(name: string): string {
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function MyTasksPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const mode = useThemeStore((s) => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
   const bp = useBreakpoint();
@@ -63,7 +63,12 @@ export default function MyTasksPage() {
   const offsetRef = useRef(0);
 
   // Accordion state — one open at a time; restored from ?open= URL param on mount
-  const [openAccordionId, setOpenAccordionId] = useState<string | null>(() => searchParams.get('open'));
+  // Validated against task-ID format to prevent param injection
+  const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
+  const rawOpen = searchParams.get('open');
+  const [openAccordionId, setOpenAccordionId] = useState<string | null>(
+    () => rawOpen && TASK_ID_RE.test(rawOpen) ? rawOpen : null,
+  );
 
   const fetchTasks = useCallback(async (preset: DuePreset, q: string, replace: boolean) => {
     const offset = replace ? 0 : offsetRef.current;
@@ -91,9 +96,16 @@ export default function MyTasksPage() {
     return () => clearTimeout(timer);
   }, [duePreset, search, fetchTasks]);
 
+  // Capture "now" once per render cycle to avoid per-task Date allocation and clock drift
+  const now = useMemo(() => new Date(), []);
+
   const toggleAccordion = useCallback((taskId: string) => {
-    setOpenAccordionId((prev) => (prev === taskId ? null : taskId));
-  }, []);
+    setOpenAccordionId((prev) => {
+      const next = prev === taskId ? null : taskId;
+      setSearchParams(next ? { open: next } : {}, { replace: true });
+      return next;
+    });
+  }, [setSearchParams]);
 
   const openInBoard = useCallback((task: MyTask) => {
     navigate(
@@ -326,7 +338,7 @@ export default function MyTasksPage() {
                       {board.tasks.map((task, idx) => {
                         const isDone = task.status?.category === 'DONE';
                         const due = task.dueDate ? new Date(task.dueDate) : null;
-                        const isOverdue = due && due < new Date() && !isDone;
+                        const isOverdue = due !== null && due < now && !isDone;
                         const prio = task.priority ? PRIO[task.priority] : null;
                         const statusColor = task.status?.color ?? '#484F58';
                         const isOpen = openAccordionId === task.id;
@@ -335,7 +347,17 @@ export default function MyTasksPage() {
                           <div key={task.id}>
                             {/* Task row */}
                             <div
+                              role="button"
+                              tabIndex={0}
+                              aria-expanded={isOpen}
+                              aria-controls={`accordion-${task.id}`}
                               onClick={() => toggleAccordion(task.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  toggleAccordion(task.id);
+                                }
+                              }}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: bp === 'mobile' ? 8 : 12,
                                 padding: bp === 'mobile' ? '10px 12px' : '11px 16px',
@@ -447,10 +469,12 @@ export default function MyTasksPage() {
                             {/* Accordion panel */}
                             {isOpen && (
                               <TaskAccordionPanel
+                                id={`accordion-${task.id}`}
                                 task={task}
                                 colors={c}
                                 isDark={mode === 'dark'}
-                                onOpenInBoard={() => openInBoard(task)}
+                                now={now}
+                                onOpenInBoard={openInBoard}
                               />
                             )}
                           </div>

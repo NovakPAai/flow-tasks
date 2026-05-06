@@ -187,21 +187,24 @@ export default function BoardPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const fromMyTasks = searchParams.get('from') === 'my-tasks';
-  const myTasksOpenId = searchParams.get('open');
+  // Validate task ID format before round-tripping in back-navigation URL
+  const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
+  const rawMyTasksOpen = searchParams.get('open');
+  const myTasksOpenId = rawMyTasksOpen && TASK_ID_RE.test(rawMyTasksOpen) ? rawMyTasksOpen : null;
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const v = searchParams.get('view');
     return (v === 'roadmap' || v === 'list' || v === 'calendar') ? v : 'board';
   });
 
-  // Auto-open drawer when navigated from a notification (via router state)
+  // Auto-open drawer when navigated from accordion "Открыть" or notification
   useEffect(() => {
     const state = location.state as { openTaskId?: string } | null;
     if (state?.openTaskId) {
       setSelectedTaskId(state.openTaskId);
-      // Clear state so back navigation doesn't re-trigger
-      window.history.replaceState({}, '', location.pathname + location.search);
+      // Use React Router navigate to clear state so back-navigation doesn't re-trigger
+      navigate(location.pathname + location.search, { replace: true, state: null });
     }
-  }, [location.state, location.pathname, location.search]);
+  }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
