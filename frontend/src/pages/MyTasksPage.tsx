@@ -65,11 +65,17 @@ export default function MyTasksPage() {
   const [search, setSearch] = useState('');
   const offsetRef = useRef(0);
 
-  // Accordion state — one open at a time; restored from ?open= URL param on mount
+  // Accordion state — one open at a time; initialized and synced from ?open= URL param
   const rawOpen = searchParams.get('open');
   const [openAccordionId, setOpenAccordionId] = useState<string | null>(
     () => rawOpen && TASK_ID_RE.test(rawOpen) ? rawOpen : null,
   );
+
+  // Keep accordion in sync when URL changes (e.g. browser Back within My Tasks)
+  useEffect(() => {
+    const id = searchParams.get('open');
+    setOpenAccordionId(id && TASK_ID_RE.test(id) ? id : null);
+  }, [searchParams]);
 
   // Ref map for scroll-to-open after tasks load
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());

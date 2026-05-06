@@ -9,8 +9,7 @@ const HEX_COLOR_RE = /^#[0-9a-f]{3,8}$/i;
 
 function isSafeAvatarUrl(url: string): boolean {
   try {
-    const { protocol } = new URL(url);
-    return protocol === 'https:' || protocol === 'http:';
+    return new URL(url).protocol === 'https:';
   } catch {
     return false;
   }

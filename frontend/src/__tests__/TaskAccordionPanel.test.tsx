@@ -175,6 +175,13 @@ describe('TaskAccordionPanel — безопасность avatar', () => {
     const { container } = render(<TaskAccordionPanel {...defaultProps} task={task} />);
     expect(container.querySelector('img')).not.toBeInTheDocument();
   });
+
+  it('НЕ рендерит img для http: URL (только https разрешён)', () => {
+    const task = makeTask({ assignee: { id: 'u1', name: 'Test', avatar: 'http://cdn.example.com/avatar.jpg' } });
+    const { container } = render(<TaskAccordionPanel {...defaultProps} task={task} />);
+    expect(container.querySelector('img')).not.toBeInTheDocument();
+    expect(screen.getByText('T')).toBeInTheDocument();
+  });
 });
 
 describe('TaskAccordionPanel — стоп-пропагация кликов', () => {
