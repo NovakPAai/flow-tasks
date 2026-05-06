@@ -2,7 +2,7 @@
 
 Лёгкий таск-трекер — аналог YouGile/Trello с Kanban-досками, дорожными картами, рабочими пространствами и workflow-переходами.
 
-**Версия:** v1.4.0 · [Changelog](#changelog)
+**Версия:** v1.5.0 · [Changelog](CHANGELOG.md)
 
 ## Стек
 
@@ -19,10 +19,15 @@
 ## Возможности
 
 - **Kanban-доски** — drag-and-drop задач, кастомные workflow-переходы (FORWARD_ONLY / BIDIRECTIONAL / CUSTOM)
+- **Серверные фильтры** — assignee, priority, status, label, due date; параметры синхронизируются с URL
 - **Дорожные карты** — Gantt-подобный вид с зумом (неделя / месяц / квартал), подзадачи раскрывашкой, overdue-индикатор
 - **Рабочие пространства** — приватные/публичные, RBAC (Owner / Member / Viewer), страница настроек
-- **Подзадачи** — безлимитная вложенность (materialized path), drawer drill-down
+- **Подзадачи** — до 5 уровней вложенности (materialized path), drawer drill-down
+- **Массовые операции** — выбор задач, batch-изменение статуса/приоритета/исполнителя, массовое удаление
+- **Глобальный поиск** — `Cmd+K` командная палитра, поиск задач по заголовку и issueKey
+- **Уведомления** — @упоминания в задачах и комментариях, уведомление о назначении, email opt-out
 - **История статусов** — сегментные бары изменений в задаче и в дорожной карте
+- **Счётчики символов** — в комментариях и пунктах чеклиста с цветовой индикацией
 - **Мобильная адаптация** — responsive 3-tier (mobile / tablet / desktop), landscape-режим, safe-area для iPhone notch
 - **Обратная связь** — плавающая кнопка FAB на всех страницах, определение устройства
 - **Администрирование** — страница пользователей и статистики, горизонтальный скролл на мобиле
@@ -124,9 +129,11 @@ GET    /api/boards
 POST   /api/boards
 PATCH  /api/boards/:id
 DELETE /api/boards/:id
-GET    /api/boards/:bid/tasks
+GET    /api/boards/:bid/tasks          # query: assigneeId, priority, statusId, labelId, dueBefore, dueAfter
 POST   /api/boards/:bid/tasks
 PATCH  /api/boards/:bid/tasks/reorder
+PATCH  /api/boards/:bid/tasks/bulk     # bulk update (status, priority, assignee); max 100 ids
+POST   /api/boards/:bid/tasks/bulk-delete  # bulk delete with subtask cascade; max 100 ids
 
 GET    /api/tasks/:id
 PATCH  /api/tasks/:id
@@ -148,6 +155,10 @@ DELETE /api/comments/:id
 
 GET    /api/my-tasks
 GET    /api/roadmap/:boardId
+GET    /api/search?q=&limit=       # global task search, rate-limit 30/min
+GET    /api/notifications
+PATCH  /api/notifications/:id/read
+POST   /api/notifications/read-all
 GET    /api/users                  # admin only
 GET    /api/users/:id/stats        # admin only
 ```
@@ -191,6 +202,15 @@ flow-tasks/
 ```
 
 ## Changelog
+
+### v1.5.0 — Gap Analysis: 10 улучшений (2026-05-06)
+- **Серверные фильтры** доски (gap-02): assignee/priority/status/label/due
+- **Счётчики символов** (gap-06): комментарии и чеклисты, предупреждение при >90%
+- **Ограничение вложенности** подзадач 5 уровней (gap-07)
+- **Email opt-out + доп. триггеры** уведомлений (gap-08): @упоминания в задачах, назначение исполнителя
+- **Глобальный поиск** Cmd+K (gap-09): командная палитра, поиск по задачам
+- **Массовые операции** (gap-10): bulk-update статуса/приоритета/исполнителя и bulk-delete до 100 задач
+- Исправлен IDOR для labels, валидация assigneeId в workspace, пагинация комментариев
 
 ### v1.4.0 — SSO, Security Hardening & E2E CI (2026-05-05)
 - SSO через Keycloak и Avanpost (OIDC/PKCE), JIT-провижининг, режим SSO_ONLY
