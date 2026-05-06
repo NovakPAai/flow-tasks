@@ -70,9 +70,9 @@ export default function NotificationBell() {
       setUnread(prev => Math.max(0, prev - 1));
     }
     setOpen(false);
-    const { workspaceSlug, boardSlug } = n.payload;
+    const { workspaceSlug, boardSlug, taskId } = n.payload;
     if (workspaceSlug && boardSlug) {
-      navigate(`/w/${workspaceSlug}/boards/${boardSlug}`);
+      navigate(`/w/${workspaceSlug}/boards/${boardSlug}?taskId=${taskId}`);
     }
   };
 
@@ -109,9 +109,9 @@ export default function NotificationBell() {
 
       {open && (
         <div style={{
-          position: 'fixed', top: dropPos.top, right: dropPos.right, width: 320,
+          position: 'fixed', top: dropPos.top, right: dropPos.right, width: 380,
           background: bg, border: `1px solid ${border}`, borderRadius: 10,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.28)', zIndex: 9999,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.22)', zIndex: 9999,
           fontFamily: '"Inter",system-ui,sans-serif',
         }}>
           {/* Header */}
