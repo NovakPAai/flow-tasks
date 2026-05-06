@@ -6,6 +6,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
   let wsSlug: string;
   let wsId: string;
   let boardId: string;
+  let boardPrefix: string;
   let token: string;
   let firstStatusId: string;
 
@@ -17,6 +18,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
     const prefix = `V${uid().slice(0, 3).toUpperCase()}`;
     const board = await createBoard(token, wsId, `Views Board ${uid()}`, prefix);
     boardId = board.id;
+    boardPrefix = board.prefix.toLowerCase();
 
     const wsData = await getWorkspace(token, wsId);
     firstStatusId = wsData.workflows?.[0]?.statuses?.[0]?.id ?? '';
@@ -27,7 +29,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/w/${wsSlug}/boards/${boardId}`);
+    await page.goto(`/w/${wsSlug}/boards/${boardPrefix}`);
     await expect(page.getByText('Быстрое добавление...').first()).toBeVisible({ timeout: 10_000 });
   });
 
@@ -86,7 +88,7 @@ test.describe('Переключение видов (Kanban / List / Calendar)', 
     const viewSwitcher = page.locator('[style*="gap: 2px"]').first();
     await viewSwitcher.locator('button').nth(2).click();
     // Календарь загрузился
-    await expect(page).toHaveURL(new RegExp(`/boards/${boardId}`));
+    await expect(page).toHaveURL(new RegExp(`/boards/${boardPrefix}`));
   });
 
 });
