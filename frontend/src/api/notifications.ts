@@ -6,6 +6,8 @@ export interface MentionPayload {
   taskKey: string;
   mentionedBy: { id: string; name: string };
   context: 'task' | 'comment';
+  workspaceSlug: string;
+  boardSlug: string;
 }
 
 export interface Notification {

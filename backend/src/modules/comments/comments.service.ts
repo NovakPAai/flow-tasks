@@ -17,8 +17,12 @@ async function verifyTaskAccess(taskId: string, userId: string) {
   return member;
 }
 
-export async function listComments(taskId: string, userId: string) {
-  // Verify read access (any member can read)
+export async function listComments(
+  taskId: string,
+  userId: string,
+  limit = 50,
+  offset = 0,
+) {
   const task = await prisma.task.findUnique({ where: { id: taskId }, include: { board: true } });
   if (!task) throw new AppError(404, 'Task not found');
   const member = await prisma.workspaceMember.findUnique({
@@ -26,17 +30,30 @@ export async function listComments(taskId: string, userId: string) {
   });
   if (!member) throw new AppError(403, 'Access denied');
 
-  return prisma.comment.findMany({
-    where: { taskId },
-    orderBy: { createdAt: 'asc' },
-    include: { author: { select: AUTHOR_SELECT } },
-  });
+  const where = { taskId };
+  const [comments, total] = await prisma.$transaction([
+    prisma.comment.findMany({
+      where,
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      skip: offset,
+      include: { author: { select: AUTHOR_SELECT } },
+    }),
+    prisma.comment.count({ where }),
+  ]);
+  return { comments, total };
 }
 
 export async function createComment(taskId: string, userId: string, dto: CreateCommentDto) {
   await verifyTaskAccess(taskId, userId);
 
-  const task = await prisma.task.findUniqueOrThrow({ where: { id: taskId }, select: { title: true, issueKey: true } });
+  const task = await prisma.task.findUniqueOrThrow({
+    where: { id: taskId },
+    select: {
+      title: true, issueKey: true,
+      board: { select: { prefix: true, workspace: { select: { slug: true } } } },
+    },
+  });
   const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
 
   const comment = await prisma.comment.create({
@@ -50,6 +67,8 @@ export async function createComment(taskId: string, userId: string, dto: CreateC
     taskKey: task.issueKey,
     mentionedBy: author,
     context: 'comment',
+    workspaceSlug: task.board.workspace.slug,
+    boardSlug: task.board.prefix.toLowerCase(),
   }, userId);
 
   return comment;
@@ -67,7 +86,13 @@ export async function updateComment(commentId: string, userId: string, dto: Upda
   });
 
   // Emit notifications for newly added mentions (re-emit all — dedup by context is acceptable at this scale)
-  const task = await prisma.task.findUniqueOrThrow({ where: { id: comment.taskId }, select: { title: true, issueKey: true } });
+  const task = await prisma.task.findUniqueOrThrow({
+    where: { id: comment.taskId },
+    select: {
+      title: true, issueKey: true,
+      board: { select: { prefix: true, workspace: { select: { slug: true } } } },
+    },
+  });
   const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
   await emitMentionNotifications(dto.body, {
     taskId: comment.taskId,
@@ -75,6 +100,8 @@ export async function updateComment(commentId: string, userId: string, dto: Upda
     taskKey: task.issueKey,
     mentionedBy: author,
     context: 'comment',
+    workspaceSlug: task.board.workspace.slug,
+    boardSlug: task.board.prefix.toLowerCase(),
   }, userId);
 
   return updated;

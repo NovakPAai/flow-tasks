@@ -18,6 +18,7 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -58,13 +59,22 @@ export default function NotificationBell() {
       setUnread(prev => Math.max(0, prev - 1));
     }
     setOpen(false);
-    navigate(`/tasks/${n.payload.taskId}`);
+    const { workspaceSlug, boardSlug } = n.payload;
+    if (workspaceSlug && boardSlug) {
+      navigate(`/w/${workspaceSlug}/boards/${boardSlug}`);
+    }
   };
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => {
+          if (!open && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setDropPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+          }
+          setOpen(v => !v);
+        }}
         style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: muted, display: 'flex', alignItems: 'center' }}
         title="Уведомления"
       >
@@ -88,9 +98,9 @@ export default function NotificationBell() {
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 320,
+          position: 'fixed', top: dropPos.top, right: dropPos.right, width: 320,
           background: bg, border: `1px solid ${border}`, borderRadius: 10,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 500,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.28)', zIndex: 9999,
           fontFamily: '"Inter",system-ui,sans-serif',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${border}` }}>
