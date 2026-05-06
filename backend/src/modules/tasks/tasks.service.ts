@@ -513,16 +513,56 @@ export async function bulkUpdateTasks(
     if (!isMember) throw new AppError(400, 'Assignee is not a member of this workspace');
   }
 
-  const result = await prisma.task.updateMany({
+  // Fetch current state to compute history and status transitions
+  const current = await prisma.task.findMany({
     where: { id: { in: ids }, boardId },
-    data: {
-      ...(patch.statusId !== undefined && { statusId: patch.statusId }),
-      ...(patch.assigneeId !== undefined && { assigneeId: patch.assigneeId }),
-      ...(patch.priority !== undefined && { priority: patch.priority }),
-    },
+    select: { id: true, statusId: true, assigneeId: true, priority: true },
+  });
+  if (current.length === 0) return { updated: 0 };
+
+  const validIds = current.map(t => t.id);
+  const historyEntries: HistoryRecord[] = [];
+  const statusChangedIds: string[] = [];
+
+  for (const t of current) {
+    if (patch.statusId !== undefined && patch.statusId !== t.statusId) {
+      historyEntries.push({ taskId: t.id, userId, field: 'statusId', oldValue: t.statusId, newValue: patch.statusId });
+      statusChangedIds.push(t.id);
+    }
+    if (patch.assigneeId !== undefined && patch.assigneeId !== t.assigneeId) {
+      historyEntries.push({ taskId: t.id, userId, field: 'assigneeId', oldValue: t.assigneeId, newValue: patch.assigneeId });
+    }
+    if (patch.priority !== undefined && patch.priority !== t.priority) {
+      historyEntries.push({ taskId: t.id, userId, field: 'priority', oldValue: t.priority ?? null, newValue: patch.priority ?? null });
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.task.updateMany({
+      where: { id: { in: validIds }, boardId },
+      data: {
+        ...(patch.statusId !== undefined && { statusId: patch.statusId }),
+        ...(patch.assigneeId !== undefined && { assigneeId: patch.assigneeId }),
+        ...(patch.priority !== undefined && { priority: patch.priority }),
+      },
+    });
+
+    if (historyEntries.length > 0) {
+      await tx.taskHistory.createMany({ data: historyEntries });
+    }
+
+    if (statusChangedIds.length > 0) {
+      await tx.taskStatusHistory.updateMany({
+        where: { taskId: { in: statusChangedIds }, endedAt: null },
+        data: { endedAt: new Date() },
+      });
+      await tx.taskStatusHistory.createMany({
+        data: statusChangedIds.map(id => ({ taskId: id, statusId: patch.statusId! })),
+      });
+    }
   });
 
-  return { updated: result.count };
+  return { updated: validIds.length };
 }
 
 // ─── Bulk delete tasks ────────────────────────────────────────────────────────
