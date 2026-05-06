@@ -643,6 +643,7 @@ export default function TaskDrawer({
                 taskId={task.id}
                 comments={task.comments ?? []}
                 onCommentsChanged={handleCommentsChanged}
+                members={members}
               />
             )
 

@@ -1,5 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
+import { emitMentionNotifications } from '../notifications/notifications.service.js';
 import type { CreateCommentDto, UpdateCommentDto } from './comments.dto.js';
 
 const AUTHOR_SELECT = { id: true, name: true, avatar: true } as const;
@@ -35,10 +36,23 @@ export async function listComments(taskId: string, userId: string) {
 export async function createComment(taskId: string, userId: string, dto: CreateCommentDto) {
   await verifyTaskAccess(taskId, userId);
 
-  return prisma.comment.create({
+  const task = await prisma.task.findUniqueOrThrow({ where: { id: taskId }, select: { title: true, issueKey: true } });
+  const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
+
+  const comment = await prisma.comment.create({
     data: { taskId, authorId: userId, body: dto.body },
     include: { author: { select: AUTHOR_SELECT } },
   });
+
+  await emitMentionNotifications(dto.body, {
+    taskId,
+    taskTitle: task.title,
+    taskKey: task.issueKey,
+    mentionedBy: author,
+    context: 'comment',
+  }, userId);
+
+  return comment;
 }
 
 export async function updateComment(commentId: string, userId: string, dto: UpdateCommentDto) {
@@ -46,11 +60,24 @@ export async function updateComment(commentId: string, userId: string, dto: Upda
   if (!comment) throw new AppError(404, 'Comment not found');
   if (comment.authorId !== userId) throw new AppError(403, 'Only the author can edit this comment');
 
-  return prisma.comment.update({
+  const updated = await prisma.comment.update({
     where: { id: commentId },
     data: { body: dto.body },
     include: { author: { select: AUTHOR_SELECT } },
   });
+
+  // Emit notifications for newly added mentions (re-emit all — dedup by context is acceptable at this scale)
+  const task = await prisma.task.findUniqueOrThrow({ where: { id: comment.taskId }, select: { title: true, issueKey: true } });
+  const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
+  await emitMentionNotifications(dto.body, {
+    taskId: comment.taskId,
+    taskTitle: task.title,
+    taskKey: task.issueKey,
+    mentionedBy: author,
+    context: 'comment',
+  }, userId);
+
+  return updated;
 }
 
 export async function deleteComment(commentId: string, userId: string) {

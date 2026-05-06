@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
-import type { Comment } from '../types';
+import type { Comment, WorkspaceMember } from '../types';
 import * as commentsApi from '../api/comments';
 import { useAuthStore } from '../store/auth.store';
+import MentionTextarea from './MentionTextarea';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -36,10 +37,11 @@ interface Props {
   taskId: string;
   comments: Comment[];
   onCommentsChanged: (comments: Comment[]) => void;
+  members?: WorkspaceMember[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function CommentThread({ taskId, comments, onCommentsChanged }: Props) {
+export default function CommentThread({ taskId, comments, onCommentsChanged, members = [] }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
   const c = isDark ? DARK : LIGHT;
@@ -250,18 +252,13 @@ export default function CommentThread({ taskId, comments, onCommentsChanged }: P
           </span>
         </div>
         <div style={{ flex: 1 }}>
-          <textarea
+          <MentionTextarea
             value={newBody}
-            onChange={e => setNewBody(e.target.value)}
-            placeholder="Написать комментарий..."
+            onChange={setNewBody}
+            members={members}
+            placeholder="Написать комментарий... (@имя для упоминания)"
             rows={2}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
-            style={{
-              ...textareaStyle(false),
-              color: newBody ? c.inputText : c.inputPlaceholder,
-            }}
-            onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorderFocus; }}
-            onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = c.inputBorder; }}
+            style={textareaStyle(false)}
           />
           {newBody.trim() && (
             <button
