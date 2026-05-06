@@ -31,6 +31,21 @@ const LIGHT: C = {
   addBtnBg: '#FDFCFF', addBtnBorder: '#E8E5F0', addBtnText: '#6B7194',
 };
 
+// ── Character limits ──────────────────────────────────────────────────────────
+const CHECKLIST_TITLE_MAX = 200;
+const ITEM_TITLE_MAX = 500;
+
+function CharCounter({ len, max, dimColor }: { len: number; max: number; dimColor: string }) {
+  return (
+    <span style={{
+      fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, flexShrink: 0,
+      color: len >= max ? '#EF4444' : len > max * 0.9 ? '#F59E0B' : dimColor,
+    }}>
+      {len}/{max}
+    </span>
+  );
+}
+
 // ── Props ──────────────────────────────────────────────────────────────────────
 interface Props {
   taskId: string;
@@ -243,7 +258,7 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
 
             {/* Add item */}
             {addingItem === checklist.id ? (
-              <div style={{ display: 'flex', gap: 6, marginTop: 4, paddingLeft: 23 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, paddingLeft: 23 }}>
                 <input
                   value={newItemTitle}
                   onChange={e => setNewItemTitle(e.target.value)}
@@ -257,9 +272,11 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
                   }}
                   placeholder="Добавить пункт..."
                   autoFocus
+                  maxLength={ITEM_TITLE_MAX}
                   style={{ ...inputStyle, flex: 1 }}
                   onFocus={e => { (e.target as HTMLInputElement).style.borderColor = c.inputBorderFocus; }}
                 />
+                {newItemTitle.length > 0 && <CharCounter len={newItemTitle.length} max={ITEM_TITLE_MAX} dimColor={c.addText} />}
               </div>
             ) : (
               <button
@@ -285,15 +302,19 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
 
       {/* New checklist input */}
       <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-        <input
-          value={addingTitle}
-          onChange={e => setAddingTitle(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') addChecklist(); }}
-          placeholder="Добавить чеклист..."
-          style={{ ...inputStyle, flex: 1 }}
-          onFocus={e => { (e.target as HTMLInputElement).style.borderColor = c.inputBorderFocus; }}
-          onBlur={e => { (e.target as HTMLInputElement).style.borderColor = c.inputBorder; }}
-        />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <input
+            value={addingTitle}
+            onChange={e => setAddingTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addChecklist(); }}
+            placeholder="Добавить чеклист..."
+            maxLength={CHECKLIST_TITLE_MAX}
+            style={{ ...inputStyle, flex: 1 }}
+            onFocus={e => { (e.target as HTMLInputElement).style.borderColor = c.inputBorderFocus; }}
+            onBlur={e => { (e.target as HTMLInputElement).style.borderColor = c.inputBorder; }}
+          />
+          {addingTitle.length > 0 && <CharCounter len={addingTitle.length} max={CHECKLIST_TITLE_MAX} dimColor={c.addText} />}
+        </div>
         <button
           onClick={addChecklist}
           disabled={!addingTitle.trim()}
