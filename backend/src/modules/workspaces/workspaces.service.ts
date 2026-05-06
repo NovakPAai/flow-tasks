@@ -131,12 +131,17 @@ export async function getWorkspace(workspaceId: string, userId: string) {
 export async function updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
   await assertOwner(workspaceId, userId);
 
+  const current = await prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId }, select: { name: true, isPrivate: true } });
+
   const updated = await prisma.workspace.update({
     where: { id: workspaceId },
     data: dto,
   });
 
-  await logEvent(workspaceId, userId, 'workspace_updated', 'workspace', workspaceId, dto as Record<string, unknown>);
+  const meta: Record<string, unknown> = {};
+  if (dto.name !== undefined && dto.name !== current.name) { meta.nameFrom = current.name; meta.nameTo = dto.name; }
+  if (dto.isPrivate !== undefined && dto.isPrivate !== current.isPrivate) meta.isPrivate = dto.isPrivate;
+  await logEvent(workspaceId, userId, 'workspace_updated', 'workspace', workspaceId, meta);
 
   return updated;
 }

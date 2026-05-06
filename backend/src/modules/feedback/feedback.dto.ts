@@ -18,7 +18,7 @@ export const feedbackDto = z.object({
   type: z.enum(['bug', 'idea'], { message: 'Тип должен быть bug или idea' }),
   // multipart sends meta as a JSON string; preprocess handles both cases
   meta: z.preprocess(
-    (v) => (typeof v === 'string' ? JSON.parse(v) : v),
+    (v) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return undefined; } },
     metaSchema,
   ).optional(),
 });
