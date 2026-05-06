@@ -11,11 +11,39 @@ export interface MentionPayload {
   body?: string;
 }
 
+export interface TaskAssignedPayload {
+  taskId: string;
+  taskTitle: string;
+  taskKey: string;
+  workspaceSlug: string;
+  boardSlug: string;
+  actor: { id: string; name: string };
+}
+
+export interface CommentAddedPayload {
+  taskId: string;
+  taskTitle: string;
+  taskKey: string;
+  workspaceSlug: string;
+  boardSlug: string;
+  actor: { id: string; name: string };
+}
+
+export interface MemberAddedPayload {
+  workspaceId: string;
+  workspaceName: string;
+  workspaceSlug: string;
+  actor: { id: string; name: string };
+}
+
+export type NotificationType = 'mention' | 'task_assigned' | 'comment_added' | 'member_added';
+export type NotificationPayload = MentionPayload | TaskAssignedPayload | CommentAddedPayload | MemberAddedPayload;
+
 export interface Notification {
   id: string;
   userId: string;
-  type: string;
-  payload: MentionPayload;
+  type: NotificationType;
+  payload: NotificationPayload;
   isRead: boolean;
   createdAt: string;
 }

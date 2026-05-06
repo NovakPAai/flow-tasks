@@ -262,17 +262,19 @@ export default function ProfilePage() {
 
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
+  const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
   const [saving, setSaving] = useState(false);
 
-  const hasChanges = name !== (user?.name ?? '') || email !== (user?.email ?? '');
+  const hasChanges = name !== (user?.name ?? '') || email !== (user?.email ?? '') || emailNotifications !== (user?.emailNotifications ?? true);
 
   const handleSave = async () => {
     if (!hasChanges) return;
     setSaving(true);
     try {
-      const data: { name?: string; email?: string } = {};
+      const data: { name?: string; email?: string; emailNotifications?: boolean } = {};
       if (name !== user?.name) data.name = name;
       if (email !== user?.email) data.email = email;
+      if (emailNotifications !== (user?.emailNotifications ?? true)) data.emailNotifications = emailNotifications;
       await updateProfile(data);
       message.success('Профиль обновлён');
     } catch (err: unknown) {
@@ -353,6 +355,34 @@ export default function ProfilePage() {
               lineHeight: '16px', outline: 'none', padding: '11px 14px', width: '100%',
             }}
           />
+        </div>
+
+        {/* Email notifications toggle */}
+        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ color: c.label, fontFamily: INTER, fontSize: 12, fontWeight: 500, lineHeight: '16px', marginBottom: 2 }}>
+              Email-уведомления
+            </div>
+            <div style={{ color: c.muted, fontFamily: INTER, fontSize: 12, lineHeight: '16px' }}>
+              Назначение задач, комментарии, добавление в воркспейс
+            </div>
+          </div>
+          <button
+            onClick={() => setEmailNotifications(v => !v)}
+            style={{
+              width: 40, height: 22, borderRadius: 11, border: 'none',
+              background: emailNotifications ? c.accent : c.inputBorder,
+              position: 'relative', cursor: 'pointer', flexShrink: 0,
+              transition: 'background 0.2s',
+            }}
+            title={emailNotifications ? 'Выключить email-уведомления' : 'Включить email-уведомления'}
+          >
+            <span style={{
+              position: 'absolute', top: 3, left: emailNotifications ? 21 : 3,
+              width: 16, height: 16, borderRadius: '50%', background: '#fff',
+              transition: 'left 0.2s',
+            }} />
+          </button>
         </div>
 
         {/* Save button */}

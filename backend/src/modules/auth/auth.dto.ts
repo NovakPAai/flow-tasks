@@ -23,7 +23,8 @@ export const refreshDto = z.object({
 export const updateProfileDto = z.object({
   name: stripHtml(z.string().min(1).max(255)).optional(),
   email: z.string().email().optional(),
-}).refine((d) => d.name !== undefined || d.email !== undefined, {
+  emailNotifications: z.boolean().optional(),
+}).refine((d) => d.name !== undefined || d.email !== undefined || d.emailNotifications !== undefined, {
   message: 'Укажите хотя бы одно поле для обновления',
 });
 

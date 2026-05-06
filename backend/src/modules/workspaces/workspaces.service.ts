@@ -1,6 +1,7 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { createDefaultWorkflow } from '../workflows/workflows.service.js';
+import { emitMemberAddedNotification } from '../notifications/notifications.service.js';
 import type { CreateWorkspaceDto, UpdateWorkspaceDto, AddMemberDto, UpdateMemberRoleDto, InviteByEmailDto } from './workspaces.dto.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -174,10 +175,12 @@ export async function addMember(workspaceId: string, requesterId: string, dto: A
   });
   if (existing) throw new AppError(409, 'User is already a member');
 
-  return prisma.workspaceMember.create({
+  const member = await prisma.workspaceMember.create({
     data: { workspaceId, userId: dto.userId, role: dto.role },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
+  emitMemberAddedNotification(workspaceId, dto.userId, requesterId).catch(() => {});
+  return member;
 }
 
 export async function updateMemberRole(
@@ -219,6 +222,8 @@ export async function inviteByEmail(workspaceId: string, requesterId: string, dt
     data: { workspaceId, userId: targetUser.id, role: dto.role },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
+
+  emitMemberAddedNotification(workspaceId, targetUser.id, requesterId).catch(() => {});
 
   await logEvent(workspaceId, requesterId, 'member_added', 'member', targetUser.id, {
     name: targetUser.name,
