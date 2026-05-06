@@ -1,5 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
+import { emitMentionNotifications } from '../notifications/notifications.service.js';
 import type { CreateTaskDto, UpdateTaskDto, TaskFiltersDto, MyTasksFiltersDto } from './tasks.dto.js';
 import type { Prisma } from '@prisma/client';
 
@@ -169,36 +170,58 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
   });
   const orderIndex = (maxOrder._max.orderIndex ?? -1) + 1;
 
-  const task = await prisma.task.create({
-    data: {
-      boardId,
-      statusId,
-      title: dto.title,
-      description: dto.description,
-      priority: dto.priority,
-      dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
-      startDate: dto.startDate ? new Date(dto.startDate) : undefined,
-      assigneeId: dto.assigneeId,
-      creatorId: userId,
-      parentId: dto.parentId,
-      issueKey,
-      issueNumber,
-      path,
-      depth,
-      orderIndex,
-    },
-    omit: { assigneeId: true },
-    include: {
-      assignee: { select: { id: true, name: true, avatar: true } },
-      status: { select: { id: true, name: true, color: true, category: true } },
-      _count: { select: { children: true } },
-    },
+  // Membership check + write are atomic to prevent TOCTOU if assignee is removed mid-request.
+  const task = await prisma.$transaction(async (tx) => {
+    if (dto.assigneeId != null) {
+      const member = await tx.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: board.workspaceId, userId: dto.assigneeId } },
+        select: { userId: true },
+      });
+      if (!member) throw new AppError(400, 'Assignee is not a member of this workspace');
+    }
+
+    const created = await tx.task.create({
+      data: {
+        boardId,
+        statusId,
+        title: dto.title,
+        description: dto.description,
+        priority: dto.priority,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+        assigneeId: dto.assigneeId,
+        creatorId: userId,
+        parentId: dto.parentId,
+        issueKey,
+        issueNumber,
+        path,
+        depth,
+        orderIndex,
+      },
+      omit: { assigneeId: true },
+      include: {
+        assignee: { select: { id: true, name: true, avatar: true } },
+        status: { select: { id: true, name: true, color: true, category: true } },
+        _count: { select: { children: true } },
+      },
+    });
+
+    // Открываем первую запись истории статусов
+    await tx.taskStatusHistory.create({ data: { taskId: created.id, statusId } });
+
+    return created;
   });
 
-  // Открываем первую запись истории статусов
-  await prisma.taskStatusHistory.create({
-    data: { taskId: task.id, statusId },
-  });
+  if (dto.description) {
+    const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
+    await emitMentionNotifications(dto.description, {
+      taskId: task.id,
+      taskTitle: task.title,
+      taskKey: task.issueKey,
+      mentionedBy: author,
+      context: 'task',
+    }, userId);
+  }
 
   return task;
 }
@@ -302,8 +325,19 @@ export async function updateTask(taskId: string, userId: string, dto: UpdateTask
   }
   const historyEntries = makeHistoryEntries(taskId, userId, before, data);
 
-  const [updated] = await prisma.$transaction([
-    prisma.task.update({
+  // Run membership check + write atomically so a concurrent membership removal
+  // cannot slip between the validation and the UPDATE.
+  // null = explicit unassign (skip check); undefined = field not in payload.
+  const updated = await prisma.$transaction(async (tx) => {
+    if (dto.assigneeId != null) {
+      const member = await tx.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: current.board.workspaceId, userId: dto.assigneeId } },
+        select: { userId: true },
+      });
+      if (!member) throw new AppError(400, 'Assignee is not a member of this workspace');
+    }
+
+    const result = await tx.task.update({
       where: { id: taskId },
       data,
       omit: { assigneeId: true },
@@ -313,9 +347,21 @@ export async function updateTask(taskId: string, userId: string, dto: UpdateTask
         labels: { include: { label: { select: { id: true, name: true, color: true } } } },
         _count: { select: { children: true } },
       },
-    }),
-    ...historyEntries.map((e) => prisma.taskHistory.create({ data: e })),
-  ]);
+    });
+    await Promise.all(historyEntries.map((e) => tx.taskHistory.create({ data: e })));
+    return result;
+  });
+
+  if (dto.description !== undefined) {
+    const author = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { id: true, name: true } });
+    await emitMentionNotifications(dto.description, {
+      taskId,
+      taskTitle: updated.title,
+      taskKey: updated.issueKey,
+      mentionedBy: author,
+      context: 'task',
+    }, userId);
+  }
 
   return updated;
 }
