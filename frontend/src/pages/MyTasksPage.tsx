@@ -1,23 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useBreakpoint } from '../utils/useBreakpoint';
 import * as tasksApi from '../api/tasks';
-import * as boardsApi from '../api/boards';
-import * as workspacesApi from '../api/workspaces';
-import * as labelsApi from '../api/labels';
 import type { MyTask } from '../api/tasks';
-import type { WorkflowStatus, WorkspaceMember, Label } from '../types';
-import TaskDrawer from '../components/TaskDrawer';
-
-interface BoardContext {
-  statuses: WorkflowStatus[];
-  members: WorkspaceMember[];
-  labels: Label[];
-  workspaceId: string;
-}
+import TaskAccordionPanel from '../components/TaskAccordionPanel';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -50,6 +39,9 @@ const PRIO: Record<string, { bg: string; text: string }> = {
 // ── Due preset helpers ─────────────────────────────────────────────────────────
 type DuePreset = '' | 'today' | 'this_week' | 'overdue' | 'no_date';
 
+// Task IDs are cuid/cuid2 — validated before trusting URL params
+const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
+
 // ── Workspace icon colors ──────────────────────────────────────────────────────
 const WS_COLORS = ['#22C55E', '#4F6EF7', '#8B5CF6', '#F59E0B', '#EC4899', '#0EA5E9'];
 function wsColor(name: string): string {
@@ -59,6 +51,7 @@ function wsColor(name: string): string {
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function MyTasksPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const mode = useThemeStore((s) => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
   const bp = useBreakpoint();
@@ -72,13 +65,20 @@ export default function MyTasksPage() {
   const [search, setSearch] = useState('');
   const offsetRef = useRef(0);
 
-  // Drawer state
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [drawerCtx, setDrawerCtx] = useState<BoardContext | null>(null);
-  const [drawerBoardId, setDrawerBoardId] = useState<string | null>(null);
-  const boardCtxCache = useRef<Map<string, BoardContext>>(new Map());
-  // Tracks the boardId of the in-flight fetch; used to discard stale responses on rapid clicks
-  const fetchingBoardIdRef = useRef<string | null>(null);
+  // Accordion state — one open at a time; initialized and synced from ?open= URL param
+  const rawOpen = searchParams.get('open');
+  const [openAccordionId, setOpenAccordionId] = useState<string | null>(
+    () => rawOpen && TASK_ID_RE.test(rawOpen) ? rawOpen : null,
+  );
+
+  // Keep accordion in sync when URL changes (e.g. browser Back within My Tasks)
+  useEffect(() => {
+    const id = searchParams.get('open');
+    setOpenAccordionId(id && TASK_ID_RE.test(id) ? id : null);
+  }, [searchParams]);
+
+  // Ref map for scroll-to-open after tasks load
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const fetchTasks = useCallback(async (preset: DuePreset, q: string, replace: boolean) => {
     const offset = replace ? 0 : offsetRef.current;
@@ -104,49 +104,34 @@ export default function MyTasksPage() {
     offsetRef.current = 0;
     const timer = setTimeout(() => { fetchTasks(duePreset, search, true); }, search ? 300 : 0);
     return () => clearTimeout(timer);
-  }, [duePreset, search, fetchTasks]);
+  }, [duePreset, search]); // fetchTasks is stable (empty useCallback deps)
 
-  const openDrawer = useCallback(async (task: MyTask) => {
-    const { id: boardId, workspace } = task.board;
-
-    const cached = boardCtxCache.current.get(boardId);
-    if (cached) {
-      setDrawerCtx(cached);
-      setDrawerBoardId(boardId);
-      setSelectedTaskId(task.id);
-      return;
+  // Scroll to restored accordion after tasks load
+  useEffect(() => {
+    if (!loading && openAccordionId) {
+      const el = rowRefs.current.get(openAccordionId);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+  }, [loading, openAccordionId]);
 
-    // Mark this boardId as in-flight; any concurrent click will overwrite this ref
-    fetchingBoardIdRef.current = boardId;
-    try {
-      const [board, members, labels] = await Promise.all([
-        boardsApi.getBoard(boardId),
-        workspacesApi.listMembers(workspace.id),
-        labelsApi.listLabels(workspace.id),
-      ]);
-      // Discard result if another click started a newer fetch
-      if (fetchingBoardIdRef.current !== boardId) return;
-      const ctx: BoardContext = {
-        statuses: board.workflow.statuses,
-        members,
-        labels,
-        workspaceId: workspace.id,
-      };
-      boardCtxCache.current.set(boardId, ctx);
-      setDrawerCtx(ctx);
-      setDrawerBoardId(boardId);
-      setSelectedTaskId(task.id);
-    } catch {
-      if (fetchingBoardIdRef.current === boardId) {
-        message.error('Не удалось загрузить данные задачи');
-      }
-    } finally {
-      if (fetchingBoardIdRef.current === boardId) {
-        fetchingBoardIdRef.current = null;
-      }
-    }
-  }, []);
+  // Capture "now" once per render cycle to avoid per-task Date allocation and clock drift
+  const now = useMemo(() => new Date(), []);
+
+  const toggleAccordion = useCallback((taskId: string) => {
+    setOpenAccordionId((prev) => {
+      const next = prev === taskId ? null : taskId;
+      setSearchParams(next ? { open: next } : {}, { replace: true });
+      return next;
+    });
+  }, [setSearchParams]);
+
+  const openInBoard = useCallback((task: MyTask) => {
+    navigate(
+      `/w/${task.board.workspace.slug}/boards/${task.board.prefix.toLowerCase()}` +
+        `?from=my-tasks&open=${task.id}`,
+      { state: { openTaskId: task.id } },
+    );
+  }, [navigate]);
 
   // Group by workspace → board
   const grouped = useMemo(() => {
@@ -371,106 +356,147 @@ export default function MyTasksPage() {
                       {board.tasks.map((task, idx) => {
                         const isDone = task.status?.category === 'DONE';
                         const due = task.dueDate ? new Date(task.dueDate) : null;
-                        const isOverdue = due && due < new Date() && !isDone;
+                        const isOverdue = due !== null && due < now && !isDone;
                         const prio = task.priority ? PRIO[task.priority] : null;
                         const statusColor = task.status?.color ?? '#484F58';
+                        const isOpen = openAccordionId === task.id;
 
                         return (
-                          <div
-                            key={task.id}
-                            onClick={() => openDrawer(task)}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: bp === 'mobile' ? 8 : 12,
-                              padding: bp === 'mobile' ? '10px 12px' : '11px 16px',
-                              minWidth: 0,
-                              background: isOverdue
-                                ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
-                                : c.rowBg,
-                              borderBottom: idx < board.tasks.length - 1
-                                ? `1px solid ${c.border}` : 'none',
-                              borderLeft: `3px solid ${statusColor}`,
-                              cursor: 'pointer', transition: 'background 0.12s',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLElement).style.background =
-                                mode === 'light' ? '#F0EEF8' : '#131729';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.background = isOverdue
-                                ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
-                                : c.rowBg;
-                            }}
-                          >
-                            {/* Status circle */}
-                            <div style={{
-                              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: isDone ? '#22C55E' : 'transparent',
-                              border: isDone ? 'none' : `2px solid ${statusColor}`,
-                            }}>
-                              {isDone && (
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                                  <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <div key={task.id} ref={(el) => { if (el) rowRefs.current.set(task.id, el); else rowRefs.current.delete(task.id); }}>
+                            {/* Task row */}
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              aria-expanded={isOpen}
+                              aria-controls={`accordion-${task.id}`}
+                              onClick={() => toggleAccordion(task.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  toggleAccordion(task.id);
+                                }
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: bp === 'mobile' ? 8 : 12,
+                                padding: bp === 'mobile' ? '10px 12px' : '11px 16px',
+                                minWidth: 0,
+                                background: isOpen
+                                  ? (mode === 'light' ? '#EDE9FE' : '#111526')
+                                  : isOverdue
+                                    ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
+                                    : c.rowBg,
+                                borderBottom: (!isOpen && idx < board.tasks.length - 1)
+                                  ? `1px solid ${c.border}` : 'none',
+                                borderLeft: `3px solid ${isOpen ? '#4F6EF7' : statusColor}`,
+                                cursor: 'pointer', transition: 'background 0.12s',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isOpen) {
+                                  (e.currentTarget as HTMLElement).style.background =
+                                    mode === 'light' ? '#F0EEF8' : '#131729';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isOpen) {
+                                  (e.currentTarget as HTMLElement).style.background = isOverdue
+                                    ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
+                                    : c.rowBg;
+                                }
+                              }}
+                            >
+                              {/* Status circle */}
+                              <div style={{
+                                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: isDone ? '#22C55E' : 'transparent',
+                                border: isDone ? 'none' : `2px solid ${statusColor}`,
+                              }}>
+                                {isDone && (
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                    <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </div>
+
+                              {/* Key */}
+                              <span style={{
+                                fontSize: 11, color: c.key, letterSpacing: '0.02em',
+                                fontFamily: '"Inter",system-ui,sans-serif',
+                                flexShrink: 0, minWidth: 52,
+                              }}>
+                                {task.issueKey}
+                              </span>
+
+                              {/* Title */}
+                              <span style={{
+                                fontSize: 13, color: isDone ? c.muted : c.text,
+                                textDecoration: isDone ? 'line-through' : 'none',
+                                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}>
+                                {task.title}
+                              </span>
+
+                              {/* Right side: status + priority + due */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                {task.status && bp !== 'mobile' && (
+                                  <span style={{
+                                    fontSize: 11, fontWeight: 500,
+                                    color: task.status.color,
+                                    background: `${task.status.color}18`,
+                                    borderRadius: 5, padding: '2px 7px',
+                                  }}>
+                                    {task.status.name}
+                                  </span>
+                                )}
+                                {prio && bp !== 'mobile' && (
+                                  <span style={{
+                                    fontSize: 10, fontWeight: 600,
+                                    color: prio.text, background: prio.bg,
+                                    borderRadius: 4, padding: '2px 6px',
+                                    letterSpacing: '0.04em',
+                                  }}>
+                                    {task.priority === 'MEDIUM' ? 'MED' : task.priority}
+                                  </span>
+                                )}
+                                {due && (
+                                  <span style={{
+                                    fontSize: 11,
+                                    color: isOverdue ? '#EF4444' : c.muted,
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    {isOverdue && bp !== 'mobile' ? 'Просрочено · ' : ''}
+                                    {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
+
+                                {/* Chevron — far right, standard accordion position */}
+                                <svg
+                                  aria-hidden="true"
+                                  width="12" height="12" viewBox="0 0 12 12" fill="none"
+                                  style={{
+                                    flexShrink: 0, marginLeft: 4,
+                                    transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                                    transition: 'transform 0.15s',
+                                    color: isOpen ? '#4F6EF7' : c.muted,
+                                  }}
+                                >
+                                  <path d="M4 2.5L7.5 6L4 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                              )}
+                              </div>
                             </div>
 
-                            {/* Key */}
-                            <span style={{
-                              fontSize: 11, color: c.key, letterSpacing: '0.02em',
-                              fontFamily: '"Inter",system-ui,sans-serif',
-                              flexShrink: 0, minWidth: 52,
-                            }}>
-                              {task.issueKey}
-                            </span>
-
-                            {/* Title */}
-                            <span style={{
-                              fontSize: 13, color: isDone ? c.muted : c.text,
-                              textDecoration: isDone ? 'line-through' : 'none',
-                              flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                            }}>
-                              {task.title}
-                            </span>
-
-                            {/* Right side: status + priority + due */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                              {/* Status badge — hidden on mobile to save space */}
-                              {task.status && bp !== 'mobile' && (
-                                <span style={{
-                                  fontSize: 11, fontWeight: 500,
-                                  color: task.status.color,
-                                  background: `${task.status.color}18`,
-                                  borderRadius: 5, padding: '2px 7px',
-                                }}>
-                                  {task.status.name}
-                                </span>
-                              )}
-
-                              {/* Priority badge — hidden on mobile */}
-                              {prio && bp !== 'mobile' && (
-                                <span style={{
-                                  fontSize: 10, fontWeight: 600,
-                                  color: prio.text, background: prio.bg,
-                                  borderRadius: 4, padding: '2px 6px',
-                                  letterSpacing: '0.04em',
-                                }}>
-                                  {task.priority === 'MEDIUM' ? 'MED' : task.priority}
-                                </span>
-                              )}
-
-                              {/* Due date — compact on mobile */}
-                              {due ? (
-                                <span style={{
-                                  fontSize: 11,
-                                  color: isOverdue ? '#EF4444' : c.muted,
-                                  whiteSpace: 'nowrap',
-                                }}>
-                                  {isOverdue && bp !== 'mobile' ? 'Просрочено · ' : ''}
-                                  {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-                                </span>
-                              ) : null}
-                            </div>
+                            {/* Accordion panel */}
+                            {isOpen && (
+                              <TaskAccordionPanel
+                                id={`accordion-${task.id}`}
+                                task={task}
+                                colors={c}
+                                isDark={mode === 'dark'}
+                                bp={bp}
+                                now={now}
+                                onOpenInBoard={openInBoard}
+                              />
+                            )}
                           </div>
                         );
                       })}
@@ -502,29 +528,6 @@ export default function MyTasksPage() {
         </div>
       )}
 
-      <TaskDrawer
-        taskId={selectedTaskId}
-        statuses={drawerCtx?.statuses ?? []}
-        members={drawerCtx?.members ?? []}
-        workspaceId={drawerCtx?.workspaceId}
-        boardId={drawerBoardId ?? undefined}
-        workspaceLabels={drawerCtx?.labels ?? []}
-        onClose={() => {
-          setSelectedTaskId(null);
-          setDrawerBoardId(null);
-          setDrawerCtx(null);
-        }}
-        onUpdated={(updated) =>
-          setAllTasks((prev) =>
-            prev.map((t) =>
-              t.id === updated.id ? { ...t, ...updated, board: t.board } : t,
-            ),
-          )
-        }
-        onDeleted={(id) =>
-          setAllTasks((prev) => prev.filter((t) => t.id !== id))
-        }
-      />
     </div>
   );
 }

@@ -24,6 +24,8 @@ import FilterBar from '../components/FilterBar';
 import BulkActionBar from '../components/BulkActionBar';
 
 type ViewMode = 'board' | 'list' | 'calendar' | 'roadmap';
+
+const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
 type Columns = Record<string, Task[]>;
 
 function groupByStatus(tasks: Task[], statuses: WorkflowStatus[]): Columns {
@@ -186,20 +188,23 @@ export default function BoardPage() {
   const [addTitle, setAddTitle] = useState('');
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const fromMyTasks = searchParams.get('from') === 'my-tasks';
+  const rawMyTasksOpen = searchParams.get('open');
+  const myTasksOpenId = rawMyTasksOpen && TASK_ID_RE.test(rawMyTasksOpen) ? rawMyTasksOpen : null;
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const v = searchParams.get('view');
     return (v === 'roadmap' || v === 'list' || v === 'calendar') ? v : 'board';
   });
 
-  // Auto-open drawer when navigated from a notification (via router state)
+  // Auto-open drawer when navigated from accordion "Открыть" or notification
   useEffect(() => {
     const state = location.state as { openTaskId?: string } | null;
     if (state?.openTaskId) {
       setSelectedTaskId(state.openTaskId);
-      // Clear state so back navigation doesn't re-trigger
-      window.history.replaceState({}, '', location.pathname + location.search);
+      // Use React Router navigate to clear state so back-navigation doesn't re-trigger
+      navigate(location.pathname + location.search, { replace: true, state: null });
     }
-  }, [location.state, location.pathname, location.search]);
+  }, [location.state]); // eslint-disable-line react-hooks/exhaustive-deps
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
@@ -579,12 +584,20 @@ export default function BoardPage() {
       }}>
         {/* Back */}
         <button
-          onClick={() => navigate(-1)}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: addText, flexShrink: 0 }}
+          onClick={() => fromMyTasks
+            ? navigate(`/my-tasks${myTasksOpenId ? `?open=${myTasksOpenId}` : ''}`)
+            : navigate(-1)
+          }
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', gap: 4, color: addText, flexShrink: 0 }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8L10 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
+          {fromMyTasks && (
+            <span style={{ fontSize: 12, fontFamily: '"Inter",system-ui,sans-serif', color: addText }}>
+              Мои задачи
+            </span>
+          )}
         </button>
 
         {/* Board name + task count */}
