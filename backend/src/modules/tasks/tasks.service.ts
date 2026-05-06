@@ -1,6 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
-import { emitMentionNotifications } from '../notifications/notifications.service.js';
+import { emitMentionNotifications, emitTaskAssignedNotification } from '../notifications/notifications.service.js';
 import type { CreateTaskDto, UpdateTaskDto, TaskFiltersDto, MyTasksFiltersDto } from './tasks.dto.js';
 import type { Prisma } from '@prisma/client';
 
@@ -232,6 +232,10 @@ export async function createTask(boardId: string, userId: string, dto: CreateTas
     }, userId);
   }
 
+  if (dto.assigneeId && dto.assigneeId !== userId) {
+    emitTaskAssignedNotification(task.id, dto.assigneeId, userId).catch(() => {});
+  }
+
   return task;
 }
 
@@ -372,6 +376,12 @@ export async function updateTask(taskId: string, userId: string, dto: UpdateTask
       mentionedBy: author,
       context: 'task',
     }, userId);
+  }
+
+  // Notify new assignee if assignee changed
+  const newAssigneeId = dto.assigneeId;
+  if (newAssigneeId !== undefined && newAssigneeId !== current.assigneeId && newAssigneeId) {
+    emitTaskAssignedNotification(taskId, newAssigneeId, userId).catch(() => {});
   }
 
   return updated;

@@ -13,3 +13,18 @@ export const stripHtml = (schema: z.ZodString) =>
   z.string()
     .transform(val => sanitizeHtml(val, PLAIN_TEXT_OPTIONS).trim())
     .pipe(schema);
+
+// Escape special HTML characters for safe interpolation into HTML strings.
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Strip newlines from strings that flow into email headers to prevent header injection.
+export function sanitizeEmailHeader(s: string): string {
+  return s.replace(/[\r\n]/g, ' ').trim();
+}

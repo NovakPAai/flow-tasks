@@ -10,7 +10,7 @@ interface AuthState {
   register: (email: string, password: string, name: string) => Promise<string>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
-  updateProfile: (data: { name?: string; email?: string }) => Promise<void>;
+  updateProfile: (data: { name?: string; email?: string; emailNotifications?: boolean }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({

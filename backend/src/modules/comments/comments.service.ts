@@ -1,6 +1,6 @@
 import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
-import { emitMentionNotifications } from '../notifications/notifications.service.js';
+import { emitMentionNotifications, emitCommentNotification } from '../notifications/notifications.service.js';
 import type { CreateCommentDto, UpdateCommentDto } from './comments.dto.js';
 
 const AUTHOR_SELECT = { id: true, name: true, avatar: true } as const;
@@ -70,6 +70,8 @@ export async function createComment(taskId: string, userId: string, dto: CreateC
     workspaceSlug: task.board.workspace.slug,
     boardSlug: task.board.prefix.toLowerCase(),
   }, userId);
+
+  emitCommentNotification(taskId, userId).catch(() => {});
 
   return comment;
 }

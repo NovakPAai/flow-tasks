@@ -49,3 +49,21 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
 
   logger.info('email_sent', { action: 'password_reset' });
 }
+
+export async function sendNotificationEmail(to: string, subject: string, html: string, text: string): Promise<void> {
+  if (!isConfigured()) {
+    logger.warn('email_not_configured', { action: 'notification', subject });
+    return;
+  }
+
+  const transport = createTransport();
+  await transport.sendMail({
+    from: `"FlowTask" <${config.SMTP_FROM}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  logger.info('email_sent', { action: 'notification', subject });
+}

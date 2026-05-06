@@ -207,14 +207,15 @@ export async function updateProfile(userId: string, dto: UpdateProfileDto) {
     dto = { ...dto, email: normalizedEmail };
   }
 
-  const data: Record<string, string> = {};
+  const data: Record<string, unknown> = {};
   if (dto.name !== undefined) data.name = dto.name;
   if (dto.email !== undefined) data.email = dto.email;
+  if (dto.emailNotifications !== undefined) data.emailNotifications = dto.emailNotifications;
 
   const user = await prisma.user.update({
     where: { id: userId },
     data,
-    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
+    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true, emailNotifications: true },
   });
   const firstName = extractFirstName(user.name);
   return { ...user, firstName };
@@ -223,7 +224,7 @@ export async function updateProfile(userId: string, dto: UpdateProfileDto) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true, isSuperadmin: true },
+    select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true, isSuperadmin: true, emailNotifications: true },
   });
   if (!user) throw new AppError(404, 'Пользователь не найден');
   const firstName = extractFirstName(user.name);

@@ -18,12 +18,13 @@ model User {
   keycloakId    String?   @unique                     // legacy — will be migrated to ssoSubjectId
   ssoSubjectId  String?   @unique @map("sso_subject_id") // provider sub claim: "<provider>:<sub>"
   authProvider  String    @default("local") @map("auth_provider") // "local" | "keycloak" | "avanpost"
-  ssoOnly       Boolean   @default(false) @map("sso_only") // local login disabled for this user
-  loginCount    Int       @default(0)
-  lastLoginAt   DateTime?
-  isSuperadmin  Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  ssoOnly              Boolean   @default(false) @map("sso_only") // local login disabled for this user
+  loginCount           Int       @default(0)
+  lastLoginAt          DateTime?
+  isSuperadmin         Boolean   @default(false)
+  emailNotifications   Boolean   @default(true) @map("email_notifications")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]

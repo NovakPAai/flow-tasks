@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '../store/theme.store';
 import * as notificationsApi from '../api/notifications';
-import type { Notification } from '../api/notifications';
+import type { Notification, MentionPayload, TaskAssignedPayload, CommentAddedPayload, MemberAddedPayload } from '../api/notifications';
 
 const POLL_MS = 30_000;
 
@@ -12,6 +12,34 @@ function avatarInitials(name: string) { return name.split(/\s+/).map(w => w[0]).
 function bodyPreview(body?: string): string {
   if (!body) return '';
   return body.replace(/@\[([^\]]+)\]\([^)]+\)/g, '@$1').slice(0, 120);
+}
+
+function getActor(n: Notification): { id: string; name: string } {
+  if (n.type === 'mention') return (n.payload as MentionPayload).mentionedBy;
+  return (n.payload as TaskAssignedPayload | CommentAddedPayload | MemberAddedPayload).actor;
+}
+
+function getActionText(n: Notification): string {
+  switch (n.type) {
+    case 'mention': {
+      const p = n.payload as MentionPayload;
+      return p.context === 'comment' ? ' упомянул(а) вас в комментарии · ' : ' упомянул(а) вас в задаче · ';
+    }
+    case 'task_assigned': return ' назначил(а) вас на задачу · ';
+    case 'comment_added': return ' прокомментировал(а) задачу · ';
+    case 'member_added': return ' добавил(а) вас в воркспейс · ';
+    default: return ' · ';
+  }
+}
+
+function getTarget(n: Notification): string {
+  if (n.type === 'member_added') return (n.payload as MemberAddedPayload).workspaceName;
+  return (n.payload as MentionPayload | TaskAssignedPayload | CommentAddedPayload).taskKey;
+}
+
+function getSubtitle(n: Notification): string | null {
+  if (n.type === 'member_added') return null;
+  return (n.payload as MentionPayload | TaskAssignedPayload | CommentAddedPayload).taskTitle;
 }
 
 export default function NotificationBell() {
@@ -70,9 +98,11 @@ export default function NotificationBell() {
       setUnread(prev => Math.max(0, prev - 1));
     }
     setOpen(false);
-    const { workspaceSlug, boardSlug, taskId } = n.payload;
-    if (workspaceSlug && boardSlug) {
-      navigate(`/w/${workspaceSlug}/boards/${boardSlug}`, { state: { openTaskId: taskId } });
+    const p = n.payload as unknown as Record<string, unknown>;
+    if (p.workspaceSlug && p.boardSlug) {
+      navigate(`/w/${p.workspaceSlug}/boards/${p.boardSlug}`, { state: { openTaskId: p.taskId } });
+    } else if (p.workspaceSlug) {
+      navigate(`/w/${String(p.workspaceSlug)}`);
     }
   };
 
@@ -129,7 +159,10 @@ export default function NotificationBell() {
             {items.length === 0 ? (
               <div style={{ padding: '28px 16px', textAlign: 'center', fontSize: 13, color: muted }}>Нет уведомлений</div>
             ) : items.map(n => {
-              const preview = bodyPreview(n.payload.body);
+              const actor = getActor(n);
+              const preview = n.type === 'mention' ? bodyPreview((n.payload as MentionPayload).body) : null;
+              const subtitle = getSubtitle(n);
+              const isTaskLink = n.type !== 'member_added';
               return (
                 <div
                   key={n.id}
@@ -146,30 +179,30 @@ export default function NotificationBell() {
                     {/* Avatar */}
                     <div style={{
                       width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                      background: avatarColor(n.payload.mentionedBy.name),
+                      background: avatarColor(actor.name),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>
-                        {avatarInitials(n.payload.mentionedBy.name)}
+                        {avatarInitials(actor.name)}
                       </span>
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      {/* Who + where */}
+                      {/* Who + action */}
                       <div style={{ fontSize: 13, color: text, lineHeight: '18px', marginBottom: 2 }}>
-                        <span style={{ fontWeight: 600 }}>{n.payload.mentionedBy.name}</span>
-                        <span style={{ color: subText }}>
-                          {n.payload.context === 'comment' ? ' упомянул(а) вас в комментарии · ' : ' упомянул(а) вас в задаче · '}
-                        </span>
-                        <span style={{ color: '#4F6EF7', fontWeight: 500 }}>{n.payload.taskKey}</span>
+                        <span style={{ fontWeight: 600 }}>{actor.name}</span>
+                        <span style={{ color: subText }}>{getActionText(n)}</span>
+                        <span style={{ color: '#4F6EF7', fontWeight: 500 }}>{getTarget(n)}</span>
                       </div>
 
-                      {/* Task title */}
-                      <div style={{ fontSize: 12, color: subText, marginBottom: preview ? 6 : 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {n.payload.taskTitle}
-                      </div>
+                      {/* Task title / subtitle */}
+                      {subtitle && (
+                        <div style={{ fontSize: 12, color: subText, marginBottom: preview ? 6 : 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {subtitle}
+                        </div>
+                      )}
 
-                      {/* Comment preview */}
+                      {/* Comment preview (mention only) */}
                       {preview && (
                         <div style={{
                           fontSize: 12, color: text, lineHeight: '17px',
@@ -182,13 +215,13 @@ export default function NotificationBell() {
                         </div>
                       )}
 
-                      {/* Footer: time + open button */}
+                      {/* Footer */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: 11, color: muted }}>
                           {new Date(n.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span style={{ fontSize: 11, color: '#4F6EF7', fontWeight: 500 }}>
-                          Открыть задачу →
+                          {isTaskLink ? 'Открыть задачу →' : 'Открыть воркспейс →'}
                         </span>
                       </div>
                     </div>

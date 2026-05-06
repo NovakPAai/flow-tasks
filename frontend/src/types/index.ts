@@ -24,6 +24,7 @@ export interface User {
   loginCount?: number;
   createdAt?: string;
   isSuperadmin?: boolean;
+  emailNotifications?: boolean;
 }
 
 // ─── Admin ─────────────────────────────────────────────────────────────────────
