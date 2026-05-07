@@ -3,7 +3,7 @@ import type { Request } from 'express';
 import { validate } from '../../shared/middleware/validate.js';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { rateLimit, RATE_LIMITS } from '../../shared/middleware/rate-limit.js';
-import { registerDto, loginDto, updateProfileDto, forgotPasswordDto, resetPasswordDto } from './auth.dto.js';
+import { registerDto, loginDto, updateProfileDto, changePasswordDto, forgotPasswordDto, resetPasswordDto } from './auth.dto.js';
 import * as authService from './auth.service.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { config } from '../../config.js';
@@ -90,6 +90,21 @@ router.patch('/me', authenticate, validate(updateProfileDto), async (req: AuthRe
   try {
     const user = await authService.updateProfile(req.user!.userId, req.body);
     res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/profile', authenticate, validate(changePasswordDto), async (req: AuthRequest, res, next) => {
+  try {
+    const clientMeta = extractClientMeta(req);
+    const result = await authService.changePassword(
+      req.user!.userId,
+      req.body.currentPassword,
+      req.body.newPassword,
+      clientMeta,
+    );
+    res.json(result);
   } catch (err) {
     next(err);
   }

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { requireSuperadmin } from '../../shared/middleware/require-superadmin.js';
 import { validate } from '../../shared/middleware/validate.js';
-import { createUserDto, reviewRequestDto, updateUserDto, SetUserActiveSchema } from './admin.dto.js';
+import { createUserDto, reviewRequestDto, updateUserDto, SetUserActiveSchema, updateConfigDto } from './admin.dto.js';
 import * as adminService from './admin.service.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
@@ -30,10 +30,14 @@ router.post('/users', validate(createUserDto), async (req: AuthRequest, res, nex
 
 router.patch('/users/:id', validate(updateUserDto), async (req: AuthRequest, res, next) => {
   try {
+    if (req.body.isActive !== undefined) {
+      const result = await adminService.setUserActive(req.user!.userId, req.params.id as string, req.body.isActive);
+      return res.json(result);
+    }
     const user = await adminService.setUserSuperadmin(
       req.user!.userId,
       req.params.id as string,
-      req.body.isSuperadmin,
+      req.body.isSuperadmin as boolean,
     );
     res.json(user);
   } catch (err) {
@@ -66,6 +70,15 @@ router.patch('/users/:id/active', validate(SetUserActiveSchema), async (req: Aut
       req.params.id as string,
       req.body.isActive,
     );
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/config', validate(updateConfigDto), async (req: AuthRequest, res, next) => {
+  try {
+    const result = await adminService.updateConfig(req.user!.userId, req.body);
     res.json(result);
   } catch (err) {
     next(err);

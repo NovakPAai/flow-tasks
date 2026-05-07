@@ -38,11 +38,16 @@ function maskPii(obj: Record<string, unknown>): Record<string, unknown> {
 export async function auditLog(event: AuditEventInput): Promise<void> {
   try {
     const tags = tagsForAction(event.action);
+    // tags = [system, type, segment, env, dc]
+    const techSegment = tags[2] ?? 'iia';
     const meta = maskPii({
       result: event.result ?? 'SUCCESS',
       ip: event.ip,
       userAgent: event.userAgent,
       sessionId: event.sessionId,
+      session_id: event.sessionId ?? null,
+      subject: event.actorId ?? 'system',
+      tech_segment: techSegment,
       source: 'flow-tasks-backend',
       tags,
       time: new Date().toISOString(),

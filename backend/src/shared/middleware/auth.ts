@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import type { Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt.js';
 import { AppError } from './error-handler.js';
+import { auditLog } from '../utils/audit-logger.js';
 import type { AuthRequest } from '../types/index.js';
 import { prisma } from '../../prisma/client.js';
 
@@ -33,6 +34,14 @@ export function authenticate(req: AuthRequest, _res: Response, next: NextFunctio
         lastUsedCache.set(apiKey.id, now);
         prisma.apiKey.update({ where: { id: apiKey.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
       }
+      void auditLog({
+        actorId: apiKey.user.id,
+        action: 'auth.apikey.use',
+        result: 'SUCCESS',
+        ip: (req.headers['x-real-ip'] as string) ?? req.ip ?? 'unknown',
+        userAgent: (req.headers['user-agent'] as string) ?? 'unknown',
+        meta: { keyPrefix: token.slice(0, 10) },
+      });
       next();
     }).catch(next);
     return;

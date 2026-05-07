@@ -61,9 +61,8 @@ test('CIO demo smoke: full user journey', async ({ page }) => {
 
   // ── 8. Add a comment (click Comments tab first) ───────────────────────────────
   await page.locator('text=Комментарии').click();
-  await page.waitForLoadState('networkidle');
   const commentInput = page.locator('textarea[placeholder="Написать комментарий..."]');
-  await commentInput.waitFor({ timeout: 20_000 });
+  await commentInput.waitFor({ timeout: 15_000 });
   await commentInput.fill('Hello from e2e smoke test');
   await page.locator('button:has-text("Отправить")').click();
   await expect(page.locator('text=Hello from e2e smoke test')).toBeVisible({ timeout: 10_000 });
