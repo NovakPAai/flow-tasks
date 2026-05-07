@@ -2,7 +2,7 @@
 id: gap-03-label-idor
 type: gap-fix
 priority: P1
-status: draft
+status: done
 ---
 
 # Spec: IDOR — валидация принадлежности метки к воркспейсу задачи

@@ -2,7 +2,7 @@
 id: gap-06-comment-limits
 type: gap-fix
 priority: P2
-status: draft
+status: done
 ---
 
 # Spec: Ограничения длины для комментариев и чеклистов

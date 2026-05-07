@@ -2,7 +2,7 @@
 id: gap-04-assignee-validation
 type: gap-fix
 priority: P2
-status: draft
+status: done
 ---
 
 # Spec: Валидация assigneeId — только участники воркспейса

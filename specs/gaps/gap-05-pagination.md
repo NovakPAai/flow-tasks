@@ -2,7 +2,7 @@
 id: gap-05-pagination
 type: gap-fix
 priority: P2
-status: draft
+status: done
 ---
 
 # Spec: Пагинация на всех list-эндпоинтах

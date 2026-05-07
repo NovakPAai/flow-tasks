@@ -2,7 +2,7 @@
 id: gap-10-bulk-operations
 type: gap-feat
 priority: P3
-status: draft
+status: done
 ---
 
 # Spec: Массовые операции над задачами

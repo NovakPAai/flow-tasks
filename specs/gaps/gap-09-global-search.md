@@ -2,7 +2,7 @@
 id: gap-09-global-search
 type: gap-feat
 priority: P3
-status: draft
+status: done
 ---
 
 # Spec: Глобальный поиск по задачам
