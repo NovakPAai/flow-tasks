@@ -178,6 +178,9 @@ export default function WorkspaceSettingsPage() {
   const [mfaGraceDays, setMfaGraceDays] = useState(7);
   const [savingMfa, setSavingMfa]   = useState(false);
 
+  // Confirm modal
+  const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+
   const wsId          = workspace?.id;
   const wsName        = workspace?.name;
   const wsDescription = workspace?.description;
@@ -240,14 +243,18 @@ export default function WorkspaceSettingsPage() {
     } catch { message.error('Не удалось изменить роль'); }
   };
 
-  const handleRemoveMember = async (userId: string) => {
-    if (!confirm('Удалить участника?')) return;
-    try {
-      await workspacesApi.removeMember(workspace.id, userId);
-      setMembers((prev) => prev.filter((m) => m.userId !== userId));
-      load(); // refresh memberCount in workspace store
-    }
-    catch { message.error('Не удалось удалить'); }
+  const handleRemoveMember = (userId: string) => {
+    setConfirmModal({
+      title: 'Удалить участника?',
+      message: 'Участник потеряет доступ к workspace.',
+      onConfirm: async () => {
+        try {
+          await workspacesApi.removeMember(workspace.id, userId);
+          setMembers((prev) => prev.filter((m) => m.userId !== userId));
+          load();
+        } catch { message.error('Не удалось удалить'); }
+      },
+    });
   };
 
   const handleInvite = async () => {
@@ -284,10 +291,15 @@ export default function WorkspaceSettingsPage() {
     finally { setSavingLabel(false); }
   };
 
-  const handleDeleteLabel = async (labelId: string) => {
-    if (!confirm('Удалить метку?')) return;
-    try { await labelsApi.deleteLabel(labelId); setLabels((prev) => prev.filter((l) => l.id !== labelId)); }
-    catch { message.error('Не удалось удалить'); }
+  const handleDeleteLabel = (labelId: string) => {
+    setConfirmModal({
+      title: 'Удалить метку?',
+      message: 'Метка будет удалена из всех задач.',
+      onConfirm: async () => {
+        try { await labelsApi.deleteLabel(labelId); setLabels((prev) => prev.filter((l) => l.id !== labelId)); }
+        catch { message.error('Не удалось удалить'); }
+      },
+    });
   };
 
   const handleCreateWorkflow = async () => {
@@ -309,16 +321,21 @@ export default function WorkspaceSettingsPage() {
     finally { setCreatingWf(false); }
   };
 
-  const handleDeleteWorkflow = async (wfId: string) => {
-    if (!confirm('Удалить workflow? Доски с этим workflow перестанут работать.')) return;
-    try {
-      await wfApi.deleteWorkflow(wfId);
-      setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
-      if (editingWfId === wfId) setEditingWfId(null);
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      message.error(msg ?? 'Не удалось удалить');
-    }
+  const handleDeleteWorkflow = (wfId: string) => {
+    setConfirmModal({
+      title: 'Удалить workflow?',
+      message: 'Доски с этим workflow перестанут работать.',
+      onConfirm: async () => {
+        try {
+          await wfApi.deleteWorkflow(wfId);
+          setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
+          if (editingWfId === wfId) setEditingWfId(null);
+        } catch (err: unknown) {
+          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+          message.error(msg ?? 'Не удалось удалить');
+        }
+      },
+    });
   };
 
   const handleSetDefaultWorkflow = async (wfId: string) => {
@@ -331,13 +348,18 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
-  const handleDeleteWorkspace = async () => {
-    if (!confirm(`Удалить workspace "${workspace.name}"? Это действие необратимо.`)) return;
-    try {
-      await workspacesApi.deleteWorkspace(workspace.id);
-      await load();
-      navigate('/workspaces');
-    } catch { message.error('Не удалось удалить workspace'); }
+  const handleDeleteWorkspace = () => {
+    setConfirmModal({
+      title: `Удалить "${workspace.name}"?`,
+      message: 'Это действие необратимо. Все доски, задачи и участники будут удалены.',
+      onConfirm: async () => {
+        try {
+          await workspacesApi.deleteWorkspace(workspace.id);
+          await load();
+          navigate('/workspaces');
+        } catch { message.error('Не удалось удалить workspace'); }
+      },
+    });
   };
 
   // ─── Input style ───────────────────────────────────────────────────────────
@@ -360,7 +382,38 @@ export default function WorkspaceSettingsPage() {
 
   // ─── Tab content ───────────────────────────────────────────────────────────
 
-  const renderMembers = () => (
+  const renderMembers = () => {
+    if (loadingData) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Участники</h2>
+        </div>
+        <div style={{ border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 56, background: c.cardBg, borderBottom: i < 3 ? `1px solid ${c.border}` : 'none', animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+    );
+
+    if (loadError) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Участники</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
+          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <button
+            onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
+            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+          >
+            Повторить
+          </button>
+        </div>
+      </div>
+    );
+
+    return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -449,7 +502,8 @@ export default function WorkspaceSettingsPage() {
         ))}
       </div>
     </div>
-  );
+    );
+  };
 
   const renderWorkflows = () => {
     if (loadingData) return (
@@ -631,7 +685,38 @@ export default function WorkspaceSettingsPage() {
     );
   };
 
-  const renderLabels = () => (
+  const renderLabels = () => {
+    if (loadingData) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Метки</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ height: 64, borderRadius: 10, background: c.cardBg, border: `1px solid ${c.border}`, animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+    );
+
+    if (loadError) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Метки</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
+          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <button
+            onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
+            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+          >
+            Повторить
+          </button>
+        </div>
+      </div>
+    );
+
+    return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -668,7 +753,8 @@ export default function WorkspaceSettingsPage() {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderHistory = () => workspace ? <WorkspaceHistoryTimeline workspaceId={workspace.id} /> : null;
 
@@ -872,21 +958,6 @@ export default function WorkspaceSettingsPage() {
         })}
 
         <div style={{ flex: 1 }} />
-
-        {/* Delete workspace */}
-        {isOwner && (
-          <button
-            onClick={handleDeleteWorkspace}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left',
-              padding: '9px 20px', fontSize: 13, color: '#EF4444',
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              fontFamily: '"Inter",system-ui,sans-serif',
-            }}
-          >
-            Удалить workspace
-          </button>
-        )}
       </div>
 
       {/* Content area */}
@@ -936,6 +1007,27 @@ export default function WorkspaceSettingsPage() {
           <PrimaryBtn onClick={handleSaveLabel} loading={savingLabel} disabled={!labelName.trim()} style={{ width: '100%', justifyContent: 'center' }}>
             {editLabelId ? 'Сохранить' : 'Создать метку'}
           </PrimaryBtn>
+        </div>
+      </Modal>
+
+      {/* Confirm modal */}
+      <Modal open={confirmModal !== null} onClose={() => setConfirmModal(null)} title={confirmModal?.title ?? ''}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ margin: 0, fontSize: 13, color: c.muted, lineHeight: '1.6' }}>{confirmModal?.message}</p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setConfirmModal(null)}
+              style={{ fontSize: 13, color: c.muted, background: 'none', border: `1px solid ${c.border}`, borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            >
+              Отмена
+            </button>
+            <button
+              onClick={() => { const fn = confirmModal?.onConfirm; setConfirmModal(null); void fn?.(); }}
+              style={{ fontSize: 13, fontWeight: 500, color: '#fff', background: '#EF4444', border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            >
+              Удалить
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

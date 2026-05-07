@@ -16,7 +16,7 @@ const emailSchema = z.string().email();
 export function mapClaims(raw: Record<string, unknown>): MappedClaims {
   const sub = String(raw['sub'] ?? '').trim();
   const rawEmail = String(raw['email'] ?? '').trim();
-  const emailVerified = raw['email_verified'] !== false; // treat absent as true (IdP-verified accounts)
+  const emailVerified = raw['email_verified'] === true;
 
   if (!sub) throw new Error('OIDC claims missing required "sub"');
 
