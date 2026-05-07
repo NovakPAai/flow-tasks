@@ -3,11 +3,13 @@ import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
 import { createLabelDto, updateLabelDto } from './labels.dto.js';
 import * as labels from './labels.service.js';
-import { authHandler } from '../../shared/utils/async-handler.js';
+import { workspaceMfaGuard, taskMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
+import { asyncHandler, authHandler } from '../../shared/utils/async-handler.js';
 
 // ─── /workspaces/:wid/labels ──────────────────────────────────────────────────
 export const workspaceLabelsRouter = Router({ mergeParams: true });
 workspaceLabelsRouter.use(authenticate);
+workspaceLabelsRouter.use(asyncHandler(workspaceMfaGuard('wid')));
 
 workspaceLabelsRouter.get('/', authHandler(async (req, res) => {
   res.json(await labels.listLabels(String(req.params.wid), req.user!.userId));
@@ -35,6 +37,7 @@ export default router;
 // ─── /tasks/:tid/labels ───────────────────────────────────────────────────────
 export const taskLabelsRouter = Router({ mergeParams: true });
 taskLabelsRouter.use(authenticate);
+taskLabelsRouter.use(asyncHandler(taskMfaGuard('tid')));
 
 taskLabelsRouter.post('/:labelId', authHandler(async (req, res) => {
   res.json(await labels.addLabelToTask(String(req.params.tid), String(req.params.labelId), req.user!.userId));

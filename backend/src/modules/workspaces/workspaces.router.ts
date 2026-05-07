@@ -11,7 +11,7 @@ import {
 } from './workspaces.dto.js';
 import * as ws from './workspaces.service.js';
 import * as boards from '../boards/boards.service.js';
-import { authHandler } from '../../shared/utils/async-handler.js';
+import { asyncHandler, authHandler } from '../../shared/utils/async-handler.js';
 
 const router = Router();
 router.use(authenticate);
@@ -64,7 +64,7 @@ router.delete('/:id/members/:userId', authHandler(async (req, res) => {
   res.json({ message: 'Member removed' });
 }));
 
-router.get('/:id/boards/by-prefix/:prefix', authHandler(workspaceMfaGuard()), authHandler(async (req, res) => {
+router.get('/:id/boards/by-prefix/:prefix', asyncHandler(workspaceMfaGuard()), authHandler(async (req, res) => {
   res.json(await boards.getBoardByPrefix(String(req.params.id), String(req.params.prefix), req.user!.userId));
 }));
 

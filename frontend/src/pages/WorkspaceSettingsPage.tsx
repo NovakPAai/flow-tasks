@@ -186,6 +186,7 @@ export default function WorkspaceSettingsPage() {
   const loadWorkspaceData = useCallback(async (id: string) => {
     setLoadingData(true);
     setLoadError(null);
+    setMembers([]); setLabels([]); setWorkflows([]);
     try {
       const [m, l, wfs] = await Promise.all([
         workspacesApi.listMembers(id),
@@ -494,7 +495,7 @@ export default function WorkspaceSettingsPage() {
             <span style={{ fontSize: 12, color: c.muted }}>Управляйте статусами и переходами для ваших досок</span>
           </div>
         </div>
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(139,148,158,0.08)', borderRadius: 8, border: `1px solid ${c.border}`, fontSize: 13, color: c.muted }}>
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(79,110,247,0.06)', borderRadius: 8, borderLeft: '3px solid #4F6EF7', border: `1px solid rgba(79,110,247,0.18)`, fontSize: 13, color: c.text, fontWeight: 500 }}>
           Редактирование workflow доступно только владельцу воркспейса
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -767,7 +768,7 @@ export default function WorkspaceSettingsPage() {
         <div style={{ background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Обязательная двухфакторная аутентификация</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Обязательная двухфакторная аутентификация</div>
               <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
                 SSO-участники должны проходить 2FA через Avanpost / Keycloak (TOTP)
               </div>
@@ -775,6 +776,7 @@ export default function WorkspaceSettingsPage() {
             <button
               role="switch"
               aria-checked={mfaEnabled}
+              aria-label="Обязательная двухфакторная аутентификация"
               onClick={() => setMfaEnabled((v) => !v)}
               style={{
                 flexShrink: 0, width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
@@ -794,13 +796,14 @@ export default function WorkspaceSettingsPage() {
             <div style={{ borderTop: `1px solid ${c.border}`, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 600, color: c.label, letterSpacing: '0.06em', marginBottom: 6 }}>
-                  GRACE PERIOD (ДНЕЙ)
+                  ПЕРИОД ОТСРОЧКИ (ДНЕЙ)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <input
                     type="number" min={1} max={30}
                     value={mfaGraceDays}
                     onChange={(e) => setMfaGraceDays(Math.min(30, Math.max(1, Number(e.target.value))))}
+                    onBlur={(e) => { const v = Number(e.target.value); setMfaGraceDays(isNaN(v) || v < 1 ? 1 : Math.min(30, Math.round(v))); }}
                     style={{ ...inp, width: 80 }}
                   />
                   <span style={{ fontSize: 12, color: c.muted }}>дней до принудительной проверки</span>

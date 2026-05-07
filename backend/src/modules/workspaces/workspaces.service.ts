@@ -184,6 +184,15 @@ export async function listMembers(workspaceId: string, userId: string) {
   });
 }
 
+async function getMfaGraceUntil(workspaceId: string): Promise<Date | null> {
+  const ws = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { requireMfa: true, mfaGraceDays: true },
+  });
+  if (!ws?.requireMfa) return null;
+  return new Date(Date.now() + ws.mfaGraceDays * 86_400_000);
+}
+
 export async function addMember(workspaceId: string, requesterId: string, dto: AddMemberDto) {
   await assertOwner(workspaceId, requesterId);
 
@@ -195,8 +204,10 @@ export async function addMember(workspaceId: string, requesterId: string, dto: A
   });
   if (existing) throw new AppError(409, 'User is already a member');
 
+  const mfaGraceUntil = await getMfaGraceUntil(workspaceId);
+
   const member = await prisma.workspaceMember.create({
-    data: { workspaceId, userId: dto.userId, role: dto.role },
+    data: { workspaceId, userId: dto.userId, role: dto.role, mfaGraceUntil },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
   emitMemberAddedNotification(workspaceId, dto.userId, requesterId).catch(() => {});
@@ -243,8 +254,10 @@ export async function inviteByEmail(workspaceId: string, requesterId: string, dt
   });
   if (existing) throw new AppError(409, 'User is already a member');
 
+  const mfaGraceUntil = await getMfaGraceUntil(workspaceId);
+
   const member = await prisma.workspaceMember.create({
-    data: { workspaceId, userId: targetUser.id, role: dto.role },
+    data: { workspaceId, userId: targetUser.id, role: dto.role, mfaGraceUntil },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
 

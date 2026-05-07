@@ -3,10 +3,9 @@ import type { AuthRequest } from '../types/index.js';
 import { prisma } from '../../prisma/client.js';
 import { getUserSession } from '../redis.js';
 import { AppError } from './error-handler.js';
+import { logger } from '../utils/logger.js';
 
 const MFA_AMR_VALUES = ['totp', 'otp', 'mfa', 'hwk', 'swk'];
-
-type WorkspaceIdResolver = (req: AuthRequest) => Promise<string | null>;
 
 async function enforceMfa(workspaceId: string, req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const workspace = await prisma.workspace.findUnique({
@@ -26,7 +25,15 @@ async function enforceMfa(workspaceId: string, req: AuthRequest, res: Response, 
   if (!user || user.authProvider === 'local') return next();
 
   const session = await getUserSession(userId);
-  const amr: string[] = session?.amr ?? [];
+
+  // Fail-closed: if Redis is unavailable for an SSO user in an MFA workspace, deny access.
+  // This prevents a Redis outage from silently downgrading security.
+  if (session === null) {
+    logger.warn('mfa_guard_session_unavailable', { userId, workspaceId });
+    throw new AppError(503, 'SESSION_UNAVAILABLE');
+  }
+
+  const amr: string[] = session.amr ?? [];
   if (amr.some((v) => MFA_AMR_VALUES.includes(v))) return next();
 
   const member = await prisma.workspaceMember.findUnique({
@@ -50,7 +57,7 @@ export function workspaceMfaGuard(workspaceParamName = 'id') {
   };
 }
 
-// For routes that operate on a board ID — resolves workspaceId from the board.
+// For routes operating on a board ID — resolves workspaceId from the board.
 export function boardMfaGuard(boardParamName = 'id') {
   return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     const boardId = String(req.params[boardParamName]);
@@ -60,5 +67,18 @@ export function boardMfaGuard(boardParamName = 'id') {
     });
     if (!board) return next(); // board not found — let the route handler return 404
     await enforceMfa(board.workspaceId, req, res, next);
+  };
+}
+
+// For routes operating on a task ID — resolves workspaceId via task → board.
+export function taskMfaGuard(taskParamName = 'id') {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const taskId = String(req.params[taskParamName]);
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { board: { select: { workspaceId: true } } },
+    });
+    if (!task) return next(); // not found — let the route handler return 404
+    await enforceMfa(task.board.workspaceId, req, res, next);
   };
 }

@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
+import { taskMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
 import { createCommentDto, updateCommentDto } from './comments.dto.js';
 import * as comments from './comments.service.js';
-import { authHandler } from '../../shared/utils/async-handler.js';
+import { asyncHandler, authHandler } from '../../shared/utils/async-handler.js';
 
 // ─── /tasks/:tid/comments ─────────────────────────────────────────────────────
 export const taskCommentsRouter = Router({ mergeParams: true });
 taskCommentsRouter.use(authenticate);
+taskCommentsRouter.use(asyncHandler(taskMfaGuard('tid')));
 
 taskCommentsRouter.get('/', authHandler(async (req, res) => {
   const rawLimit  = parseInt(String(req.query.limit  ?? '50'), 10);
