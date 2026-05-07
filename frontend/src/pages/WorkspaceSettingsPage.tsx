@@ -170,7 +170,7 @@ export default function WorkspaceSettingsPage() {
   const [editingWfId, setEditingWfId] = useState<string | null>(null);
 
   // Data loading state
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
   const [loadError, setLoadError]     = useState<string | null>(null);
 
   const wsId          = workspace?.id;
@@ -209,7 +209,6 @@ export default function WorkspaceSettingsPage() {
     if (!wsId) return;
     loadWorkspaceData(wsId);
   }, [wsId, loadWorkspaceData]);
-
 
   const myRole  = loadingData ? undefined : members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';
