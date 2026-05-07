@@ -221,7 +221,10 @@ export default function WorkspaceSettingsPage() {
     loadWorkspaceData(wsId);
   }, [wsId, loadWorkspaceData]);
 
-  const myRole  = loadingData ? undefined : members.find((m) => m.userId === currentUser?.id)?.role;
+  // During load, fall back to the role stored in the workspace list so nav doesn't shift
+  const myRole  = loadingData
+    ? (workspace?.role ?? undefined)
+    : members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';
 
   if (!workspace) return null;
@@ -923,8 +926,6 @@ export default function WorkspaceSettingsPage() {
   // ─── Layout ────────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', minHeight: '100%', fontFamily: '"Inter",system-ui,sans-serif', background: c.bg }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-
       {/* Sidebar */}
       <div style={{ width: 230, flexShrink: 0, background: c.sidebar, borderRight: `1px solid ${c.sidebarBorder}`, padding: '24px 0', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '0 20px 24px' }}>
