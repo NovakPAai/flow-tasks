@@ -27,11 +27,50 @@ describe('ИАА: Аутентификация — ИБ-требования', (
   // ─── Уникальность учётных записей ─────────────────────────────────────────
 
   describe('Уникальность учётных записей (Req basic §1.2)', () => {
-    it('дублирующийся email возвращает 409', async () => {
+    it('дублирующийся email возвращает 200 с тем же сообщением (gap-15: no enumeration)', async () => {
       const e = email();
-      await api.post('/api/auth/register').send({ email: e, name: 'A', password: 'Password1' });
-      const res = await api.post('/api/auth/register').send({ email: e, name: 'B', password: 'Password1' });
-      expect(res.status).toBe(409);
+      const first = await api.post('/api/auth/register').send({ email: e, name: 'A', password: 'Password1' });
+      const second = await api.post('/api/auth/register').send({ email: e, name: 'B', password: 'Password1' });
+      expect(second.status).toBe(200);
+      expect(second.body.message).toBe(first.body.message);
+    });
+  });
+
+  // ─── Email enumeration (gap-15) ───────────────────────────────────────────
+
+  describe('Отсутствие email enumeration через /register (gap-15)', () => {
+    it('три запроса с разным статусом email возвращают одинаковый message', async () => {
+      // existing user
+      const existingUser = await registerUser();
+
+      // pending request (direct via API)
+      const pendingEmail = email();
+      const pendingRes = await api
+        .post('/api/auth/register')
+        .send({ email: pendingEmail, name: 'Pending', password: 'Password1' });
+      expect(pendingRes.status).toBe(200);
+
+      // new email (never seen)
+      const newEmail = email();
+      const newRes = await api
+        .post('/api/auth/register')
+        .send({ email: newEmail, name: 'New', password: 'Password1' });
+
+      // re-submit existing
+      const existingRes = await api
+        .post('/api/auth/register')
+        .send({ email: existingUser.email, name: 'Dup', password: 'Password1' });
+
+      // re-submit pending
+      const pendingDupRes = await api
+        .post('/api/auth/register')
+        .send({ email: pendingEmail, name: 'Dup', password: 'Password1' });
+
+      expect(newRes.status).toBe(200);
+      expect(existingRes.status).toBe(200);
+      expect(pendingDupRes.status).toBe(200);
+      expect(existingRes.body.message).toBe(newRes.body.message);
+      expect(pendingDupRes.body.message).toBe(newRes.body.message);
     });
   });
 
@@ -79,6 +118,46 @@ describe('ИАА: Аутентификация — ИБ-требования', (
       const meta = log!.meta as Record<string, unknown>;
       expect(typeof meta.sessionId).toBe('string');
       expect((meta.sessionId as string).length).toBeGreaterThan(0);
+    });
+  });
+
+  // ─── Rate-limit по email (gap-14) ────────────────────────────────────────
+
+  describe('Rate-limit на /login ключируется по email, а не по IP (gap-14)', () => {
+    it('10 запросов с разными X-Forwarded-For на один email → 11-й блокируется (429)', async () => {
+      const victim = await registerUser();
+
+      for (let i = 1; i <= 10; i++) {
+        await api
+          .post('/api/auth/login')
+          .set('X-Forwarded-For', `10.99.${i}.1`)
+          .send({ email: victim.email, password: 'WrongPass!' });
+      }
+
+      const blocked = await api
+        .post('/api/auth/login')
+        .set('X-Forwarded-For', '10.99.99.1')
+        .send({ email: victim.email, password: 'WrongPass!' });
+
+      expect(blocked.status).toBe(429);
+    });
+
+    it('/register: 10 запросов с разными X-Forwarded-For на один email → 11-й блокируется (429)', async () => {
+      const targetEmail = email();
+
+      for (let i = 1; i <= 10; i++) {
+        await api
+          .post('/api/auth/register')
+          .set('X-Forwarded-For', `10.88.${i}.1`)
+          .send({ email: targetEmail, name: 'Flood', password: 'Password1' });
+      }
+
+      const blocked = await api
+        .post('/api/auth/register')
+        .set('X-Forwarded-For', '10.88.99.1')
+        .send({ email: targetEmail, name: 'Flood', password: 'Password1' });
+
+      expect(blocked.status).toBe(429);
     });
   });
 

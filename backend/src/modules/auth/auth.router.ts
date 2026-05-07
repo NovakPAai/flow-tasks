@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import type { Request } from 'express';
 import { validate } from '../../shared/middleware/validate.js';
 import { authenticate } from '../../shared/middleware/auth.js';
+import { rateLimit, RATE_LIMITS } from '../../shared/middleware/rate-limit.js';
 import { registerDto, loginDto, updateProfileDto, forgotPasswordDto, resetPasswordDto } from './auth.dto.js';
 import * as authService from './auth.service.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
@@ -8,6 +10,14 @@ import { config } from '../../config.js';
 import ssoRouter from './sso/sso.router.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 import { extractClientMeta } from '../../shared/utils/audit-logger.js';
+
+// Key by email so rotating X-Forwarded-For doesn't bypass the limit.
+// Fall back to 'no-email' (single shared bucket) — not req.ip — so that
+// malformed requests without a body can't escape the limit by spoofing the IP.
+const authEmailKey = (req: Request): string =>
+  (req.body?.email as string | undefined)?.trim().toLowerCase() ?? 'no-email';
+
+const authLimit = rateLimit({ ...RATE_LIMITS.auth, keyFn: authEmailKey });
 
 const REFRESH_COOKIE_OPTS = {
   httpOnly: true,
@@ -23,7 +33,7 @@ router.get('/registration-domain', (_req, res) => {
   res.json({ domain: config.REGISTRATION_DOMAIN });
 });
 
-router.post('/register', validate(registerDto), async (req, res, next) => {
+router.post('/register', authLimit, validate(registerDto), async (req, res, next) => {
   try {
     const result = await authService.register(req.body);
     res.json(result);
@@ -32,7 +42,7 @@ router.post('/register', validate(registerDto), async (req, res, next) => {
   }
 });
 
-router.post('/login', validate(loginDto), async (req, res, next) => {
+router.post('/login', authLimit, validate(loginDto), async (req, res, next) => {
   try {
     const clientMeta = extractClientMeta(req);
     const { user, accessToken, refreshToken } = await authService.login(req.body, clientMeta);
@@ -85,7 +95,7 @@ router.patch('/me', authenticate, validate(updateProfileDto), async (req: AuthRe
   }
 });
 
-router.post('/forgot-password', validate(forgotPasswordDto), async (req, res, next) => {
+router.post('/forgot-password', authLimit, validate(forgotPasswordDto), async (req, res, next) => {
   try {
     const result = await authService.requestPasswordReset(req.body.email);
     res.json(result);
