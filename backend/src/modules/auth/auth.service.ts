@@ -44,26 +44,27 @@ function generateRefreshExpiry(): Date {
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 }
 
+// Single response for all register outcomes — prevents email enumeration (gap-15).
+const REGISTER_MSG = 'Если email доступен, заявка отправлена. Ожидайте подтверждения администратора.';
+
 export async function register(dto: RegisterDto) {
   const localPart = dto.email.trim().toLowerCase().split('@')[0];
   const email = `${localPart}@${config.REGISTRATION_DOMAIN}`;
 
-  const [existingUser, existingRequest] = await Promise.all([
+  // hashPassword runs unconditionally to equalise response time (timing side-channel).
+  const [existingUser, existingRequest, passwordHash] = await Promise.all([
     prisma.user.findUnique({ where: { email } }),
     prisma.registrationRequest.findUnique({ where: { email } }),
+    hashPassword(dto.password),
   ]);
 
-  if (existingUser) {
-    throw new AppError(409, 'Email уже зарегистрирован');
+  // Silent exit: don't reveal whether email is taken or pending.
+  if (existingUser || existingRequest?.status === 'PENDING') {
+    return { message: REGISTER_MSG };
   }
-  if (existingRequest && existingRequest.status === 'PENDING') {
-    throw new AppError(409, 'Заявка с этим email уже ожидает рассмотрения');
-  }
-
-  const passwordHash = await hashPassword(dto.password);
 
   if (existingRequest) {
-    // Повторная заявка после отклонения — обновляем
+    // Re-submission after rejection — reset to PENDING.
     await prisma.registrationRequest.update({
       where: { email },
       data: { password: passwordHash, name: dto.name, status: 'PENDING', reviewedBy: null, reviewedAt: null },
@@ -74,7 +75,7 @@ export async function register(dto: RegisterDto) {
     });
   }
 
-  return { message: 'Заявка на регистрацию отправлена. Ожидайте подтверждения администратора.' };
+  return { message: REGISTER_MSG };
 }
 
 export async function login(dto: LoginDto, clientMeta?: ClientMeta) {

@@ -22,6 +22,8 @@
 | gap-11 | my-tasks-accordion | feat | P2 | **done** | #145 |
 | **gap-12** | **workflow-settings-unlocked** | **fix** | **P1** | **done** | этa ветка |
 | **gap-13** | **2fa-totp** | **feat** | **P2** | **done** | #151 |
+| **gap-14** | **rate-limit-ip-bypass** | **fix / security** | **P1** | **done** | эта ветка |
+| **gap-15** | **email-enumeration** | **fix / security** | **P2** | **done** | эта ветка |
 
 ---
 

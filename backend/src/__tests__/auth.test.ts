@@ -15,11 +15,12 @@ describe('Auth', () => {
       expect(res.body.message).toBeDefined();
     });
 
-    it('rejects duplicate email with 409', async () => {
+    it('returns 200 with generic message for duplicate email (gap-15: no enumeration)', async () => {
       const e = email();
-      await api.post('/api/auth/register').send({ email: e, name: 'A', password: 'Password1' });
-      const res = await api.post('/api/auth/register').send({ email: e, name: 'B', password: 'Password1' });
-      expect(res.status).toBe(409);
+      const first = await api.post('/api/auth/register').send({ email: e, name: 'A', password: 'Password1' });
+      const second = await api.post('/api/auth/register').send({ email: e, name: 'B', password: 'Password1' });
+      expect(second.status).toBe(200);
+      expect(second.body.message).toBe(first.body.message);
     });
 
     it('rejects weak password with 400', async () => {
