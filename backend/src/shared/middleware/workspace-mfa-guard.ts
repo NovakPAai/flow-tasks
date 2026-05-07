@@ -34,11 +34,22 @@ async function enforceMfa(workspaceId: string, req: AuthRequest, res: Response, 
   }
 
   const amr: string[] = session.amr ?? [];
-  if (amr.some((v) => MFA_AMR_VALUES.includes(v))) return next();
+  const mfaOk = amr.some((v) => MFA_AMR_VALUES.includes(v));
 
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
   });
+
+  if (mfaOk) {
+    // Clear stale grace period so the frontend banner dismisses after first TOTP login.
+    if (member?.mfaGraceUntil) {
+      void prisma.workspaceMember.update({
+        where: { workspaceId_userId: { workspaceId, userId } },
+        data: { mfaGraceUntil: null },
+      }).catch((err) => logger.warn('mfa_guard_grace_clear_failed', { userId, workspaceId, error: String(err) }));
+    }
+    return next();
+  }
 
   const graceUntil = member?.mfaGraceUntil ?? null;
   if (graceUntil && graceUntil > new Date()) {
@@ -80,5 +91,31 @@ export function taskMfaGuard(taskParamName = 'id') {
     });
     if (!task) return next(); // not found — let the route handler return 404
     await enforceMfa(task.board.workspaceId, req, res, next);
+  };
+}
+
+// For routes operating on a checklist ID — resolves workspaceId via checklist → task → board.
+export function checklistMfaGuard(checklistParamName = 'id') {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const checklistId = String(req.params[checklistParamName]);
+    const checklist = await prisma.checklist.findUnique({
+      where: { id: checklistId },
+      select: { task: { select: { board: { select: { workspaceId: true } } } } },
+    });
+    if (!checklist) return next();
+    await enforceMfa(checklist.task.board.workspaceId, req, res, next);
+  };
+}
+
+// For routes operating on a checklist item ID — resolves workspaceId via item → checklist → task → board.
+export function checklistItemMfaGuard(itemParamName = 'id') {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const itemId = String(req.params[itemParamName]);
+    const item = await prisma.checklistItem.findUnique({
+      where: { id: itemId },
+      select: { checklist: { select: { task: { select: { board: { select: { workspaceId: true } } } } } } },
+    });
+    if (!item) return next();
+    await enforceMfa(item.checklist.task.board.workspaceId, req, res, next);
   };
 }

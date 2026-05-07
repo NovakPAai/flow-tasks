@@ -68,7 +68,7 @@ router.get('/:id/boards/by-prefix/:prefix', asyncHandler(workspaceMfaGuard()), a
   res.json(await boards.getBoardByPrefix(String(req.params.id), String(req.params.prefix), req.user!.userId));
 }));
 
-router.get('/:id/history', authHandler(async (req, res) => {
+router.get('/:id/history', asyncHandler(workspaceMfaGuard()), authHandler(async (req, res) => {
   const rawLimit  = parseInt(String(req.query.limit  ?? '50'), 10);
   const rawOffset = parseInt(String(req.query.offset ?? '0'),  10);
   const limit  = Math.min(Number.isNaN(rawLimit)  ? 50 : rawLimit,  200);

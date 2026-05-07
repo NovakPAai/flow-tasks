@@ -170,7 +170,7 @@ export default function WorkspaceSettingsPage() {
   const [editingWfId, setEditingWfId] = useState<string | null>(null);
 
   // Data loading state
-  const [loadingData, setLoadingData] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError]     = useState<string | null>(null);
 
   // Security settings
@@ -802,16 +802,18 @@ export default function WorkspaceSettingsPage() {
                   <input
                     type="number" min={1} max={30}
                     value={mfaGraceDays}
-                    onChange={(e) => setMfaGraceDays(Math.min(30, Math.max(1, Number(e.target.value))))}
+                    onChange={(e) => { const v = Number(e.target.value); setMfaGraceDays(isNaN(v) ? mfaGraceDays : Math.min(30, Math.max(1, Math.round(v)))); }}
                     onBlur={(e) => { const v = Number(e.target.value); setMfaGraceDays(isNaN(v) || v < 1 ? 1 : Math.min(30, Math.round(v))); }}
                     style={{ ...inp, width: 80 }}
                   />
                   <span style={{ fontSize: 12, color: c.muted }}>дней до принудительной проверки</span>
                 </div>
               </div>
-              <div style={{ fontSize: 12, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px' }}>
-                При включении: все участники получат {mfaGraceDays} дней для настройки TOTP в Avanpost/Keycloak
-              </div>
+              {!workspace?.requireMfa && (
+                <div style={{ fontSize: 12, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px' }}>
+                  При включении: все участники получат {mfaGraceDays} дней для настройки TOTP в Avanpost/Keycloak
+                </div>
+              )}
             </div>
           )}
         </div>

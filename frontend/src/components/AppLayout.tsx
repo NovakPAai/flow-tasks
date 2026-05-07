@@ -139,6 +139,41 @@ function WorkspaceSelector({ workspaces, current, onSelect, navBg, border, textP
   );
 }
 
+function pluralDays(n: number) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'день';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'дня';
+  return 'дней';
+}
+
+function mfaGraceBanner(workspace: { requireMfa?: boolean; mfaGraceUntil?: string | null } | null | undefined) {
+  if (!workspace?.requireMfa || !workspace.mfaGraceUntil) return null;
+  const until = new Date(workspace.mfaGraceUntil);
+  if (until <= new Date()) return null;
+  const daysLeft = Math.ceil((until.getTime() - Date.now()) / 86_400_000);
+  return (
+    <div
+      role="alert"
+      aria-live="polite"
+      style={{
+        background: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.25)',
+        paddingTop: 8, paddingBottom: 8,
+        paddingLeft: 'max(24px, env(safe-area-inset-left))',
+        paddingRight: 'max(24px, env(safe-area-inset-right))',
+        fontSize: 12, color: '#F59E0B',
+        display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap',
+        fontFamily: '"Inter",system-ui,sans-serif',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M7 1.5L1 12.5h12L7 1.5z" stroke="#F59E0B" strokeWidth="1.2" strokeLinejoin="round"/>
+        <path d="M7 5.5v3M7 10h.01" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+      Требуется настроить двухфакторную аутентификацию — осталось {daysLeft} {pluralDays(daysLeft)}
+    </div>
+  );
+}
+
 // ─── AppLayout ────────────────────────────────────────────────────────────────
 export default function AppLayout({ children }: Props) {
   const navigate = useNavigate();
@@ -413,32 +448,7 @@ export default function AppLayout({ children }: Props) {
       </div>
 
       {/* ── MFA grace period banner ── */}
-      {(() => {
-        if (!current?.requireMfa || !current?.mfaGraceUntil) return null;
-        const until = new Date(current.mfaGraceUntil);
-        if (until <= new Date()) return null;
-        const daysLeft = Math.ceil((until.getTime() - Date.now()) / 86_400_000);
-        const mod10 = daysLeft % 10, mod100 = daysLeft % 100;
-        const dayWord = (mod10 === 1 && mod100 !== 11) ? 'день'
-          : (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) ? 'дня' : 'дней';
-        return (
-          <div style={{
-            background: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.25)',
-            paddingTop: 8, paddingBottom: 8,
-            paddingLeft: 'max(24px, env(safe-area-inset-left))',
-            paddingRight: 'max(24px, env(safe-area-inset-right))',
-            fontSize: 12, color: '#F59E0B',
-            display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap',
-            fontFamily: '"Inter",system-ui,sans-serif',
-          }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1.5L1 12.5h12L7 1.5z" stroke="#F59E0B" strokeWidth="1.2" strokeLinejoin="round"/>
-              <path d="M7 5.5v3M7 10h.01" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
-            Требуется настроить двухфакторную аутентификацию — осталось {daysLeft} {dayWord}
-          </div>
-        );
-      })()}
+      {mfaGraceBanner(current)}
 
       {/* ── Page content ── */}
       <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'auto' }}>
