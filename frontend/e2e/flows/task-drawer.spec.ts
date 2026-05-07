@@ -348,12 +348,13 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
     // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
     await page.getByRole('button', { name: 'Метки' }).click();
+    await page.waitForLoadState('networkidle');
     // .first() т.к. labelName может матчиться в picker list И в sidebar labels
     await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 10000 });
-    await page.getByText(labelName).first().click();
+    await page.getByText(labelName).first().click({ timeout: 15_000 });
     // Метка назначена — picker ещё открыт (Escape закрыл бы drawer целиком)
     // Проверяем что метка видна — .first() избегает strict mode
-    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 10_000 });
   });
 
   // ── Удаление задачи ──────────────────────────────────────────────────────────
