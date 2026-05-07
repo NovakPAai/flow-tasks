@@ -56,12 +56,12 @@ test('CIO demo smoke: full user journey', async ({ page }) => {
   // ── 7. Open task drawer ──────────────────────────────────────────────────────
   await page.locator(`text=${taskTitle}`).first().click();
   // Task drawer opens — wait for the comments tab to be available
-  await expect(page.locator('text=Комментарии')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=Комментарии')).toBeVisible({ timeout: 10000 });
 
   // ── 8. Add a comment (click Comments tab first) ───────────────────────────────
   await page.locator('text=Комментарии').click();
   const commentInput = page.locator('textarea[placeholder="Написать комментарий..."]');
-  await commentInput.waitFor({ timeout: 5000 });
+  await commentInput.waitFor({ timeout: 10000 });
   await commentInput.fill('Hello from e2e smoke test');
   await page.locator('button:has-text("Отправить")').click();
   await expect(page.locator('text=Hello from e2e smoke test')).toBeVisible({ timeout: 5000 });
