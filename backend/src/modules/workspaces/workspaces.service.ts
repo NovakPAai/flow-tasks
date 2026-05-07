@@ -139,20 +139,24 @@ export async function updateWorkspace(workspaceId: string, userId: string, dto: 
   });
 
   const graceDays = dto.mfaGraceDays ?? current.mfaGraceDays;
-  const enablingMfa = dto.requireMfa === true && current.requireMfa === false;
 
-  const updated = await prisma.workspace.update({
-    where: { id: workspaceId },
-    data: dto,
-  });
-
-  if (enablingMfa) {
-    const graceUntil = new Date(Date.now() + graceDays * 86_400_000);
-    await prisma.workspaceMember.updateMany({
-      where: { workspaceId, mfaGraceUntil: null },
-      data: { mfaGraceUntil: graceUntil },
+  const updated = await prisma.$transaction(async (tx) => {
+    const ws = await tx.workspace.update({
+      where: { id: workspaceId },
+      data: dto,
     });
-  }
+
+    const enablingMfa = dto.requireMfa === true && current.requireMfa === false;
+    if (enablingMfa) {
+      const graceUntil = new Date(Date.now() + graceDays * 86_400_000);
+      await tx.workspaceMember.updateMany({
+        where: { workspaceId, mfaGraceUntil: null },
+        data: { mfaGraceUntil: graceUntil },
+      });
+    }
+
+    return ws;
+  });
 
   const meta: Record<string, unknown> = {};
   if (dto.name !== undefined && dto.name !== current.name) { meta.nameFrom = current.name; meta.nameTo = dto.name; }

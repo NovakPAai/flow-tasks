@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
 import { rateLimit } from '../../shared/middleware/rate-limit.js';
+import { boardMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
 import {
   createTaskDto,
   updateTaskDto,
@@ -27,6 +28,7 @@ const bulkLimit = rateLimit({
 // ─── /boards/:bid/tasks ───────────────────────────────────────────────────────
 export const boardTasksRouter = Router({ mergeParams: true });
 boardTasksRouter.use(authenticate);
+boardTasksRouter.use(authHandler(boardMfaGuard('bid')));
 
 boardTasksRouter.get('/', validate(taskFiltersDto, 'query'), authHandler(async (req, res) => {
   res.json(await tasks.listTasks(String(req.params.bid), req.user!.userId, req.query as never));

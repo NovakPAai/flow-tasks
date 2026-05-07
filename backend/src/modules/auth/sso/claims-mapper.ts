@@ -32,7 +32,11 @@ export function mapClaims(raw: Record<string, unknown>): MappedClaims {
   }
   if (!name) name = email.split('@')[0];
 
-  const amr = Array.isArray(raw['amr']) ? (raw['amr'] as string[]) : [];
+  const amr = Array.isArray(raw['amr'])
+    ? (raw['amr'] as unknown[])
+        .filter((v): v is string => typeof v === 'string' && v.length <= 32)
+        .slice(0, 10)
+    : [];
 
   return { sub, email, name, emailVerified, amr };
 }

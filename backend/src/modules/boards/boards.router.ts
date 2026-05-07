@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
-import { workspaceMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
+import { workspaceMfaGuard, boardMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
 import { createBoardDto, updateBoardDto } from './boards.dto.js';
 import * as boards from './boards.service.js';
 import { authHandler } from '../../shared/utils/async-handler.js';
@@ -22,6 +22,7 @@ workspaceBoardsRouter.post('/', validate(createBoardDto), authHandler(async (req
 // ─── /boards/:id ─────────────────────────────────────────────────────────────
 const router = Router();
 router.use(authenticate);
+router.use('/:id', authHandler(boardMfaGuard()));
 
 router.get('/:id', authHandler(async (req, res) => {
   res.json(await boards.getBoard(String(req.params.id), req.user!.userId));
