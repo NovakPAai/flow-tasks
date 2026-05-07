@@ -47,11 +47,14 @@ function defaultKey(req: Request): string {
   return req.ip ?? req.socket.remoteAddress ?? 'anonymous';
 }
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+// E2E tests fire many parallel logins (workers × spec files × beforeEach) which
+// reliably hits the per-email limit. Unit tests exercise rate-limit itself so
+// they need it enabled. Production always enforces it.
+const RATE_LIMIT_DISABLED = process.env.NODE_ENV === 'e2e';
 
 export function rateLimit(opts: RateLimitOptions) {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
-    if (!IS_PROD) return next(); // rate-limit active in production only
+    if (RATE_LIMIT_DISABLED) return next();
 
     const identity = opts.keyFn ? opts.keyFn(req) : defaultKey(req);
     const key = `rl:${opts.scope}:${identity}`;
