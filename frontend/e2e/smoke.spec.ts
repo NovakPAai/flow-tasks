@@ -10,6 +10,7 @@ import { login, logout, uniqueName } from './helpers';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test('CIO demo smoke: full user journey', async ({ page }) => {
+  test.setTimeout(90_000); // full journey: login → ws → board → task → drawer → comment → logout
   // ── 1. Login ────────────────────────────────────────────────────────────────
   await login(page);
   await expect(page).toHaveURL(/\/workspaces/, { timeout: 10000 });
