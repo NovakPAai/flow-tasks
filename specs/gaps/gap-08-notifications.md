@@ -2,7 +2,7 @@
 id: gap-08-notifications
 type: gap-feat
 priority: P3
-status: draft
+status: done
 ---
 
 # Spec: Уведомления (In-app + Email)

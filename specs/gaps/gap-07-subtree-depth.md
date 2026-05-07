@@ -2,7 +2,7 @@
 id: gap-07-subtree-depth
 type: gap-fix
 priority: P2
-status: draft
+status: done
 ---
 
 # Spec: Лимит глубины рекурсивной выборки подзадач

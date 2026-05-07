@@ -2,7 +2,7 @@
 id: gap-02-board-filters-server
 type: gap-fix
 priority: P1
-status: draft
+status: done
 ---
 
 # Spec: FilterBar — перенести фильтрацию на сервер

@@ -2,7 +2,7 @@
 id: gap-11-my-tasks-accordion
 type: gap-feat
 priority: P2
-status: approved
+status: done
 ---
 
 # Spec: My Tasks — аккордеон с основной информацией по задаче
