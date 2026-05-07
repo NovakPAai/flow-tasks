@@ -2,7 +2,7 @@
 id: gap-13-2fa-totp
 type: gap-feat
 priority: P2
-status: draft
+status: done
 ---
 
 # Spec: 2FA / TOTP — двухфакторная аутентификация через Avanpost / Keycloak
