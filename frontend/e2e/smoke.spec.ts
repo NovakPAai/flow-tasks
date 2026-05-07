@@ -55,7 +55,8 @@ test('CIO demo smoke: full user journey', async ({ page }) => {
   await expect(page.locator(`text=${taskTitle}`).first()).toBeVisible({ timeout: 10_000 });
 
   // ── 7. Open task drawer ──────────────────────────────────────────────────────
-  await page.locator(`text=${taskTitle}`).first().click();
+  // dispatchEvent на outer div TaskCard — надёжнее .click() по тексту (тот тригерит inline-edit)
+  await page.locator('[data-rfd-draggable-id]').filter({ hasText: taskTitle }).locator('> div').first().dispatchEvent('click');
   // Task drawer opens — wait for the comments tab to be available
   await expect(page.locator('text=Комментарии')).toBeVisible({ timeout: 10000 });
 
