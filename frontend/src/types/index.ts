@@ -95,6 +95,9 @@ export interface Workspace {
   slug: string;
   description?: string;
   isPrivate: boolean;
+  requireMfa: boolean;
+  mfaGraceDays: number;
+  mfaGraceUntil?: string | null;
   creatorId: string;
   createdAt: string;
   updatedAt: string;

@@ -14,6 +14,7 @@ import { AppError } from '../../../shared/middleware/error-handler.js';
 import { logger } from '../../../shared/utils/logger.js';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../../../prisma/client.js';
+import { auditLog } from '../../../shared/utils/audit-logger.js';
 
 const STATE_TTL_SECONDS = 300;
 const MAX_SESSIONS = 5;
@@ -76,6 +77,12 @@ export async function handleSsoCallback(
     });
   } catch (err) {
     logger.warn('SSO callback token exchange failed', { error: String(err) });
+    void auditLog({
+      actorId: null,
+      action: 'auth.login.sso',
+      result: 'FAIL',
+      meta: { reason: String(err) },
+    });
     throw new AppError(401, 'SSO authentication failed');
   }
 
@@ -112,8 +119,15 @@ export async function handleSsoCallback(
       where: { id: user.id },
       data: { loginCount: { increment: 1 }, lastLoginAt: new Date() },
     }),
-    setUserSession(user.id, { email: user.email, createdAt: nowIso, lastSeenAt: nowIso }),
+    setUserSession(user.id, { email: user.email, createdAt: nowIso, lastSeenAt: nowIso, amr: claims.amr }),
   ]);
+
+  void auditLog({
+    actorId: user.id,
+    action: 'auth.login.sso',
+    result: 'SUCCESS',
+    meta: { provider: 'oidc', ssoSubject: claims.sub, email: user.email },
+  });
 
   return { refreshToken: refreshTokenRaw };
 }

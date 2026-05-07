@@ -77,6 +77,7 @@ export async function listMyWorkspaces(userId: string) {
       memberCount: m.workspace._count.members,
       boardCount: m.workspace._count.boards,
       taskCount: taskCountMap.get(m.workspaceId) ?? 0,
+      mfaGraceUntil: m.mfaGraceUntil ?? null,
     }));
 }
 
@@ -132,16 +133,31 @@ export async function getWorkspace(workspaceId: string, userId: string) {
 export async function updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
   await assertOwner(workspaceId, userId);
 
-  const current = await prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId }, select: { name: true, isPrivate: true } });
+  const current = await prisma.workspace.findUniqueOrThrow({
+    where: { id: workspaceId },
+    select: { name: true, isPrivate: true, requireMfa: true, mfaGraceDays: true },
+  });
+
+  const graceDays = dto.mfaGraceDays ?? current.mfaGraceDays;
+  const enablingMfa = dto.requireMfa === true && current.requireMfa === false;
 
   const updated = await prisma.workspace.update({
     where: { id: workspaceId },
     data: dto,
   });
 
+  if (enablingMfa) {
+    const graceUntil = new Date(Date.now() + graceDays * 86_400_000);
+    await prisma.workspaceMember.updateMany({
+      where: { workspaceId, mfaGraceUntil: null },
+      data: { mfaGraceUntil: graceUntil },
+    });
+  }
+
   const meta: Record<string, unknown> = {};
   if (dto.name !== undefined && dto.name !== current.name) { meta.nameFrom = current.name; meta.nameTo = dto.name; }
   if (dto.isPrivate !== undefined && dto.isPrivate !== current.isPrivate) meta.isPrivate = dto.isPrivate;
+  if (dto.requireMfa !== undefined && dto.requireMfa !== current.requireMfa) meta.requireMfa = dto.requireMfa;
   await logEvent(workspaceId, userId, 'workspace_updated', 'workspace', workspaceId, meta);
 
   return updated;
@@ -180,6 +196,11 @@ export async function addMember(workspaceId: string, requesterId: string, dto: A
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
   emitMemberAddedNotification(workspaceId, dto.userId, requesterId).catch(() => {});
+  await logEvent(workspaceId, requesterId, 'member_added', 'member', dto.userId, {
+    name: targetUser.name,
+    email: targetUser.email,
+    role: dto.role,
+  });
   return member;
 }
 

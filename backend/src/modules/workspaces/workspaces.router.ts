@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
+import { workspaceMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
 import {
   createWorkspaceDto,
   updateWorkspaceDto,
@@ -63,7 +64,7 @@ router.delete('/:id/members/:userId', authHandler(async (req, res) => {
   res.json({ message: 'Member removed' });
 }));
 
-router.get('/:id/boards/by-prefix/:prefix', authHandler(async (req, res) => {
+router.get('/:id/boards/by-prefix/:prefix', authHandler(workspaceMfaGuard()), authHandler(async (req, res) => {
   res.json(await boards.getBoardByPrefix(String(req.params.id), String(req.params.prefix), req.user!.userId));
 }));
 

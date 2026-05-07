@@ -412,6 +412,28 @@ export default function AppLayout({ children }: Props) {
         </div>
       </div>
 
+      {/* ── MFA grace period banner ── */}
+      {(() => {
+        if (!current?.requireMfa || !current?.mfaGraceUntil) return null;
+        const until = new Date(current.mfaGraceUntil);
+        if (until <= new Date()) return null;
+        const daysLeft = Math.ceil((until.getTime() - Date.now()) / 86_400_000);
+        return (
+          <div style={{
+            background: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.25)',
+            padding: '8px 24px', fontSize: 12, color: '#F59E0B',
+            display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+            fontFamily: '"Inter",system-ui,sans-serif',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1.5L1 12.5h12L7 1.5z" stroke="#F59E0B" strokeWidth="1.2" strokeLinejoin="round"/>
+              <path d="M7 5.5v3M7 10h.01" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+            Требуется настроить двухфакторную аутентификацию — осталось {daysLeft} {daysLeft === 1 ? 'день' : daysLeft < 5 ? 'дня' : 'дней'}
+          </div>
+        );
+      })()}
+
       {/* ── Page content ── */}
       <div style={{ display: 'flex', flex: 1, flexDirection: 'column', overflow: 'auto' }}>
         {children}

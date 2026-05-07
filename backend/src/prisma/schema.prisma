@@ -22,6 +22,7 @@ model User {
   loginCount           Int       @default(0)
   lastLoginAt          DateTime?
   isSuperadmin         Boolean   @default(false)
+  isActive             Boolean   @default(true) @map("is_active")
   emailNotifications   Boolean   @default(true) @map("email_notifications")
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -116,10 +117,12 @@ model Workspace {
   name        String
   slug        String   @unique
   description String?
-  isPrivate   Boolean  @default(false)
-  creatorId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isPrivate    Boolean  @default(false)
+  requireMfa   Boolean  @default(false)
+  mfaGraceDays Int      @default(7)
+  creatorId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   creator   User              @relation("WorkspaceCreator", fields: [creatorId], references: [id])
   members   WorkspaceMember[]
@@ -132,11 +135,12 @@ model Workspace {
 }
 
 model WorkspaceMember {
-  id          String        @id @default(uuid())
-  workspaceId String
-  userId      String
-  role        WorkspaceRole @default(MEMBER)
-  createdAt   DateTime      @default(now())
+  id             String        @id @default(uuid())
+  workspaceId    String
+  userId         String
+  role           WorkspaceRole @default(MEMBER)
+  mfaGraceUntil  DateTime?
+  createdAt      DateTime      @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -402,14 +406,19 @@ model WorkspaceEvent {
 
 model AuditLog {
   id        String   @id @default(uuid())
-  actorId   String   // userId who performed the action
-  action    String   // e.g. "user.create", "user.set_superadmin", "request.approve"
-  targetId  String?  // userId or requestId being acted upon
-  meta      Json?    // additional context (safe, no secrets)
+  actorId   String
+  action    String
+  targetId  String?
+  result    String?  @map("result")       // "SUCCESS" | "FAIL"
+  ip        String?  @map("ip")
+  userAgent String?  @map("user_agent")
+  sessionId String?  @map("session_id")
+  meta      Json?
   createdAt DateTime @default(now())
 
   @@index([actorId])
   @@index([createdAt])
+  @@index([action])
   @@map("audit_logs")
 }
 

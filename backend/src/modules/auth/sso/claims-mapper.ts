@@ -6,6 +6,7 @@ export interface MappedClaims {
   email: string;
   name: string;
   emailVerified: boolean;
+  amr: string[];
 }
 
 const emailSchema = z.string().email();
@@ -31,7 +32,9 @@ export function mapClaims(raw: Record<string, unknown>): MappedClaims {
   }
   if (!name) name = email.split('@')[0];
 
-  return { sub, email, name, emailVerified };
+  const amr = Array.isArray(raw['amr']) ? (raw['amr'] as string[]) : [];
+
+  return { sub, email, name, emailVerified, amr };
 }
 
 export function buildSsoSubjectId(sub: string): string {

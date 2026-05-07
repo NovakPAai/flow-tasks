@@ -173,6 +173,11 @@ export default function WorkspaceSettingsPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [loadError, setLoadError]     = useState<string | null>(null);
 
+  // Security settings
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaGraceDays, setMfaGraceDays] = useState(7);
+  const [savingMfa, setSavingMfa]   = useState(false);
+
   const wsId          = workspace?.id;
   const wsName        = workspace?.name;
   const wsDescription = workspace?.description;
@@ -202,7 +207,9 @@ export default function WorkspaceSettingsPage() {
     setName(wsName ?? '');
     setDescription(wsDescription ?? '');
     setIsPrivate(wsIsPrivate ?? false);
-  }, [wsName, wsDescription, wsIsPrivate]);
+    setMfaEnabled(workspace?.requireMfa ?? false);
+    setMfaGraceDays(workspace?.mfaGraceDays ?? 7);
+  }, [wsName, wsDescription, wsIsPrivate, workspace?.requireMfa, workspace?.mfaGraceDays]);
 
   // Load workspace data only when workspace identity changes
   useEffect(() => {
@@ -346,6 +353,7 @@ export default function WorkspaceSettingsPage() {
     { key: 'workflows', label: 'Workflows' },
     { key: 'labels',    label: 'Метки' },
     ...(isOwner ? [{ key: 'history', label: 'История' }] : []),
+    ...(isOwner ? [{ key: 'security', label: 'Безопасность' }] : []),
     { key: 'general',   label: 'Основное' },
   ];
 
@@ -737,11 +745,87 @@ export default function WorkspaceSettingsPage() {
     </div>
   );
 
+  const saveMfaSettings = async () => {
+    setSavingMfa(true);
+    try {
+      await workspacesApi.updateWorkspace(workspace.id, { requireMfa: mfaEnabled, mfaGraceDays });
+      await load();
+      message.success('Настройки безопасности сохранены');
+    } catch {
+      message.error('Не удалось сохранить');
+    } finally {
+      setSavingMfa(false);
+    }
+  };
+
+  const renderSecurity = () => (
+    <div>
+      <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Безопасность</h2>
+      <div style={{ marginBottom: 32, marginTop: 8, fontSize: 12, color: c.muted }}>Настройки аутентификации и доступа</div>
+
+      <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: c.text }}>Обязательная двухфакторная аутентификация</div>
+              <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
+                SSO-участники должны проходить 2FA через Avanpost / Keycloak (TOTP)
+              </div>
+            </div>
+            <button
+              role="switch"
+              aria-checked={mfaEnabled}
+              onClick={() => setMfaEnabled((v) => !v)}
+              style={{
+                flexShrink: 0, width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
+                border: 'none', outline: 'none', position: 'relative', transition: 'background 0.2s',
+                background: mfaEnabled ? '#4F6EF7' : c.label,
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: 3, left: mfaEnabled ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                transition: 'left 0.2s',
+              }} />
+            </button>
+          </div>
+
+          {mfaEnabled && (
+            <div style={{ borderTop: `1px solid ${c.border}`, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: c.label, letterSpacing: '0.06em', marginBottom: 6 }}>
+                  GRACE PERIOD (ДНЕЙ)
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="number" min={1} max={30}
+                    value={mfaGraceDays}
+                    onChange={(e) => setMfaGraceDays(Math.min(30, Math.max(1, Number(e.target.value))))}
+                    style={{ ...inp, width: 80 }}
+                  />
+                  <span style={{ fontSize: 12, color: c.muted }}>дней до принудительной проверки</span>
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px' }}>
+                При включении: все участники получат {mfaGraceDays} дней для настройки TOTP в Avanpost/Keycloak
+              </div>
+            </div>
+          )}
+        </div>
+
+        <PrimaryBtn onClick={saveMfaSettings} loading={savingMfa} style={{ width: 'fit-content' }}>
+          Сохранить настройки безопасности
+        </PrimaryBtn>
+      </div>
+    </div>
+  );
+
   const CONTENT_MAP: Record<string, () => React.ReactNode> = {
     members: renderMembers,
     workflows: renderWorkflows,
     labels: renderLabels,
     history: renderHistory,
+    security: renderSecurity,
     general: renderGeneral,
   };
 

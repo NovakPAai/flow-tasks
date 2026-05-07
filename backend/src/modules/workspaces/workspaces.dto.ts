@@ -12,9 +12,11 @@ export const createWorkspaceDto = z.object({
 });
 
 export const updateWorkspaceDto = z.object({
-  name: stripHtml(z.string().min(1).max(100)).optional(),
-  description: stripHtml(z.string().max(500)).optional(),
-  isPrivate: z.boolean().optional(),
+  name:         stripHtml(z.string().min(1).max(100)).optional(),
+  description:  stripHtml(z.string().max(500)).optional(),
+  isPrivate:    z.boolean().optional(),
+  requireMfa:   z.boolean().optional(),
+  mfaGraceDays: z.number().int().min(1).max(30).optional(),
 });
 
 export const addMemberDto = z.object({
