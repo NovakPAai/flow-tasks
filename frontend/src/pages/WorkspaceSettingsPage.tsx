@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
@@ -169,10 +169,31 @@ export default function WorkspaceSettingsPage() {
   const [creatingWf, setCreatingWf] = useState(false);
   const [editingWfId, setEditingWfId] = useState<string | null>(null);
 
+  // Data loading state
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadError, setLoadError]     = useState<string | null>(null);
+
   const wsId          = workspace?.id;
   const wsName        = workspace?.name;
   const wsDescription = workspace?.description;
   const wsIsPrivate   = workspace?.isPrivate;
+
+  const loadWorkspaceData = useCallback(async (id: string) => {
+    setLoadingData(true);
+    setLoadError(null);
+    try {
+      const [m, l, wfs] = await Promise.all([
+        workspacesApi.listMembers(id),
+        labelsApi.listLabels(id),
+        wfApi.listWorkflows(id),
+      ]);
+      setMembers(m); setLabels(l); setWorkflows(wfs);
+    } catch {
+      setLoadError('Не удалось загрузить данные — попробуйте обновить страницу');
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
   useEffect(() => {
@@ -180,14 +201,10 @@ export default function WorkspaceSettingsPage() {
     setName(wsName ?? '');
     setDescription(wsDescription ?? '');
     setIsPrivate(wsIsPrivate ?? false);
-    Promise.all([
-      workspacesApi.listMembers(wsId),
-      labelsApi.listLabels(wsId),
-      wfApi.listWorkflows(wsId),
-    ]).then(([m, l, wfs]) => { setMembers(m); setLabels(l); setWorkflows(wfs); }).catch(() => {});
-  }, [wsId, wsName, wsDescription, wsIsPrivate]);
+    loadWorkspaceData(wsId);
+  }, [wsId, wsName, wsDescription, wsIsPrivate, loadWorkspaceData]);
 
-  const myRole = members.find((m) => m.userId === currentUser?.id)?.role;
+  const myRole  = loadingData ? undefined : members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';
 
   if (!workspace) return null;
@@ -419,7 +436,95 @@ export default function WorkspaceSettingsPage() {
     </div>
   );
 
-  const renderWorkflows = () => (
+  const renderWorkflows = () => {
+    if (loadingData) return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Workflows</h2>
+            <span style={{ fontSize: 12, color: c.muted }}>Управляйте статусами и переходами для ваших досок</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 72, borderRadius: 10, background: c.cardBg, border: `1px solid ${c.border}`, animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+    );
+
+    if (loadError) return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Workflows</h2>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
+          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <button
+            onClick={() => wsId && loadWorkspaceData(wsId)}
+            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+          >
+            Повторить
+          </button>
+        </div>
+      </div>
+    );
+
+    if (!isOwner) return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Workflows</h2>
+            <span style={{ fontSize: 12, color: c.muted }}>Управляйте статусами и переходами для ваших досок</span>
+          </div>
+        </div>
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(139,148,158,0.08)', borderRadius: 8, border: `1px solid ${c.border}`, fontSize: 13, color: c.muted }}>
+          Редактирование workflow доступно только владельцу воркспейса
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {workflows.map((wf) => {
+            const modeColor = wf.mode === 'FORWARD_ONLY' ? '#22C55E' : wf.mode === 'BIDIRECTIONAL' ? '#4F6EF7' : '#F59E0B';
+            return (
+              <div key={wf.id} style={{ background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>{wf.name}</span>
+                      {wf.isDefault && (
+                        <span style={{ fontSize: 10, fontWeight: 500, color: '#4F6EF7', background: 'rgba(79,110,247,0.12)', borderRadius: 4, padding: '2px 6px' }}>По умолчанию</span>
+                      )}
+                      <span style={{ fontSize: 10, fontWeight: 500, color: modeColor, background: `${modeColor}18`, borderRadius: 4, padding: '2px 7px' }}>
+                        {WF_MODE_LABEL[wf.mode]}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                      {(wf.statuses ?? []).map((s, i) => (
+                        <span key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: c.muted }}>
+                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                            {s.name}
+                          </span>
+                          {i < (wf.statuses ?? []).length - 1 && (
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: c.label }}>
+                              <path d="M2 5h6M6 3l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {workflows.length === 0 && <span style={{ color: c.muted, fontSize: 13 }}>Нет workflow</span>}
+        </div>
+      </div>
+    );
+
+    return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -508,7 +613,8 @@ export default function WorkspaceSettingsPage() {
         {workflows.length === 0 && <span style={{ color: c.muted, fontSize: 13 }}>Нет workflow</span>}
       </div>
     </div>
-  );
+    );
+  };
 
   const renderLabels = () => (
     <div>
@@ -636,7 +742,7 @@ export default function WorkspaceSettingsPage() {
   // ─── Layout ────────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', minHeight: '100%', fontFamily: '"Inter",system-ui,sans-serif', background: c.bg }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
       {/* Sidebar */}
       <div style={{ width: 230, flexShrink: 0, background: c.sidebar, borderRight: `1px solid ${c.sidebarBorder}`, padding: '24px 0', display: 'flex', flexDirection: 'column' }}>
