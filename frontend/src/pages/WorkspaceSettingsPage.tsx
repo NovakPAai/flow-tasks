@@ -170,7 +170,7 @@ export default function WorkspaceSettingsPage() {
   const [editingWfId, setEditingWfId] = useState<string | null>(null);
 
   // Data loading state
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
   const [loadError, setLoadError]     = useState<string | null>(null);
 
   const wsId          = workspace?.id;
@@ -196,13 +196,19 @@ export default function WorkspaceSettingsPage() {
   }, []);
 
   useEffect(() => { if (workspaces.length === 0) load(); }, [workspaces.length, load]);
+
+  // Sync form fields from store (does not trigger API reload)
   useEffect(() => {
-    if (!wsId) return;
     setName(wsName ?? '');
     setDescription(wsDescription ?? '');
     setIsPrivate(wsIsPrivate ?? false);
+  }, [wsName, wsDescription, wsIsPrivate]);
+
+  // Load workspace data only when workspace identity changes
+  useEffect(() => {
+    if (!wsId) return;
     loadWorkspaceData(wsId);
-  }, [wsId, wsName, wsDescription, wsIsPrivate, loadWorkspaceData]);
+  }, [wsId, loadWorkspaceData]);
 
   const myRole  = loadingData ? undefined : members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';
@@ -463,7 +469,7 @@ export default function WorkspaceSettingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
           <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
           <button
-            onClick={() => wsId && loadWorkspaceData(wsId)}
+            onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
             style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
           >
             Повторить
