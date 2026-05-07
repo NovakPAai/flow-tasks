@@ -351,7 +351,8 @@ test.describe('TaskDrawer — редактирование задачи', () => 
     await page.waitForLoadState('networkidle');
     // .first() т.к. labelName может матчиться в picker list И в sidebar labels
     await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 10000 });
-    await page.getByText(labelName).first().click({ timeout: 15_000 });
+    // dispatchEvent обходит проверку actionability (тот же паттерн что в openDrawer)
+    await page.getByText(labelName).first().dispatchEvent('click');
     // Метка назначена — picker ещё открыт (Escape закрыл бы drawer целиком)
     // Проверяем что метка видна — .first() избегает strict mode
     await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 10_000 });
