@@ -20,21 +20,12 @@
 | gap-09 | global-search | feat | P3 | **done** | #140 |
 | gap-10 | bulk-operations | feat | P3 | **done** | #141 |
 | gap-11 | my-tasks-accordion | feat | P2 | **done** | #145 |
-| **gap-12** | **workflow-settings-unlocked** | **fix** | **P1** | **draft** | — |
+| **gap-12** | **workflow-settings-unlocked** | **fix** | **P1** | **done** | этa ветка |
 | **gap-13** | **2fa-totp** | **feat** | **P2** | **draft** | — |
 
 ---
 
 ## Открытые гепы
-
-### P1 — Критично
-
-#### gap-12 — Workflow Settings ghost-lock
-
-[specs/gaps/gap-12-workflow-settings-unlocked.md](gaps/gap-12-workflow-settings-unlocked.md)
-
-`.catch(() => {})` при загрузке участников страницы настроек: OWNER видит интерфейс read-only, не может редактировать workflow.
-Фикс: явная обработка ошибки + skeleton + `isOwner` вычисляется только после `loadingData = false`.
 
 ### P2 — Важно
 
@@ -119,7 +110,7 @@ FlowTask не хранит TOTP-секреты — делегирует всё I
 
 | Раздел | Открыто | Закрыто/Done |
 |--------|---------|--------------|
-| Активные гепы (gap-01..13) | **2** (gap-12, gap-13) | 11 |
+| Активные гепы (gap-01..13) | **1** (gap-13) | 12 |
 | OoS P1 | **2** (rate limit, filter URL) | 2 |
 | OoS P2 | **7** | — |
 | OoS P3 | **13** | — |
