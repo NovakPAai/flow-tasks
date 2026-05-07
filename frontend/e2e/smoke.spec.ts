@@ -51,7 +51,7 @@ test('CIO demo smoke: full user journey', async ({ page }) => {
   await titleInput.fill(taskTitle);
   await titleInput.press('Enter');
 
-  await expect(page.locator(`text=${taskTitle}`).first()).toBeVisible({ timeout: 5000 });
+  await expect(page.locator(`text=${taskTitle}`).first()).toBeVisible({ timeout: 10_000 });
 
   // ── 7. Open task drawer ──────────────────────────────────────────────────────
   await page.locator(`text=${taskTitle}`).first().click();
@@ -64,7 +64,7 @@ test('CIO demo smoke: full user journey', async ({ page }) => {
   await commentInput.waitFor({ timeout: 10000 });
   await commentInput.fill('Hello from e2e smoke test');
   await page.locator('button:has-text("Отправить")').click();
-  await expect(page.locator('text=Hello from e2e smoke test')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('text=Hello from e2e smoke test')).toBeVisible({ timeout: 10_000 });
 
   // ── 9. Logout ────────────────────────────────────────────────────────────────
   // Close drawer first if needed

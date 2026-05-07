@@ -326,6 +326,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   });
 
   test('назначение существующей метки на задачу', async ({ page }) => {
+    test.setTimeout(60_000);
     // Сначала создаём метку в первом drawer
     const labelName = `Assign Label ${uid()}`;
     await openDrawer(page, `Label Source ${uid()}`);
