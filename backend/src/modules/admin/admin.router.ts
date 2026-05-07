@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { requireSuperadmin } from '../../shared/middleware/require-superadmin.js';
 import { validate } from '../../shared/middleware/validate.js';
-import { createUserDto, reviewRequestDto, updateUserDto } from './admin.dto.js';
+import { createUserDto, reviewRequestDto, updateUserDto, SetUserActiveSchema } from './admin.dto.js';
 import * as adminService from './admin.service.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
@@ -54,6 +54,19 @@ router.patch('/registration-requests/:id', validate(reviewRequestDto), async (re
   try {
     await adminService.reviewRegistrationRequest(req.params.id as string, req.body, req.user!.userId);
     res.json({ message: 'Заявка обработана' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/users/:id/active', validate(SetUserActiveSchema), async (req: AuthRequest, res, next) => {
+  try {
+    const result = await adminService.setUserActive(
+      req.user!.userId,
+      req.params.id as string,
+      req.body.isActive,
+    );
+    res.json(result);
   } catch (err) {
     next(err);
   }

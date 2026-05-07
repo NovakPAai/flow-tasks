@@ -14,6 +14,11 @@ export const updateUserDto = z.object({
   isSuperadmin: z.boolean(),
 });
 
+export const SetUserActiveSchema = z.object({
+  isActive: z.boolean(),
+});
+
 export type CreateUserDto = z.infer<typeof createUserDto>;
 export type ReviewRequestDto = z.infer<typeof reviewRequestDto>;
 export type UpdateUserDto = z.infer<typeof updateUserDto>;
+export type SetUserActiveDto = z.infer<typeof SetUserActiveSchema>;

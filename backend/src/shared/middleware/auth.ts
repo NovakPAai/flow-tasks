@@ -40,8 +40,15 @@ export function authenticate(req: AuthRequest, _res: Response, next: NextFunctio
 
   try {
     const payload = verifyAccessToken(token);
-    req.user = { userId: payload.userId, email: payload.email };
-    next();
+    prisma.user.findUnique({ where: { id: payload.userId }, select: { isActive: true } })
+      .then((u) => {
+        if (!u || u.isActive === false) {
+          return next(new AppError(403, 'Account disabled', { code: 'ACCOUNT_DISABLED' }));
+        }
+        req.user = { userId: payload.userId, email: payload.email };
+        next();
+      })
+      .catch(next);
   } catch {
     next(new AppError(401, 'Invalid or expired token'));
   }

@@ -7,6 +7,7 @@ import { AppError } from '../../shared/middleware/error-handler.js';
 import { config } from '../../config.js';
 import ssoRouter from './sso/sso.router.js';
 import type { AuthRequest } from '../../shared/types/index.js';
+import { extractClientMeta } from '../../shared/utils/audit-logger.js';
 
 const REFRESH_COOKIE_OPTS = {
   httpOnly: true,
@@ -33,7 +34,8 @@ router.post('/register', validate(registerDto), async (req, res, next) => {
 
 router.post('/login', validate(loginDto), async (req, res, next) => {
   try {
-    const { user, accessToken, refreshToken } = await authService.login(req.body);
+    const clientMeta = extractClientMeta(req);
+    const { user, accessToken, refreshToken } = await authService.login(req.body, clientMeta);
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTS);
     res.json({ user, accessToken });
   } catch (err) {
@@ -56,7 +58,8 @@ router.post('/refresh', async (req, res, next) => {
 router.post('/logout', async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken as string | undefined;
-    if (token) await authService.logout(token);
+    const clientMeta = extractClientMeta(req);
+    if (token) await authService.logout(token, clientMeta);
     res.clearCookie('refreshToken', { path: '/' });
     res.json({ message: 'Logged out' });
   } catch (err) {
