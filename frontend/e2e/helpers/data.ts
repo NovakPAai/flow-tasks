@@ -29,8 +29,18 @@ async function authFetch(token: string, path: string, opts: RequestInit = {}): P
   });
 }
 
-export async function getAdminToken(): Promise<string> {
-  return login('admin@flowtask.dev', 'Password1');
+// Module-level cache — один логин на весь воркер-процесс.
+// Предотвращает превышение rate-limit (10/min per email) при параллельных beforeAll.
+let _adminTokenCache: Promise<string> | null = null;
+
+export function getAdminToken(): Promise<string> {
+  if (!_adminTokenCache) {
+    _adminTokenCache = login('admin@flowtask.dev', 'Password1').catch((err) => {
+      _adminTokenCache = null; // сбросить при ошибке чтобы следующий вызов повторил
+      throw err;
+    });
+  }
+  return _adminTokenCache;
 }
 
 export async function createWorkspace(
