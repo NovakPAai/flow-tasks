@@ -1,4 +1,4 @@
-import { OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
+import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import { registry } from './registry.js';
 
 // Route files register their paths as a side effect on import.
@@ -13,9 +13,9 @@ import './routes/notifications.js';
 import './routes/admin.js';
 
 export function generateOpenApiSpec() {
-  const generator = new OpenApiGeneratorV31(registry.definitions);
+  const generator = new OpenApiGeneratorV3(registry.definitions);
   return generator.generateDocument({
-    openapi: '3.1.0',
+    openapi: '3.0.3',
     info: {
       title: 'FlowTask API',
       version: process.env.npm_package_version ?? '1.0.0',
