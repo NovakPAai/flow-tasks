@@ -44,15 +44,16 @@ export function createApp() {
   });
 
   // OpenAPI spec + Swagger UI (self-contained, no CDN)
-  let cachedSpec: ReturnType<typeof generateOpenApiSpec> | null = null;
-  const getSpec = () => {
-    if (!cachedSpec) cachedSpec = generateOpenApiSpec();
-    return cachedSpec;
-  };
-  app.get('/api/openapi.json', (_req, res) => res.json(getSpec()));
-  app.use('/api/docs', swaggerUi.serve, (_req: express.Request, res: express.Response, next: express.NextFunction) => {
-    swaggerUi.setup(getSpec())(_req, res, next);
-  });
+  // CSP override must come before swaggerUi.serve so Helmet's restrictive policy doesn't block eval()
+  const openApiSpec = generateOpenApiSpec();
+  app.get('/api/openapi.json', (_req, res) => res.json(openApiSpec));
+  app.use('/api/docs', (_req, res, next) => {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;",
+    );
+    next();
+  }, swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
   // Routes
   app.use('/api/auth', authRouter);
