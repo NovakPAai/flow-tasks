@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { apiReference } from '@scalar/express-api-reference';
+import { generateOpenApiSpec } from './shared/openapi/index.js';
 
 import { errorHandler } from './shared/middleware/error-handler.js';
 import authRouter from './modules/auth/auth.router.js';
@@ -40,6 +42,14 @@ export function createApp() {
       version: process.env.GIT_SHA || 'dev',
     });
   });
+
+  // OpenAPI spec + Scalar UI
+  let cachedSpec: ReturnType<typeof generateOpenApiSpec> | null = null;
+  app.get('/api/openapi.json', (_req, res) => {
+    if (!cachedSpec) cachedSpec = generateOpenApiSpec();
+    res.json(cachedSpec);
+  });
+  app.use('/api/docs', apiReference({ url: '/api/openapi.json', theme: 'saturn' }));
 
   // Routes
   app.use('/api/auth', authRouter);

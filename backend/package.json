@@ -24,7 +24,9 @@
     "check:all": "npm run check:rbac"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@prisma/client": "^6.19.2",
+    "@scalar/express-api-reference": "^0.9.14",
     "@types/cookie-parser": "^1.4.10",
     "@types/multer": "^2.1.0",
     "bcryptjs": "^2.4.3",
