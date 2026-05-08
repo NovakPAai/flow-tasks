@@ -28,6 +28,11 @@ export const updateProfileDto = z.object({
   message: 'Укажите хотя бы одно поле для обновления',
 });
 
+export const changePasswordDto = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: passwordSchema,
+});
+
 export const forgotPasswordDto = z.object({
   email: z.string().email('Введите корректный email'),
 });
@@ -40,5 +45,6 @@ export const resetPasswordDto = z.object({
 export type RegisterDto = z.infer<typeof registerDto>;
 export type LoginDto = z.infer<typeof loginDto>;
 export type UpdateProfileDto = z.infer<typeof updateProfileDto>;
+export type ChangePasswordDto = z.infer<typeof changePasswordDto>;
 export type ForgotPasswordDto = z.infer<typeof forgotPasswordDto>;
 export type ResetPasswordDto = z.infer<typeof resetPasswordDto>;

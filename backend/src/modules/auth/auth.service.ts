@@ -112,6 +112,10 @@ export async function login(dto: LoginDto, clientMeta?: ClientMeta) {
     throw new AppError(401, 'Неверный email или пароль');
   }
 
+  if (user.isActive === false) {
+    throw new AppError(403, 'Account disabled');
+  }
+
   // Block local login for SSO-only users (except superadmins who always retain local access)
   if (user.ssoOnly && !user.isSuperadmin) {
     throw new AppError(403, 'Вход по паролю недоступен. Используйте SSO.');
@@ -137,9 +141,11 @@ export async function login(dto: LoginDto, clientMeta?: ClientMeta) {
   const accessToken = signAccessToken(tokenPayload);
   const refreshToken = signRefreshToken(tokenPayload);
 
+  const sessionId = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
   await prisma.refreshToken.create({
     data: {
-      token: crypto.createHash('sha256').update(refreshToken).digest('hex'),
+      token: sessionId,
       userId: user.id,
       expiresAt: generateRefreshExpiry(),
     },
@@ -173,6 +179,7 @@ export async function login(dto: LoginDto, clientMeta?: ClientMeta) {
     result: 'SUCCESS',
     ip: clientMeta?.ip,
     userAgent: clientMeta?.userAgent,
+    sessionId,
     meta: { email: user.email, provider: 'local', region: clientMeta?.region },
   });
 
@@ -284,6 +291,36 @@ export async function getMe(userId: string) {
   // SUPERADMIN_EMAIL always has superadmin access even if DB flag not set
   const isSuperadmin = user.isSuperadmin || user.email === config.SUPERADMIN_EMAIL;
   return { ...user, isSuperadmin, firstName };
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+  clientMeta?: ClientMeta,
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new AppError(404, 'Пользователь не найден');
+
+  const valid = await comparePassword(currentPassword, user.password);
+  if (!valid) throw new AppError(401, 'Неверный текущий пароль');
+
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: userId }, data: { password: passwordHash } }),
+    prisma.refreshToken.deleteMany({ where: { userId } }),
+  ]);
+
+  void auditLog({
+    actorId: userId,
+    action: 'auth.credential.change',
+    result: 'SUCCESS',
+    ip: clientMeta?.ip,
+    userAgent: clientMeta?.userAgent,
+    meta: { field: 'password', method: 'profile_update' },
+  });
+
+  return { message: 'Пароль изменён' };
 }
 
 export async function requestPasswordReset(email: string) {
