@@ -33,8 +33,11 @@ export async function listUsers() {
     orderBy: { createdAt: 'desc' },
   });
 
+  const superadminEmail = config.SUPERADMIN_EMAIL;
+
   return users.map(({ createdWorkspaces, _count, ...u }) => ({
     ...u,
+    isSuperadmin: u.isSuperadmin || u.email === superadminEmail,
     stats: {
       workspaces: _count.createdWorkspaces,
       boards: createdWorkspaces.reduce((s, ws) => s + ws._count.boards, 0),

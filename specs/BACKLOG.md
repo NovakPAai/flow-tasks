@@ -30,6 +30,8 @@
 | **gap-19** | **api-key-audit** | **fix / security** | **P1** | **done** | эта ветка |
 | **gap-20** | **config-change-audit** | **fix / security** | **P1** | **done** | эта ветка |
 | **gap-21** | **validation-error-audit** | **fix / security** | **P2** | **done** | эта ветка |
+| **gap-22** | **workspace-settings-always-accessible** | **feat / ux** | **P2** | **draft** | — |
+| **gap-23** | **superadmin-email-badge** | **fix** | **P1** | **draft** | — |
 
 ---
 
