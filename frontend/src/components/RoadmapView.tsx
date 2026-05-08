@@ -117,9 +117,10 @@ function BarTooltip({ tip, isDark, statuses }: {
   const muted  = isDark ? '#8B95B0' : '#6B7194';
   const dimmed = isDark ? '#484F58' : '#9B96B8';
 
-  const start      = parseDate(task.startDate);
-  const end        = parseDate(task.dueDate);
-  const dur        = start && end ? diffDays(start, end) : null;
+  const start       = parseDate(task.startDate);
+  const end         = parseDate(task.dueDate);
+  const isMilestone = !start && !!end;
+  const dur         = start && end ? diffDays(start, end) : null;
   const today      = getToday();
   const overdue    = end && end < today && task.status?.category !== 'DONE';
   const overdueD   = overdue && end ? diffDays(end, today) : 0;
@@ -302,6 +303,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   const [expanded, setExpanded]   = useState<Set<string>>(new Set());
   const [hideOpen, setHideOpen]   = useState(false);
   const [tip, setTip]             = useState<TipState | null>(null);
+  const [showLegend, setShowLegend] = useState(false);
 
   // Быстрый доступ к цвету/категории статуса по id
   const statusMap = useMemo(
@@ -312,6 +314,20 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   const leftRef  = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const lockRef  = useRef(false);
+  const rafRef   = useRef<number | null>(null);
+
+  // ── Keyboard shortcuts W/M/Q ───────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'w' || e.key === 'W') setZoom('week');
+      else if (e.key === 'm' || e.key === 'M') setZoom('month');
+      else if (e.key === 'q' || e.key === 'Q') setZoom('quarter');
+      else if (e.key === 'Escape') setShowLegend(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -500,8 +516,9 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   const rows = visibleRows();
   const totalH = rows.reduce((acc, t) => acc + (t.parentId ? CROW_H : ROW_H), 0);
 
-  // ── Today X ───────────────────────────────────────────────────────────────
-  const todayX = xOf(getToday());
+  // Computed once per render — avoids repeated new Date() across all rows
+  const today  = getToday();
+  const todayX = xOf(today);
 
   // ── Status color for tooltip ───────────────────────────────────────────────
   function statusLabel(task: Task) {
@@ -512,8 +529,26 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   // ── Overdue ────────────────────────────────────────────────────────────────
   function isOverdue(task: Task) {
     const due = parseDate(task.dueDate);
-    return due && due < getToday() && task.status?.category !== 'DONE';
+    return due && due < today && task.status?.category !== 'DONE';
   }
+
+  // ── Milestone collision offsets ────────────────────────────────────────────
+  // Pre-compute vertical offsets so overlapping diamonds don't stack on top of each other.
+  const milestoneYOffsets = (() => {
+    const offsets = new Map<string, number>();
+    const pts = rows
+      .filter(t => !parseDate(t.startDate) && !!parseDate(t.dueDate))
+      .map(t => ({ id: t.id, mx: xOf(parseDate(t.dueDate)!) }))
+      .sort((a, b) => a.mx - b.mx);
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (offsets.has(pts[i].id)) continue;
+      if (Math.abs(pts[i].mx - pts[i + 1].mx) < 22) {
+        offsets.set(pts[i].id, -7);
+        offsets.set(pts[i + 1].id, 7);
+      }
+    }
+    return offsets;
+  })();
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -527,21 +562,26 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         {/* Zoom */}
         <span style={{ fontSize: 12, color: c.muted, marginRight: 2 }}>Масштаб</span>
         <div style={{ display: 'flex', gap: 2, background: c.chip, borderRadius: 8, padding: 2 }}>
-          {(['week', 'month', 'quarter'] as Zoom[]).map(z => (
-            <button
-              key={z}
-              onClick={() => setZoom(z)}
-              style={{
-                padding: '4px 11px', border: 'none', borderRadius: 6, cursor: 'pointer',
-                fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500,
-                background: zoom === z ? c.accent : 'transparent',
-                color: zoom === z ? '#fff' : c.chipText,
-                transition: 'all .12s',
-              }}
-            >
-              {{ week: 'Неделя', month: 'Месяц', quarter: 'Квартал' }[z]}
-            </button>
-          ))}
+          {(['week', 'month', 'quarter'] as Zoom[]).map(z => {
+            const kbd = { week: 'W', month: 'M', quarter: 'Q' }[z];
+            const label = { week: 'Неделя', month: 'Месяц', quarter: 'Квартал' }[z];
+            return (
+              <button
+                key={z}
+                onClick={() => setZoom(z)}
+                title={`${label} (${kbd})`}
+                style={{
+                  padding: '4px 11px', border: 'none', borderRadius: 6, cursor: 'pointer',
+                  fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500,
+                  background: zoom === z ? c.accent : 'transparent',
+                  color: zoom === z ? '#fff' : c.chipText,
+                  transition: 'all .12s',
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Today button */}
@@ -594,6 +634,57 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         <div style={{ flex: 1 }} />
 
         <span style={{ fontSize: 12, color: c.muted }}>{rows.length} задач</span>
+
+        {/* Legend button */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowLegend(v => !v)}
+            title="Легенда дорожной карты"
+            aria-expanded={showLegend}
+            style={{
+              width: 26, height: 26, borderRadius: '50%',
+              border: `1px solid ${c.border}`, background: showLegend ? c.accent : 'transparent',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: showLegend ? '#fff' : c.muted, fontFamily: '"Inter",system-ui,sans-serif',
+              fontSize: 12, fontWeight: 600, transition: 'all .12s',
+            }}
+          >?</button>
+          {showLegend && (
+            <>
+              {/* Backdrop to close on click-outside */}
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                onClick={() => setShowLegend(false)}
+              />
+              <div style={{
+                position: 'absolute', top: 32, right: 0, width: 272, zIndex: 100,
+                background: isDark ? '#161C30' : '#FFFFFF',
+                border: `1px solid ${c.border}`, borderRadius: 10,
+                padding: '14px 16px', boxShadow: '0 8px 32px rgba(0,0,0,.25)',
+                fontFamily: '"Inter",system-ui,sans-serif',
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: isDark ? '#E2E8F8' : '#1A1A2E', marginBottom: 12 }}>
+                  Легенда дорожной карты
+                </div>
+                {[
+                  { visual: <div style={{ width: 56, height: 14, borderRadius: 3, background: 'rgba(79,110,247,.6)', border: '1px solid rgba(79,110,247,.85)' }} />, label: 'Задача с датой начала и дедлайном' },
+                  { visual: <div style={{ width: 56, display: 'flex', justifyContent: 'center' }}><div style={{ width: 12, height: 12, transform: 'rotate(45deg)', background: 'rgba(79,110,247,.6)', border: '2px solid rgba(79,110,247,.85)' }} /></div>, label: 'Задача только с дедлайном (milestone)' },
+                  { visual: <div style={{ width: 56, height: 14, borderRadius: 3, background: 'rgba(239,68,68,.2)', border: '1.5px dashed rgba(239,68,68,.65)' }} />, label: 'Просрочка (дни после дедлайна)' },
+                ].map((row, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+                    <div style={{ flexShrink: 0 }}>{row.visual}</div>
+                    <span style={{ fontSize: 11.5, color: isDark ? '#8B95B0' : '#6B7194' }}>{row.label}</span>
+                  </div>
+                ))}
+                <div style={{ borderTop: `1px solid ${c.border}`, paddingTop: 9, marginTop: 2 }}>
+                  <div style={{ fontSize: 10.5, color: isDark ? '#484F58' : '#9B96B8' }}>
+                    Цвет = статус задачи · Клавиши: <b>W</b> нед · <b>M</b> мес · <b>Q</b> кварт
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* ── Main area ── */}
@@ -620,7 +711,15 @@ export default function RoadmapView({ boardId, statuses }: Props) {
           {/* Rows */}
           <div ref={leftRef} style={{ overflowY: 'auto', flex: 1 }}>
             {loading ? (
-              <div style={{ padding: 24, textAlign: 'center', color: c.muted, fontSize: 13 }}>Загрузка…</div>
+              <div>
+                {[70, 45, 85, 55, 65].map((w, i) => (
+                  <div key={i} style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 12px', borderBottom: `1px solid ${c.border}`, gap: 8 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 4, background: c.chip, flexShrink: 0, animation: 'rm-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
+                    <div style={{ flex: 1, height: 10, borderRadius: 5, background: c.chip, maxWidth: `${w}%`, animation: 'rm-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
+                    <div style={{ width: 40, height: 10, borderRadius: 5, background: c.chip, animation: 'rm-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
+                  </div>
+                ))}
+              </div>
             ) : rows.length === 0 ? (
               <div style={{ padding: 24, textAlign: 'center', color: c.dimmed, fontSize: 13 }}>
                 Нет задач с датами в этом периоде
@@ -632,20 +731,32 @@ export default function RoadmapView({ boardId, statuses }: Props) {
               const isExp    = expanded.has(task.id);
               const due      = parseDate(task.dueDate);
               const overdue  = isOverdue(task);
-              const dueColor = overdue ? '#EF4444' : due && diffDays(due, getToday()) < 7 && due >= getToday() ? '#F59E0B' : task.status?.category === 'DONE' ? '#10B981' : c.dimmed;
+              const dueColor = overdue ? '#EF4444' : due && diffDays(due, today) < 7 && due >= today ? '#F59E0B' : task.status?.category === 'DONE' ? '#10B981' : c.dimmed;
+              const toggleExpand = () => {
+                if (!hasKids) return;
+                setExpanded(prev => { const n = new Set(prev); n.has(task.id) ? n.delete(task.id) : n.add(task.id); return n; });
+              };
 
               return (
                 <div
                   key={task.id}
+                  role={hasKids ? 'button' : undefined}
+                  tabIndex={hasKids ? 0 : undefined}
+                  aria-expanded={hasKids ? isExp : undefined}
+                  aria-label={hasKids ? `${task.title} — ${isExp ? 'свернуть' : 'развернуть'} подзадачи` : undefined}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleExpand(); } }}
                   style={{
                     display: 'flex', alignItems: 'center', height: rh,
                     borderBottom: `1px solid ${c.border}`,
                     background: idx % 2 === 0 ? 'transparent' : c.rowEven,
-                    paddingRight: 8, overflow: 'hidden', cursor: 'pointer',
-                    transition: 'background .1s',
+                    paddingRight: 8, overflow: 'hidden', cursor: hasKids ? 'pointer' : 'default',
+                    transition: 'background .1s', outline: 'none',
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = `rgba(79,110,247,.05)`; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = idx % 2 === 0 ? 'transparent' : c.rowEven; }}
+                  onFocus={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = `inset 0 0 0 2px ${c.accent}`; }}
+                  onBlur={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
+                  onClick={toggleExpand}
                 >
                   {isChild ? (
                     <>
@@ -662,15 +773,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                     <>
                       {/* Expand button */}
                       <button
-                        onClick={() => {
-                          if (!hasKids) return;
-                          setExpanded(prev => {
-                            const next = new Set(prev);
-                            if (next.has(task.id)) next.delete(task.id);
-                            else next.add(task.id);
-                            return next;
-                          });
-                        }}
+                        onClick={e => { e.stopPropagation(); toggleExpand(); }}
                         style={{
                           width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
                           background: 'none', border: 'none', cursor: hasKids ? 'pointer' : 'default',
@@ -698,9 +801,16 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         </div>
 
         {/* ── Right panel (timeline) ── */}
+        <div style={{ flex: 1, position: 'relative', minWidth: 0, overflow: 'hidden' }}>
+          {/* Scroll affordance: fade on right edge signals more content */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0, bottom: 0, width: 32,
+            background: `linear-gradient(to right, transparent, ${c.bg}CC)`,
+            pointerEvents: 'none', zIndex: 10,
+          }} />
         <div
           ref={rightRef}
-          style={{ flex: 1, overflow: 'auto', position: 'relative', minWidth: 0 }}
+          style={{ flex: 1, overflow: 'auto', position: 'relative', minWidth: 0, height: '100%' }}
         >
           <div style={{ position: 'relative', width: TL_W, minWidth: '100%' }}>
 
@@ -808,8 +918,15 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                 </div>
               )}
 
+              {/* Bars-area loading skeleton */}
+              {loading && [70, 40, 85, 55, 65].map((w, i) => (
+                <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: i * ROW_H, height: ROW_H, display: 'flex', alignItems: 'center', paddingLeft: `${8 + i * 7}%` }}>
+                  <div style={{ height: 14, borderRadius: 5, background: c.chip, width: `${w}%`, maxWidth: 320, animation: 'rm-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
+                </div>
+              ))}
+
               {/* Task bars */}
-              {rows.map((task, idx) => {
+              {!loading && rows.map((task, idx) => {
                 const isChild = !!task.parentId;
                 const rh      = isChild ? CROW_H : ROW_H;
                 const yOffset = rows.slice(0, idx).reduce((acc, t) => acc + (t.parentId ? CROW_H : ROW_H), 0);
@@ -843,44 +960,54 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                 // Milestone: only dueDate set, no startDate → render diamond marker
                 if (isMilestone) {
                   const mx = xOf(end!);
-                  // minimum 14px so child diamonds stay legible
-                  const mSize = isChild ? 14 : 16;
-                  // hitbox is larger than the visual for easy mouse targeting
+                  const mSize  = isChild ? 14 : 16;
                   const hitbox = mSize + 16;
                   const overdue = isOverdue(task);
-                  // clamp visual center so the diamond is never partially off-screen
                   const clampedMx = Math.max(mSize / 2, Math.min(TL_W - mSize / 2, mx));
                   const inView = mx >= -hitbox && mx <= TL_W + hitbox;
-                  const mileMouseProps = {
+                  // collision offset — pre-computed above
+                  const yShift = milestoneYOffsets.get(task.id) ?? 0;
+                  const mileInteract = {
                     onMouseEnter: (e: React.MouseEvent) => {
                       const inner = (e.currentTarget as HTMLDivElement).querySelector<HTMLDivElement>('[data-mile-inner]');
                       if (inner) inner.style.transform = 'rotate(45deg) scale(1.25)';
                       setTip({ task, x: e.clientX, y: e.clientY });
                     },
-                    onMouseMove: (e: React.MouseEvent) =>
-                      setTip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null),
+                    onMouseMove: (e: React.MouseEvent) => {
+                      const { clientX, clientY } = e;
+                      if (rafRef.current) return;
+                      rafRef.current = requestAnimationFrame(() => {
+                        rafRef.current = null;
+                        setTip(prev => prev ? { ...prev, x: clientX, y: clientY } : null);
+                      });
+                    },
                     onMouseLeave: (e: React.MouseEvent) => {
                       const inner = (e.currentTarget as HTMLDivElement).querySelector<HTMLDivElement>('[data-mile-inner]');
                       if (inner) inner.style.transform = 'rotate(45deg) scale(1)';
                       setTip(null);
                     },
+                    onTouchStart: (e: React.TouchEvent) => {
+                      const t = e.touches[0];
+                      setTip({ task, x: t.clientX, y: t.clientY });
+                      setTimeout(() => setTip(null), 2500);
+                    },
                   };
                   return (
                     <div key={task.id} style={rowStyle}>
                       {inView && (
-                        // Outer div: positioning only (top/left). Inner div: visual rotation + scale animation.
+                        // Outer div: positioning only. Inner div: visual rotation + scale.
                         // Separating transforms prevents scale mutations from corrupting translateY(-50%).
                         <div
-                          title={`${task.issueKey} · ${task.title} · ${statusLabel(task)} · дедлайн ${fmtShort(end!)}`}
+                          title={`${task.issueKey} · ${(task.title).slice(0, 200)} · ${statusLabel(task)} · дедлайн ${fmtShort(end!)}`}
                           style={{
                             position: 'absolute',
-                            top: '50%', left: clampedMx - hitbox / 2,
+                            top: `calc(50% + ${yShift}px)`, left: clampedMx - hitbox / 2,
                             transform: 'translateY(-50%)',
                             width: hitbox, height: hitbox,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             zIndex: 2, cursor: 'default',
                           }}
-                          {...mileMouseProps}
+                          {...mileInteract}
                         >
                           <div
                             data-mile-inner=""
@@ -907,9 +1034,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
                 const overdue = isOverdue(task);
                 const ovLeft  = Math.min(TL_W, Math.max(0, xOf(end)));
-                const ovRight = Math.min(TL_W, xOf(getToday()));
+                const ovRight = Math.min(TL_W, xOf(today));
                 const ovW     = overdue ? ovRight - ovLeft : 0;
-                const overdueDays = overdue ? diffDays(end, getToday()) : 0;
+                // Overdue badge on left edge for tasks whose end is before range.start
+                const overdueOffscreen = overdue && xOf(end) < 0;
+                const overdueDays = overdue ? diffDays(end, today) : 0;
 
                 // Сегментный бар когда есть история статусов
                 const history = task.statusHistory;
@@ -920,19 +1049,38 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                     (e.currentTarget as HTMLDivElement).style.filter = 'brightness(1.1)';
                     setTip({ task, x: e.clientX, y: e.clientY });
                   },
-                  onMouseMove: (e: React.MouseEvent) =>
-                    setTip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null),
+                  onMouseMove: (e: React.MouseEvent) => {
+                    const { clientX, clientY } = e;
+                    if (rafRef.current) return;
+                    rafRef.current = requestAnimationFrame(() => {
+                      rafRef.current = null;
+                      setTip(prev => prev ? { ...prev, x: clientX, y: clientY } : null);
+                    });
+                  },
                   onMouseLeave: (e: React.MouseEvent) => {
                     (e.currentTarget as HTMLDivElement).style.filter = '';
                     setTip(null);
+                  },
+                  onTouchStart: (e: React.TouchEvent) => {
+                    const t = e.touches[0];
+                    setTip({ task, x: t.clientX, y: t.clientY });
+                    setTimeout(() => setTip(null), 2500);
                   },
                 };
 
                 return (
                   <div key={task.id} style={rowStyle}>
+                    {/* Overdue badge on left edge for tasks whose deadline is before the visible range */}
+                    {overdueOffscreen && (
+                      <div title={`Просрочено: дедлайн ${fmtShort(end!)}`} style={{
+                        position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                        width: 4, height: barH, borderRadius: '0 2px 2px 0',
+                        background: '#EF4444', opacity: .85, zIndex: 3,
+                      }} />
+                    )}
                     {cw > 0 && (
                       <div
-                        title={`${task.issueKey} · ${task.title} · ${statusLabel(task)}`}
+                        title={`${task.issueKey} · ${task.title.slice(0, 200)} · ${statusLabel(task)}`}
                         style={{
                           position: 'absolute',
                           top: '50%', transform: 'translateY(-50%)',
@@ -1040,9 +1188,14 @@ export default function RoadmapView({ boardId, statuses }: Props) {
             </div>
           </div>
         </div>
+        </div>{/* end scroll wrapper */}
       </div>
 
-      <style>{`@keyframes ov-pulse{0%,100%{opacity:1}50%{opacity:.55}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}`}</style>
+      <style>{`
+        @keyframes ov-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+        @keyframes rm-pulse{0%,100%{opacity:.4}50%{opacity:.15}}
+        @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+      `}</style>
 
       {tip && <BarTooltip tip={tip} isDark={isDark} statuses={statuses} />}
     </div>
