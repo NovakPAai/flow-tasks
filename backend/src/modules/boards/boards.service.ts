@@ -143,6 +143,9 @@ export async function getRoadmapTasks(boardId: string, userId: string, from?: st
   if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
 
   function parseIsoDate(s: string): Date {
+    if (!/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(s)) {
+      throw new AppError(400, `Invalid date format: ${s}`);
+    }
     const d = new Date(s);
     if (isNaN(d.getTime())) throw new AppError(400, `Invalid date: ${s}`);
     return d;
@@ -151,8 +154,8 @@ export async function getRoadmapTasks(boardId: string, userId: string, from?: st
   const fromDate = from ? parseIsoDate(from) : new Date(new Date().getFullYear(), 0, 1);
   const toDate   = to   ? parseIsoDate(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
 
-  if (toDate <= fromDate) {
-    throw new AppError(400, 'to must be after from');
+  if (toDate < fromDate) {
+    throw new AppError(400, 'to must not be before from');
   }
   const MAX_RANGE_DAYS = 730;
   if ((toDate.getTime() - fromDate.getTime()) / 86_400_000 > MAX_RANGE_DAYS) {

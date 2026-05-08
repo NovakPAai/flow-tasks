@@ -24,7 +24,7 @@ function isSameDay(a: Date, b: Date) {
     && a.getMonth() === b.getMonth()
     && a.getDate() === b.getDate();
 }
-const SAFE_COLOR_RE = /^#[0-9a-fA-F]{3,8}$|^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+[\s,\d.]*\)$|^hsla?\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%[\s,\d.]*\)$/;
+const SAFE_COLOR_RE = /^#[0-9a-fA-F]{3,8}$|^rgba?\([ \t]*\d+[ \t]*,[ \t]*\d+[ \t]*,[ \t]*\d+[ \t,\d.]*\)$|^hsla?\([ \t]*\d+[ \t]*,[ \t]*\d+%[ \t]*,[ \t]*\d+%[ \t,\d.]*\)$/;
 function safeColor(c: string | null | undefined, fallback = '#4F6EF7'): string {
   return c && SAFE_COLOR_RE.test(c.trim()) ? c.trim() : fallback;
 }
@@ -105,10 +105,11 @@ const STATUS_CHIP: Record<string, { bg: string; text: string }> = {
   CANCELLED:   { bg: 'rgba(239,68,68,.16)',   text: '#F87171' },
 };
 
-function BarTooltip({ tip, isDark, statuses }: {
+function BarTooltip({ tip, isDark, statuses, today }: {
   tip: TipState;
   isDark: boolean;
   statuses: WorkflowStatus[];
+  today: Date;
 }) {
   const { task, x, y } = tip;
   const bg     = isDark ? '#161C30' : '#FFFFFF';
@@ -121,7 +122,6 @@ function BarTooltip({ tip, isDark, statuses }: {
   const end         = parseDate(task.dueDate);
   const isMilestone = !start && !!end;
   const dur         = start && end ? diffDays(start, end) : null;
-  const today      = getToday();
   const overdue    = end && end < today && task.status?.category !== 'DONE';
   const overdueD   = overdue && end ? diffDays(end, today) : 0;
   const chip       = STATUS_CHIP[task.status?.category ?? 'OPEN'] ?? STATUS_CHIP.OPEN;
@@ -316,11 +316,13 @@ export default function RoadmapView({ boardId, statuses }: Props) {
   const lockRef       = useRef(false);
   const rafRef        = useRef<number | null>(null);
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchClearRef = useRef<(() => void) | null>(null);
 
-  // ── Cleanup rAF and touch timer on unmount ─────────────────────────────────
+  // ── Cleanup rAF, touch timer and touch listener on unmount ─────────────────
   useEffect(() => () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+    if (touchClearRef.current) window.removeEventListener('touchmove', touchClearRef.current);
   }, []);
 
   // ── Keyboard shortcuts W/M/Q ───────────────────────────────────────────────
@@ -330,6 +332,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) return;
       if ((t as HTMLElement).isContentEditable) return;
       if (t.closest('[role="textbox"],[role="combobox"],[role="listbox"]')) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'w' || e.key === 'W') setZoom('week');
       else if (e.key === 'm' || e.key === 'M') setZoom('month');
       else if (e.key === 'q' || e.key === 'Q') setZoom('quarter');
@@ -500,24 +503,25 @@ export default function RoadmapView({ boardId, statuses }: Props) {
     }
 
     // quarter
+    const t = getToday();
     const quarters: { label: string; x: number; w: number }[] = [];
     const months:   { label: string; x: number; w: number; isCurrent: boolean }[] = [];
     const QS = [
-      { label: 'Q1', start: new Date(getToday().getFullYear(), 0, 1), end: new Date(getToday().getFullYear(), 3, 1) },
-      { label: 'Q2', start: new Date(getToday().getFullYear(), 3, 1), end: new Date(getToday().getFullYear(), 6, 1) },
-      { label: 'Q3', start: new Date(getToday().getFullYear(), 6, 1), end: new Date(getToday().getFullYear(), 9, 1) },
-      { label: 'Q4', start: new Date(getToday().getFullYear(), 9, 1), end: new Date(getToday().getFullYear() + 1, 0, 1) },
+      { label: 'Q1', start: new Date(t.getFullYear(), 0, 1), end: new Date(t.getFullYear(), 3, 1) },
+      { label: 'Q2', start: new Date(t.getFullYear(), 3, 1), end: new Date(t.getFullYear(), 6, 1) },
+      { label: 'Q3', start: new Date(t.getFullYear(), 6, 1), end: new Date(t.getFullYear(), 9, 1) },
+      { label: 'Q4', start: new Date(t.getFullYear(), 9, 1), end: new Date(t.getFullYear() + 1, 0, 1) },
     ].filter(q => q.end > range.start && q.start < range.end);
     for (const q of QS) {
       const qs = q.start < range.start ? range.start : q.start;
       const qe = q.end   > range.end   ? range.end   : q.end;
-      quarters.push({ label: `${q.label} ${getToday().getFullYear()}`, x: xOf(qs), w: xOf(qe) - xOf(qs) });
+      quarters.push({ label: `${q.label} ${t.getFullYear()}`, x: xOf(qs), w: xOf(qe) - xOf(qs) });
     }
     let cur = new Date(range.start);
     while (cur < range.end) {
       const next  = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
       const me    = next < range.end ? next : range.end;
-      const isCM  = cur.getMonth() === getToday().getMonth() && cur.getFullYear() === getToday().getFullYear();
+      const isCM  = cur.getMonth() === t.getMonth() && cur.getFullYear() === t.getFullYear();
       const lbl   = cur.toLocaleString('ru', { month: 'short' });
       months.push({ label: lbl[0].toUpperCase() + lbl.slice(1), x: xOf(cur), w: xOf(me) - xOf(cur), isCurrent: isCM });
       cur = next;
@@ -547,7 +551,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
   // ── Milestone collision offsets ────────────────────────────────────────────
   // Pre-compute vertical offsets so overlapping diamonds don't stack on top of each other.
-  const milestoneYOffsets = (() => {
+  const milestoneYOffsets = useMemo(() => {
     const offsets = new Map<string, number>();
     // Parse once, skip if either date is invalid
     const pts = rows.flatMap(t => {
@@ -555,11 +559,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
       return (!parseDate(t.startDate) && due) ? [{ id: t.id, mx: xOf(due) }] : [];
     }).sort((a, b) => a.mx - b.mx);
 
-    // Cluster: group pts within 22px of each other, then distribute ±7/0 offsets
+    // Cluster: group pts where each item is within 22px of the previous one, distribute ±7/0 offsets
     let i = 0;
     while (i < pts.length) {
       let j = i + 1;
-      while (j < pts.length && Math.abs(pts[j].mx - pts[i].mx) < 22) j++;
+      while (j < pts.length && pts[j].mx - pts[j - 1].mx < 22) j++;
       const cluster = pts.slice(i, j);
       // distribute evenly: -7, 0, +7 for 3; -7, +7 for 2; 0 for 1
       const step = cluster.length > 1 ? 14 / (cluster.length - 1) : 0;
@@ -567,11 +571,16 @@ export default function RoadmapView({ boardId, statuses }: Props) {
       i = j;
     }
     return offsets;
-  })();
+  }, [rows, dayPx]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', background: c.bg, fontFamily: '"Inter",system-ui,sans-serif' }}>
+
+      {/* aria-live region: announces zoom changes to screen readers */}
+      <span aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+        {zoom === 'week' ? 'Масштаб: неделя' : zoom === 'month' ? 'Масштаб: месяц' : 'Масштаб: квартал'}
+      </span>
 
       {/* ── Toolbar ── */}
       <div style={{
@@ -660,7 +669,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
             onClick={() => setShowLegend(v => !v)}
             title="Легенда дорожной карты"
             aria-expanded={showLegend}
-            aria-haspopup="true"
+            aria-haspopup="dialog"
             style={{
               width: 26, height: 26, borderRadius: '50%',
               border: `1px solid ${c.border}`, background: showLegend ? c.accent : 'transparent',
@@ -731,9 +740,9 @@ export default function RoadmapView({ boardId, statuses }: Props) {
             </span>
           </div>
           {/* Rows */}
-          <div ref={leftRef} style={{ overflowY: 'auto', flex: 1 }}>
+          <div ref={leftRef} aria-busy={loading} style={{ overflowY: 'auto', flex: 1 }}>
             {loading ? (
-              <div>
+              <div role="status" aria-label="Загрузка дорожной карты…">
                 {[70, 45, 85, 55, 65].map((w, i) => (
                   <div key={i} style={{ height: ROW_H, display: 'flex', alignItems: 'center', padding: '0 12px', borderBottom: `1px solid ${c.border}`, gap: 8 }}>
                     <div style={{ width: 20, height: 20, borderRadius: 4, background: c.chip, flexShrink: 0, animation: 'rm-pulse 1.4s ease-in-out infinite', animationDelay: `${i * 0.12}s` }} />
@@ -793,9 +802,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                     </>
                   ) : (
                     <>
-                      {/* Expand button */}
+                      {/* Expand button — aria-hidden since outer row is the keyboard target */}
                       <button
                         onClick={e => { e.stopPropagation(); toggleExpand(); }}
+                        tabIndex={-1}
+                        aria-hidden="true"
                         style={{
                           width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
                           background: 'none', border: 'none', cursor: hasKids ? 'pointer' : 'default',
@@ -1018,9 +1029,14 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                       const t = e.touches[0];
                       setTip({ task, x: t.clientX, y: t.clientY });
                       if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+                      if (touchClearRef.current) window.removeEventListener('touchmove', touchClearRef.current);
                       const clear = () => { setTip(null); };
+                      touchClearRef.current = clear;
                       window.addEventListener('touchmove', clear, { once: true, passive: true });
-                      touchTimerRef.current = setTimeout(clear, 4000);
+                      touchTimerRef.current = setTimeout(() => {
+                        window.removeEventListener('touchmove', clear);
+                        setTip(null);
+                      }, 4000);
                     },
                   };
                   return (
@@ -1096,9 +1112,14 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                     const t = e.touches[0];
                     setTip({ task, x: t.clientX, y: t.clientY });
                     if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+                    if (touchClearRef.current) window.removeEventListener('touchmove', touchClearRef.current);
                     const clear = () => { setTip(null); };
+                    touchClearRef.current = clear;
                     window.addEventListener('touchmove', clear, { once: true, passive: true });
-                    touchTimerRef.current = setTimeout(clear, 4000);
+                    touchTimerRef.current = setTimeout(() => {
+                      window.removeEventListener('touchmove', clear);
+                      setTip(null);
+                    }, 4000);
                   },
                 };
 
@@ -1110,13 +1131,20 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                         title={`Просрочено: дедлайн ${fmtShort(end!)}`}
                         onMouseEnter={e => setTip({ task, x: e.clientX, y: e.clientY })}
                         onMouseLeave={() => setTip(null)}
+                        role="img"
+                        aria-label={`Просрочено: дедлайн ${fmtShort(end!)}`}
                         onTouchStart={e => {
                           const t = e.touches[0];
                           setTip({ task, x: t.clientX, y: t.clientY });
                           if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+                          if (touchClearRef.current) window.removeEventListener('touchmove', touchClearRef.current);
                           const clear = () => setTip(null);
+                          touchClearRef.current = clear;
                           window.addEventListener('touchmove', clear, { once: true, passive: true });
-                          touchTimerRef.current = setTimeout(clear, 4000);
+                          touchTimerRef.current = setTimeout(() => {
+                            window.removeEventListener('touchmove', clear);
+                            setTip(null);
+                          }, 4000);
                         }}
                         style={{
                           position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
@@ -1240,10 +1268,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
       <style>{`
         @keyframes ov-pulse{0%,100%{opacity:1}50%{opacity:.55}}
         @keyframes rm-pulse{0%,100%{opacity:.4}50%{opacity:.15}}
-        @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+        [role="button"]:focus-visible{outline:2px solid #4F6EF7;outline-offset:-1px}
       `}</style>
 
-      {tip && <BarTooltip tip={tip} isDark={isDark} statuses={statuses} />}
+      {tip && <BarTooltip tip={tip} isDark={isDark} statuses={statuses} today={today} />}
     </div>
   );
 }
