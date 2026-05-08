@@ -333,7 +333,7 @@ export default function AdminUsersPage() {
                           Суперадмин
                         </span>
                       )}
-                      {u.id !== user?.id && (
+                      {u.id !== user?.id && !u.isSuperadminLocked && (
                         <button
                           onClick={() => handleToggleSuperadmin(u)}
                           disabled={togglingId === u.id}
@@ -346,6 +346,13 @@ export default function AdminUsersPage() {
                         >
                           {u.isSuperadmin ? 'Снять' : 'Назначить'}
                         </button>
+                      )}
+                      {u.isSuperadminLocked && (
+                        <span title="Резервный аккаунт — роль нельзя снять" style={{
+                          fontSize: 10, color: C.muted, opacity: 0.5, ...font,
+                        }}>
+                          🔒
+                        </span>
                       )}
                     </div>
                   </div>

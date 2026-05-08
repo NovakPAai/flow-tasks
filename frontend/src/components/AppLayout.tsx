@@ -57,6 +57,8 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
 
   return (
     <div
+      role="menu"
+      aria-label="Меню пользователя"
       style={{
         backgroundColor: menuBg, border: `1px solid ${border}`, borderRadius: 10,
         boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 220,
@@ -76,7 +78,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
         )}
       </div>
       <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
-      <button onClick={() => { onProfile(); onClose(); }} style={{
+      <button role="menuitem" onClick={() => { onProfile(); onClose(); }} style={{
         background: 'none', border: 'none', borderRadius: 6, color: textMuted,
         cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
         fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
@@ -84,7 +86,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
         Профиль
       </button>
       {isSuperadmin && (
-        <button onClick={() => { onAdminUsers(); onClose(); }} style={{
+        <button role="menuitem" onClick={() => { onAdminUsers(); onClose(); }} style={{
           background: 'none', border: 'none', borderRadius: 6, color: '#4F6EF7',
           cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
           fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%', fontWeight: 500,
@@ -94,24 +96,30 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
       )}
       {hasWorkspaces && (
         <>
-          <button onClick={handleSettingsClick} style={{
-            alignItems: 'center', background: 'none', border: 'none', borderRadius: 6,
-            color: textMuted, cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
-            fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13,
-            padding: '8px 16px', textAlign: 'left', width: '100%',
-          }}>
+          <button
+            role="menuitem"
+            aria-expanded={!current ? pickerOpen : undefined}
+            aria-haspopup={!current ? 'listbox' : undefined}
+            onClick={handleSettingsClick}
+            style={{
+              alignItems: 'center', background: 'none', border: 'none', borderRadius: 6,
+              color: textMuted, cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+              fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13,
+              padding: '8px 16px', textAlign: 'left', width: '100%',
+            }}
+          >
             <span>Настройки пространства</span>
             {!current && (
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0, transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
                 <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             )}
           </button>
-          {/* Inline picker — shown when no active workspace, or when user wants to switch */}
+          {/* Inline picker — shown when no active workspace */}
           {pickerOpen && !current && (
-            <div style={{ borderTop: `1px solid ${border}`, paddingBottom: 4 }}>
+            <div role="listbox" aria-label="Выберите пространство" style={{ borderTop: `1px solid ${border}`, maxHeight: 180, overflowY: 'auto', paddingBottom: 4 }}>
               {workspaces.map(ws => (
-                <button key={ws.id} onClick={() => { onSettings(ws.slug); onClose(); }} style={{
+                <button role="option" aria-selected={false} key={ws.id} onClick={() => { onSettings(ws.slug); onClose(); }} style={{
                   background: 'none', border: 'none', borderRadius: 6, color: textMuted,
                   cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
                   fontSize: 12, padding: '6px 16px 6px 28px', textAlign: 'left', width: '100%',
@@ -123,19 +131,27 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
           )}
           {/* When in a workspace — offer switching to another space's settings */}
           {current && (
-            <button onClick={() => setPickerOpen(v => !v)} style={{
-              background: 'none', border: 'none', borderRadius: 6,
-              color: textMuted, cursor: 'pointer', display: 'block',
-              fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11,
-              opacity: 0.6, padding: '2px 16px 6px', textAlign: 'left', width: '100%',
-            }}>
-              {pickerOpen ? 'Скрыть список ↑' : 'Другое пространство ›'}
+            <button
+              role="menuitem"
+              aria-expanded={pickerOpen}
+              onClick={() => setPickerOpen(v => !v)}
+              style={{
+                alignItems: 'center', background: 'none', border: 'none', borderRadius: 6,
+                color: textMuted, cursor: 'pointer', display: 'flex', gap: 4,
+                fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11,
+                opacity: 0.6, padding: '2px 16px 6px', textAlign: 'left', width: '100%',
+              }}
+            >
+              Другое пространство
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0, transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           )}
           {pickerOpen && current && (
-            <div style={{ borderTop: `1px solid ${border}`, paddingBottom: 4 }}>
+            <div role="listbox" aria-label="Выберите пространство" style={{ borderTop: `1px solid ${border}`, maxHeight: 180, overflowY: 'auto', paddingBottom: 4 }}>
               {workspaces.filter(ws => ws.id !== current.id).map(ws => (
-                <button key={ws.id} onClick={() => { onSettings(ws.slug); onClose(); }} style={{
+                <button role="option" aria-selected={false} key={ws.id} onClick={() => { onSettings(ws.slug); onClose(); }} style={{
                   background: 'none', border: 'none', borderRadius: 6, color: textMuted,
                   cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
                   fontSize: 12, padding: '6px 16px 6px 28px', textAlign: 'left', width: '100%',
@@ -148,7 +164,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
         </>
       )}
       <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
-      <button onClick={() => { onLogout(); onClose(); }} style={{
+      <button role="menuitem" onClick={() => { onLogout(); onClose(); }} style={{
         background: 'none', border: 'none', borderRadius: 6, color: '#F87171',
         cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
         fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
@@ -290,6 +306,10 @@ export default function AppLayout({ children }: Props) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen(v => !v);
+      }
+      if (e.key === 'Escape') {
+        setUserMenuOpen(false);
+        setWsMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handler);

@@ -38,6 +38,7 @@ export async function listUsers() {
   return users.map(({ createdWorkspaces, _count, ...u }) => ({
     ...u,
     isSuperadmin: u.isSuperadmin || u.email === superadminEmail,
+    isSuperadminLocked: u.email === superadminEmail,
     stats: {
       workspaces: _count.createdWorkspaces,
       boards: createdWorkspaces.reduce((s, ws) => s + ws._count.boards, 0),

@@ -45,6 +45,7 @@ export interface AdminUser {
   lastLoginAt?: string;
   createdAt: string;
   isSuperadmin: boolean;
+  isSuperadminLocked?: boolean;
   stats?: AdminUserStats;
 }
 
