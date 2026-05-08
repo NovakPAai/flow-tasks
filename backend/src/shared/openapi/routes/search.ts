@@ -1,11 +1,16 @@
+import { z } from 'zod';
 import { registry } from '../registry.js';
-import { searchQueryDto } from '../../../modules/search/search.dto.js';
+
+const searchQuery = z.object({
+  q:     z.string().min(2).max(200).describe('Поисковый запрос, минимум 2 символа'),
+  limit: z.string().optional().describe('Максимум результатов, default: 5, max: 10'),
+});
 
 registry.registerPath({
   method: 'get', path: '/search', tags: ['Search'], summary: 'Глобальный поиск задач (Cmd+K)',
-  request: { query: searchQueryDto },
+  request: { query: searchQuery },
   responses: {
-    200: { description: 'Массив задач (до 10). Rate-limit: 30 req/min' },
-    429: { description: 'Rate limit exceeded' },
+    200: { description: 'Массив задач (до 10)' },
+    429: { description: 'Rate limit: 30 req/min' },
   },
 });
