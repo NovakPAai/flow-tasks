@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlowTask — Полная документация</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #141924; --border: #1e2a3a; --border2: #2d3748;
+      --text: #e2e8f0; --muted: #64748b; --muted2: #475569;
+      --accent: #6366f1; --accent-light: #818cf8; --accent-pale: #a5b4fc;
+    }
+    html, body { height: 100%; }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; width: 100%; display: flex; align-items: flex-start; }
+
+    .sidebar { width: 248px; flex-shrink: 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; border-right: 1px solid var(--border); padding: 32px 0 32px; background: #0c0f16; z-index: 10; }
+    .sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sidebar-logo-name { font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .sidebar-logo-sub { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+    .nav-group { margin-bottom: 4px; }
+    .nav-group-label { padding: 6px 20px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted2); }
+    .nav-link { display: block; padding: 6px 20px; font-size: 13px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; transition: color .15s, border-color .15s, background .15s; }
+    .nav-link:hover { color: var(--text); background: rgba(99,102,241,.06); border-left-color: var(--border2); }
+    .nav-link.active { color: var(--accent-pale); border-left-color: var(--accent); background: rgba(99,102,241,.08); }
+
+    .main { margin-left: 248px; flex: 1; min-width: 0; padding: 0 56px 80px; }
+
+    .hero { padding: 56px 0 48px; border-bottom: 1px solid var(--border); }
+    .badge { display: inline-block; background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.4); color: var(--accent-pale); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 12px; border-radius: 20px; margin-bottom: 18px; }
+    .new-badge { display: inline-block; background: rgba(16,185,129,.15); border: 1px solid rgba(16,185,129,.4); color: #34d399; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+    .hero h1 { font-size: 44px; font-weight: 800; letter-spacing: -.025em; line-height: 1.1; margin-bottom: 14px; }
+    .hero h1 span { background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 16px; color: var(--muted); line-height: 1.7; }
+
+    .section { padding: 52px 0 0; scroll-margin-top: 24px; }
+    .section + .section { border-top: 1px solid var(--border); margin-top: 52px; }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 8px; }
+    .section-title { font-size: 26px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; letter-spacing: -.01em; }
+    .section-sub { font-size: 15px; color: var(--muted); margin-bottom: 32px; line-height: 1.65; }
+
+    .simple { background: rgba(99,102,241,.06); border: 1px solid rgba(99,102,241,.18); border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; font-size: 14px; color: #94a3b8; line-height: 1.75; }
+    .simple strong { color: var(--accent-pale); }
+    .simple::before { content: '🎓 Простыми словами: '; font-weight: 700; color: var(--accent-pale); }
+
+    .subsection { margin-top: 36px; }
+    .subsection-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; width: 100%; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: border-color .2s; }
+    .card:hover { border-color: #3d5070; }
+    .card-icon { font-size: 22px; margin-bottom: 12px; }
+    .card h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .card p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    .steps { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+    .step { display: flex; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; width: 100%; }
+    .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+    .step h4 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .step p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted2); border-bottom: 1px solid var(--border); }
+    td { padding: 10px 16px; color: #94a3b8; border-bottom: 1px solid #0f1117; vertical-align: top; line-height: 1.5; }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { color: var(--text); font-weight: 500; }
+    .yes { color: #34d399; font-weight: 600; }
+    .no  { color: var(--muted2); }
+
+    code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.2); border-radius: 5px; padding: 1px 7px; color: var(--accent-pale); }
+    .code-block { background: #0c0f16; border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #94a3b8; line-height: 1.8; overflow-x: auto; }
+    .code-block .cm { color: #475569; }
+    .code-block .kw { color: #818cf8; }
+    .code-block .st { color: #34d399; }
+    .code-block .nu { color: #fb923c; }
+
+    .role-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .r-owner  { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .r-member { background: rgba(16,185,129,.12);  color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+    .r-viewer { background: rgba(100,116,139,.1);  color: #94a3b8; border: 1px solid rgba(100,116,139,.25); }
+    .r-super  { background: rgba(251,191,36,.1);   color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
+
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; margin: 1px; }
+    .tag-method-get    { background: rgba(16,185,129,.15); color: #34d399; }
+    .tag-method-post   { background: rgba(99,102,241,.15); color: #818cf8; }
+    .tag-method-patch  { background: rgba(245,158,11,.15); color: #fbbf24; }
+    .tag-method-delete { background: rgba(244,63,94,.15);  color: #f87171; }
+
+    .notice { background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.22); border-radius: 12px; padding: 14px 18px; display: flex; gap: 12px; font-size: 13px; color: #94a3b8; line-height: 1.7; }
+    .notice-icon { flex-shrink: 0; font-size: 18px; line-height: 1.5; }
+    .notice strong { color: #fbbf24; }
+    .info { background: rgba(99,102,241,.07); border: 1px solid rgba(99,102,241,.2); border-radius: 12px; padding: 14px 18px; display: flex; gap: 12px; font-size: 13px; color: #94a3b8; line-height: 1.7; }
+    .info-icon { flex-shrink: 0; font-size: 16px; line-height: 1.6; }
+    .info strong { color: var(--accent-pale); }
+    .success { background: rgba(16,185,129,.07); border: 1px solid rgba(16,185,129,.2); border-radius: 12px; padding: 14px 18px; display: flex; gap: 12px; font-size: 13px; color: #94a3b8; line-height: 1.7; }
+    .success-icon { flex-shrink: 0; font-size: 16px; line-height: 1.6; }
+    .success strong { color: #34d399; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; font-size: 13px; color: #94a3b8; }
+    .chip strong { color: var(--text); }
+
+    .p-high   { color: #f87171; }
+    .p-medium { color: #fbbf24; }
+    .p-low    { color: #34d399; }
+
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .track { width: 40px; height: 22px; border-radius: 11px; position: relative; flex-shrink: 0; }
+    .track.on  { background: #4F6EF7; }
+    .track.off { background: #1C2236; border: 1px solid var(--border2); }
+    .thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 3px; }
+    .track.on  .thumb { left: 21px; }
+    .track.off .thumb { left: 3px; }
+
+    .cat { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+    .cat-open   { background: rgba(99,102,241,.15); color: #818cf8; }
+    .cat-prog   { background: rgba(245,158,11,.15);  color: #fbbf24; }
+    .cat-done   { background: rgba(16,185,129,.15);  color: #34d399; }
+    .cat-cancel { background: rgba(100,116,139,.15); color: #94a3b8; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+    footer { border-top: 1px solid var(--border); padding: 28px 0; margin-top: 60px; color: var(--muted2); font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-name">FlowTask</div>
+    <div class="sidebar-logo-sub">v1.6.0 · Полная документация · май 2026</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Введение</div>
+    <a class="nav-link" href="#overview">Обзор системы</a>
+    <a class="nav-link" href="#stack">Технический стек</a>
+    <a class="nav-link" href="#infra">Инфраструктура</a>
+    <a class="nav-link" href="#deploy">Деплой и CI/CD</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Доступ</div>
+    <a class="nav-link" href="#auth">Авторизация (логин/пароль)</a>
+    <a class="nav-link" href="#sso">SSO — Keycloak и Avanpost ✦</a>
+    <a class="nav-link" href="#mfa">2FA / TOTP — второй фактор ✦</a>
+    <a class="nav-link" href="#roles">Роли и права</a>
+    <a class="nav-link" href="#apikeys">API-ключи</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Основной функционал</div>
+    <a class="nav-link" href="#workspaces">Воркспейсы</a>
+    <a class="nav-link" href="#workflows">Воркфлоу</a>
+    <a class="nav-link" href="#boards">Доски</a>
+    <a class="nav-link" href="#tasks">Задачи</a>
+    <a class="nav-link" href="#drawer">Карточка задачи</a>
+    <a class="nav-link" href="#subtasks">Подзадачи (макс. 5 уровней) ✦</a>
+    <a class="nav-link" href="#bulk">Массовые операции ✦</a>
+    <a class="nav-link" href="#search">Глобальный поиск Cmd+K ✦</a>
+    <a class="nav-link" href="#mytasks">Мои задачи — аккордеон ✦</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Дополнительно</div>
+    <a class="nav-link" href="#labels">Метки</a>
+    <a class="nav-link" href="#checklists">Чеклисты</a>
+    <a class="nav-link" href="#comments">Комментарии</a>
+    <a class="nav-link" href="#notifications">Уведомления ✦</a>
+    <a class="nav-link" href="#history">История изменений</a>
+    <a class="nav-link" href="#feedback">Обратная связь</a>
+    <a class="nav-link" href="#admin">Администрирование</a>
+    <a class="nav-link" href="#integrations">Интеграции</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Безопасность</div>
+    <a class="nav-link" href="#security">Защита системы</a>
+    <a class="nav-link" href="#ratelimit">Лимиты запросов</a>
+    <a class="nav-link" href="#email">Email и сброс пароля</a>
+    <a class="nav-link" href="#auditlog">Audit-лог действий ✦</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Справочник</div>
+    <a class="nav-link" href="#models">Модели данных</a>
+    <a class="nav-link" href="#envvars">Переменные окружения</a>
+    <a class="nav-link" href="#api">API-справочник</a>
+  </div>
+</nav>
+
+<div class="main">
+
+  <div class="hero">
+    <div class="badge">Документация системы</div>
+    <h1>FlowTask —<br><span>полное руководство</span></h1>
+    <p>Всё о системе: от «что это такое» до «как это устроено внутри». Версия <strong style="color:#34d399">v1.6.0</strong>, май 2026. Разделы, отмеченные <strong style="color:#34d399">✦</strong>, содержат новые или обновлённые возможности.</p>
+  </div>
+
+  <!-- ════ OVERVIEW ════ -->
+  <div class="section" id="overview">
+    <div class="section-label">Введение</div>
+    <div class="section-title">Обзор системы</div>
+    <div class="section-sub">FlowTask — внутренний таск-трекер для командной работы. Как Jira или Trello, но свой, без зависимости от внешних облаков.</div>
+
+    <div class="card-grid">
+      <div class="card"><div class="card-icon">🗂️</div><h4>Воркспейсы</h4><p>Отдельные «комнаты» для разных команд или проектов. Данные не пересекаются.</p></div>
+      <div class="card"><div class="card-icon">📋</div><h4>Kanban-доски</h4><p>Карточки задач по колонкам-статусам. Перетащил карточку — изменил статус.</p></div>
+      <div class="card"><div class="card-icon">✅</div><h4>Задачи</h4><p>Подзадачи, чеклисты, метки, комментарии, история изменений.</p></div>
+      <div class="card"><div class="card-icon">🔑</div><h4>REST API</h4><p>Полный доступ через JWT или API-ключи. Интеграция с любыми внешними системами.</p></div>
+      <div class="card"><div class="card-icon">🔒</div><h4>Безопасность</h4><p>Защита от брутфорса, хеширование секретов, audit-лог, лимиты запросов.</p></div>
+      <div class="card"><div class="card-icon">🚀</div><h4>Деплой</h4><p>GitHub Actions → rsync на VPS → PM2. Staging и production.</p></div>
+    </div>
+  </div>
+
+  <!-- ════ STACK ════ -->
+  <div class="section" id="stack">
+    <div class="section-label">Введение</div>
+    <div class="section-title">Технический стек</div>
+    <div class="section-sub">Монорепозиторий: backend и frontend в одном репозитории <code>NovakPAai/flow-tasks</code>.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Backend</div>
+      <div class="chips">
+        <div class="chip"><strong>Node.js 20</strong> LTS</div>
+        <div class="chip"><strong>TypeScript 5.7</strong></div>
+        <div class="chip"><strong>Express 4</strong></div>
+        <div class="chip"><strong>Prisma 6</strong> ORM</div>
+        <div class="chip"><strong>PostgreSQL 16</strong></div>
+        <div class="chip"><strong>Redis 7</strong></div>
+        <div class="chip"><strong>Zod</strong> — валидация</div>
+        <div class="chip"><strong>JWT</strong> + bcryptjs</div>
+        <div class="chip"><strong>openid-client v6</strong> — SSO</div>
+        <div class="chip"><strong>nodemailer</strong> — email</div>
+        <div class="chip"><strong>Vitest</strong> — тесты</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Frontend</div>
+      <div class="chips">
+        <div class="chip"><strong>React 18</strong></div>
+        <div class="chip"><strong>TypeScript</strong></div>
+        <div class="chip"><strong>Vite 6</strong></div>
+        <div class="chip"><strong>Ant Design 5</strong> — UI-кит</div>
+        <div class="chip"><strong>Zustand</strong> — стор</div>
+        <div class="chip"><strong>React Router v6</strong></div>
+        <div class="chip"><strong>Axios</strong></div>
+        <div class="chip"><strong>@hello-pangea/dnd</strong> — drag&amp;drop</div>
+        <div class="chip"><strong>Playwright</strong> — E2E</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ INFRA ════ -->
+  <div class="section" id="infra">
+    <div class="section-label">Введение</div>
+    <div class="section-title">Инфраструктура</div>
+    <div class="section-sub">Сервер — VPS Ubuntu, процессы управляются через PM2. Локальная разработка через Docker Compose.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Docker Compose (локальная разработка)</div>
+      <div class="code-block">
+<span class="cm"># docker-compose.yml</span>
+services:
+  postgres:   <span class="cm"># PostgreSQL 16 — основная база данных</span>
+    port:     <span class="nu">5434</span>:<span class="nu">5432</span>
+    user/db:  <span class="st">flowtask</span>
+
+  redis:      <span class="cm"># Redis 7 — быстрый кеш и хранение сессий</span>
+    port:     <span class="nu">6380</span>:<span class="nu">6379</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Продакшн-сервер</div>
+      <div class="card-grid">
+        <div class="card"><div class="card-icon">🌐</div><h4>Nginx (порт 3200)</h4><p>Раздаёт статику frontend. Проксирует <code>/api/*</code> на backend :3101. Настроены лимиты запросов и security headers.</p></div>
+        <div class="card"><div class="card-icon">⚙️</div><h4>PM2</h4><p>Менеджер процессов. Автоперезапуск backend при сбоях. <code>pm2 logs flowtask-api</code> — логи в реальном времени.</p></div>
+        <div class="card"><div class="card-icon">🐘</div><h4>PostgreSQL</h4><p>Основное хранилище. Схема управляется через Prisma миграции.</p></div>
+        <div class="card"><div class="card-icon">⚡</div><h4>Redis</h4><p>Кеш + защита от брутфорса + SSO state-токены. При недоступности Redis система продолжает работать.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ DEPLOY ════ -->
+  <div class="section" id="deploy">
+    <div class="section-label">Введение</div>
+    <div class="section-title">Деплой и CI/CD</div>
+    <div class="section-sub">GitHub Actions автоматически проверяет каждый PR и деплоит на сервер по команде.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">CI (ci.yml) — автоматически на каждый PR</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>TypeScript check</h4><p>Проверка типов backend и frontend. Ошибки типов блокируют мёрдж.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Lint (ESLint)</h4><p>Линтинг кода. PR не мёрджится пока lint не зелёный.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>RBAC-проверка</h4><p>Скрипт сканирует все роутеры и проверяет, что нет незащищённых эндпоинтов. Блокирует CI если найдены «голые» маршруты без <code>authenticate</code>.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Tests (Vitest) + Coverage</h4><p>Unit + integration тесты с реальной БД. Coverage-gate: линии ≥60%, ветки ≥50%, функции ≥60%.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>E2E (Playwright)</h4><p>Сквозные тесты на PR и main. Запускаются с реальными PostgreSQL и Redis через GitHub Actions services.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Deploy (deploy.yml) — запускается вручную</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Выбор окружения</h4><p>Параметр <code>staging | production</code> при запуске через GitHub Actions → Run workflow.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Build</h4><p>Сборка frontend (<code>vite build</code>) и компиляция backend TypeScript.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>rsync на сервер</h4><p>Артефакты синхронизируются в <code>/opt/flowtask/</code> по SSH.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Prisma migrate deploy</h4><p>Применяются новые миграции к БД. Все миграции аддитивные — никаких разрушающих изменений.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>PM2 reload</h4><p>Zero-downtime рестарт backend-процесса.</p></div></div>
+        <div class="step"><div class="step-num">6</div><div><h4>Health check</h4><p>Проверка доступности API. Если упал — деплой считается провалившимся.</p></div></div>
+      </div>
+    </div>
+
+    <div class="info" style="margin-top:20px">
+      <div class="info-icon">💡</div>
+      <div>Окружения: <strong>staging-flowtask.ru</strong> (тестирование) и production (основной). Staging деплоится свободно, production требует осознанного выбора.</div>
+    </div>
+  </div>
+
+  <!-- ════ AUTH ════ -->
+  <div class="section" id="auth">
+    <div class="section-label">Доступ</div>
+    <div class="section-title">Авторизация — логин и пароль</div>
+    <div class="section-sub">Стандартный способ входа: email + пароль. Доступен всегда, для всех пользователей системы.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Схема токенов</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Токен</th><th>Где хранится</th><th>Время жизни</th><th>Зачем</th></tr></thead>
+          <tbody>
+            <tr><td>Access Token (JWT)</td><td>Память браузера (JS-переменная)</td><td>1 час</td><td>Авторизация каждого запроса к API</td></tr>
+            <tr><td>Refresh Token</td><td>HttpOnly cookie (JS не видит)</td><td>7 дней</td><td>Тихое обновление access token</td></tr>
+            <tr><td>Password Reset Token</td><td>БД (только SHA-256 хеш)</td><td>1 час</td><td>Одноразовая ссылка сброса пароля</td></tr>
+            <tr><td>API Key</td><td>Только SHA-256 хеш в БД</td><td>Бессрочно / по дате</td><td>Машинный доступ без логина</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Вход в систему (POST /api/auth/login)</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Защита от брутфорса</h4><p>Счётчик ошибочных попыток хранится в Redis по ключу email. 5+ неудачных попыток → блокировка на 15 минут. Redis недоступен → счётчик в памяти процесса (graceful degradation).</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Проверка SSO_ONLY</h4><p>Если у пользователя в БД <code>ssoOnly=true</code> и он не суперадмин — локальный вход заблокирован (403). Все текущие пользователи имеют <code>ssoOnly=false</code> по умолчанию.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Верификация пароля</h4><p>bcryptjs с 12 раундами соли. Сравнение константного времени — защита от timing-атак.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Выдача токенов</h4><p>Access token (1h) — в теле ответа. Refresh token — в HttpOnly cookie <code>SameSite=Strict</code>. В БД хранится SHA-256 хеш refresh token, а не сам токен.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>LRU-ротация сессий</h4><p>Максимум 5 активных сессий на пользователя. При создании 6-й — старейшая удаляется. Операция атомарная (Prisma transaction).</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Регистрация</div>
+      <div class="info">
+        <div class="info-icon">ℹ️</div>
+        <div>Самостоятельная регистрация создаёт заявку со статусом <strong>PENDING</strong>. Суперадмин одобряет или отклоняет в панели администрирования. До одобрения войти нельзя. Email автоматически формируется из имени и фамилии (домен задаётся в <code>REGISTRATION_DOMAIN</code>).</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Обновление токена (POST /api/auth/refresh)</div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.65">Axios-интерцептор перехватывает 401, автоматически вызывает <code>/auth/refresh</code> (cookie летит автоматически), получает новый access token и повторяет оригинальный запрос. Пользователь ничего не замечает.</p>
+    </div>
+  </div>
+
+  <!-- ════ SSO ════ -->
+  <div class="section" id="sso">
+    <div class="section-label">Доступ</div>
+    <div class="section-title">SSO — Keycloak и Avanpost <span class="new-badge">новое</span></div>
+    <div class="section-sub">Единый вход через корпоративный провайдер идентификации. Поддерживаются Keycloak и Avanpost по стандартному протоколу OIDC/PKCE.</div>
+
+    <div class="success" style="margin-bottom:24px">
+      <div class="success-icon">✅</div>
+      <div><strong>Обратная совместимость:</strong> SSO выключено по умолчанию (<code>SSO_ENABLED=false</code>). Все существующие пользователи продолжают заходить по логину и паролю без каких-либо изменений. SSO включается только явным выставлением переменных окружения.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Как работает PKCE-поток</div>
+
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Пользователь нажимает «Войти через Keycloak»</h4><p>Браузер вызывает <code>GET /api/auth/sso/login</code>. Сервер генерирует случайный <code>state</code> (128-битный), PKCE <code>verifier</code> и <code>challenge</code>. Пара сохраняется в Redis на 5 минут. Пользователь перенаправляется на страницу Keycloak.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Пользователь вводит корпоративный пароль в Keycloak</h4><p>Это происходит на странице Keycloak, а не FlowTask. FlowTask никогда не видит корпоративный пароль.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Keycloak перенаправляет на <code>/api/auth/sso/callback</code></h4><p>Сервер проверяет <code>state</code> через атомарный GETDEL из Redis (одноразовое использование, нет риска повторного использования). Обменивает code на токены Keycloak.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>JIT Provisioning — автосоздание пользователя</h4><p>Ищет пользователя по <code>ssoSubjectId = "keycloak:&lt;sub&gt;"</code>. Если не найден — ищет по email (нужен <code>email_verified=true</code>). Если не найден — создаёт нового. Гонка параллельных запросов обрабатывается через P2002 + retry.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div><h4>Выдача сессии</h4><p>Сервер устанавливает refresh token cookie (HttpOnly). Перенаправляет на <code>/?sso_return=1</code>. Фронтенд вызывает <code>/auth/refresh</code> и получает access token — точно так же как после обычного логина. Никаких токенов в URL.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">JIT Provisioning — автоматическое создание пользователей</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ситуация</th><th>Что происходит</th></tr></thead>
+          <tbody>
+            <tr><td>Первый вход через SSO, пользователь новый</td><td>Создаётся новый аккаунт с данными из claims (имя, email). Пароль не задаётся.</td></tr>
+            <tr><td>Пользователь уже есть в FlowTask (совпадение по email)</td><td>Аккаунты связываются — добавляется <code>ssoSubjectId</code>. Требуется <code>email_verified=true</code> в токене IdP.</td></tr>
+            <tr><td>Повторный вход через SSO</td><td>Поиск по <code>ssoSubjectId</code> — мгновенно, без создания нового аккаунта.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Настройка SSO (переменные окружения)</div>
+      <div class="code-block">
+<span class="cm"># Включение SSO</span>
+<span class="st">SSO_ENABLED</span>=<span class="kw">true</span>         <span class="cm"># false по умолчанию — SSO выключено</span>
+<span class="st">SSO_ONLY</span>=<span class="kw">false</span>           <span class="cm"># true = запретить локальный вход (кроме суперадминов)</span>
+
+<span class="cm"># Провайдер</span>
+<span class="st">OIDC_PROVIDER</span>=<span class="st">keycloak</span>  <span class="cm"># или avanpost</span>
+<span class="st">OIDC_ISSUER_URL</span>=<span class="st">https://auth.example.com/realms/flowtask</span>
+<span class="st">OIDC_CLIENT_ID</span>=<span class="st">flowtask</span>
+<span class="st">OIDC_CLIENT_SECRET</span>=<span class="st">...</span>
+<span class="st">OIDC_REDIRECT_URI</span>=<span class="st">https://flowtask.example.com/api/auth/sso/callback</span>
+<span class="st">OIDC_SCOPE</span>=<span class="st">openid profile email</span>  <span class="cm"># по умолчанию</span>
+      </div>
+      <div class="notice" style="margin-top:14px">
+        <div class="notice-icon">⚠️</div>
+        <div>При <code>SSO_ENABLED=true</code> сервер проверяет на старте, что все OIDC-переменные заданы. Если чего-то нет — <strong>process.exit(1)</strong> с явным сообщением об ошибке. Неправильная конфигурация не пройдёт незамеченной.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Кнопка SSO на странице входа</div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:12px">Фронтенд запрашивает <code>GET /api/auth/sso/status</code> при загрузке страницы входа. Если <code>enabled: false</code> — кнопка не отображается вообще. Если статус-эндпоинт не отвечает — кнопки тоже нет (fail-safe).</p>
+      <div class="two-col">
+        <div class="card"><div class="toggle-row"><div class="track off"><div class="thumb"></div></div><strong style="font-size:14px">SSO_ENABLED=false</strong></div><p style="font-size:13px;color:var(--muted)">Кнопка «Войти через SSO» не показывается. Только форма email + пароль.</p></div>
+        <div class="card" style="border-color:rgba(99,102,241,.35)"><div class="toggle-row"><div class="track on"><div class="thumb"></div></div><strong style="font-size:14px">SSO_ENABLED=true</strong></div><p style="font-size:13px;color:var(--muted)">Появляется кнопка «Войти через Keycloak» (или Avanpost). Локальный вход остаётся доступным.</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Эндпоинты SSO</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/api/auth/sso/status</code></td><td>Показывает включён ли SSO и какой провайдер</td></tr>
+            <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/api/auth/sso/login?returnUrl=/</code></td><td>Перенаправление на страницу входа провайдера</td></tr>
+            <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/api/auth/sso/callback</code></td><td>Обработка ответа от провайдера (PKCE)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MFA ════ -->
+  <div class="section" id="mfa">
+    <div class="section-label">Доступ</div>
+    <div class="section-title">2FA / TOTP — второй фактор <span class="new-badge">новое</span></div>
+    <div class="section-sub">Двухфакторная аутентификация через TOTP делегируется IdP (Avanpost / Keycloak). FlowTask не хранит TOTP-секреты и не показывает экран ввода кода — это полностью на стороне провайдера идентификации. FlowTask только проверяет результат в токене.</div>
+
+    <div class="info" style="margin-bottom:28px">
+      <div class="info-icon">ℹ️</div>
+      <div><strong>Для кого этот раздел:</strong> сотрудники ИБ, настраивающие Keycloak или Avanpost для интеграции с FlowTask. Здесь описано, что именно FlowTask ожидает от IdP и как включить принудительный второй фактор на уровне воркспейса.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Три режима авторизации</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Режим</th><th>Кто выполняет вход</th><th>Второй фактор</th><th>Настройка</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>Локальный</strong></td>
+              <td>FlowTask (email + пароль)</td>
+              <td class="no">нет</td>
+              <td>Только <code>SSO_ENABLED=false</code></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>SSO</strong></td>
+              <td>Avanpost / Keycloak</td>
+              <td class="no">нет</td>
+              <td><code>SSO_ENABLED=true</code>, TOTP не настроен в IdP</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>SSO + TOTP</strong></td>
+              <td>Avanpost / Keycloak → экран TOTP IdP</td>
+              <td class="yes">✓ TOTP</td>
+              <td><code>SSO_ENABLED=true</code> + TOTP настроен в IdP + <code>requireMfa</code> в воркспейсе</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="notice" style="margin-top:14px">
+        <div class="notice-icon">⚠️</div>
+        <div>FlowTask <strong>не реализует</strong> TOTP самостоятельно для режима SSO. Экран ввода кода, привязка устройства, QR-код — всё это происходит в Avanpost / Keycloak. FlowTask только читает <code>amr</code> claim из OIDC id_token.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Что такое amr claim и зачем он нужен</div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:16px">
+        <strong style="color:var(--text)">amr (Authentication Method References)</strong> — стандартное поле OIDC id_token (RFC 8176). Содержит список методов аутентификации, которые использовал пользователь при входе. FlowTask читает это поле и сохраняет его в Redis-сессию при SSO-входе.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Значение amr</th><th>Смысл</th><th>Удовлетворяет MFA?</th></tr></thead>
+          <tbody>
+            <tr><td><code>pwd</code></td><td>Только пароль</td><td class="no">нет</td></tr>
+            <tr><td><code>totp</code></td><td>TOTP (Time-based One-Time Password)</td><td class="yes">✓ да</td></tr>
+            <tr><td><code>otp</code></td><td>OTP (одноразовый код)</td><td class="yes">✓ да</td></tr>
+            <tr><td><code>mfa</code></td><td>Многофакторная аутентификация (общий)</td><td class="yes">✓ да</td></tr>
+            <tr><td><code>hwk</code></td><td>Аппаратный ключ (YubiKey и др.)</td><td class="yes">✓ да</td></tr>
+            <tr><td><code>swk</code></td><td>Программный ключ (passkey)</td><td class="yes">✓ да</td></tr>
+            <tr><td><code>pwd</code> + <code>totp</code></td><td>Пароль и TOTP (типичный Keycloak)</td><td class="yes">✓ да</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:12px;line-height:1.6">Если <code>amr</code> отсутствует в токене или не содержит ни одного из значений выше — FlowTask считает, что второй фактор не пройден.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Настройка Keycloak — включение обязательного TOTP</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div>
+          <h4>Создать Client для FlowTask</h4>
+          <p>Realm → Clients → Create. <code>Client ID</code> = значение <code>OIDC_CLIENT_ID</code> в FlowTask. <code>Client Protocol</code> = openid-connect. <code>Access Type</code> = confidential. <code>Valid Redirect URIs</code> = значение <code>OIDC_REDIRECT_URI</code>.</p>
+        </div></div>
+        <div class="step"><div class="step-num">2</div><div>
+          <h4>Включить PKCE</h4>
+          <p>Вкладка Advanced Settings → <code>Proof Key for Code Exchange Code Challenge Method</code> = <code>S256</code>. FlowTask использует PKCE для защиты authorization code flow.</p>
+        </div></div>
+        <div class="step"><div class="step-num">3</div><div>
+          <h4>Настроить обязательный TOTP (Authentication Flow)</h4>
+          <p>Authentication → Flows → Browser Flow → Duplicate. В копии добавить execution <code>OTP Form</code> с требованием <code>REQUIRED</code>. Привязать новый flow к клиенту: Client → Authentication Flow Overrides → Browser Flow.</p>
+        </div></div>
+        <div class="step"><div class="step-num">4</div><div>
+          <h4>Убедиться, что amr включён в id_token</h4>
+          <p>Client Scopes → openid → Mappers → Add Mapper → User Attribute. Или проверить, что встроенный mapper <code>amr</code> активен. Keycloak ≥ 18.x включает <code>amr</code> автоматически при использовании OTP.</p>
+        </div></div>
+        <div class="step"><div class="step-num">5</div><div>
+          <h4>Выдать scope профиля и email</h4>
+          <p><code>OIDC_SCOPE=openid profile email</code> — FlowTask запрашивает эти scopes. Убедитесь, что клиент имеет доступ к <code>email</code>, <code>email_verified</code>, <code>name</code> / <code>given_name</code> + <code>family_name</code>.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Настройка Avanpost — включение обязательного TOTP</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div>
+          <h4>Создать OIDC-приложение</h4>
+          <p>Avanpost Admin Console → Applications → New → OIDC. <code>Client ID</code> и <code>Client Secret</code> → в переменные <code>OIDC_CLIENT_ID</code> / <code>OIDC_CLIENT_SECRET</code>. <code>Redirect URI</code> = значение <code>OIDC_REDIRECT_URI</code>.</p>
+        </div></div>
+        <div class="step"><div class="step-num">2</div><div>
+          <h4>Включить PKCE</h4>
+          <p>В настройках приложения → Token Endpoint Auth Method = none (или client_secret_basic) + включить Code Challenge = S256.</p>
+        </div></div>
+        <div class="step"><div class="step-num">3</div><div>
+          <h4>Настроить политику MFA</h4>
+          <p>Security Policies → MFA Policy → Add Rule: применить для группы пользователей FlowTask, метод второго фактора = TOTP. Назначить политику на приложение FlowTask.</p>
+        </div></div>
+        <div class="step"><div class="step-num">4</div><div>
+          <h4>Проверить amr в id_token</h4>
+          <p>Avanpost ≥ 4.x включает <code>amr</code> в id_token автоматически при прохождении TOTP. Для более старых версий — уточнить у вендора или добавить кастомный claim mapper. Ожидаемое значение: <code>["totp"]</code> или <code>["password","totp"]</code>.</p>
+        </div></div>
+        <div class="step"><div class="step-num">5</div><div>
+          <h4>Выдать claims профиля</h4>
+          <p>Убедиться, что приложение получает: <code>sub</code>, <code>email</code>, <code>email_verified</code>, <code>name</code> (или <code>given_name</code> + <code>family_name</code>). FlowTask использует эти поля для JIT provisioning.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Переменные окружения для режима SSO + TOTP</div>
+      <div class="code-block">
+<span class="cm"># Базовый SSO (обязательно)</span>
+<span class="st">SSO_ENABLED</span>=<span class="kw">true</span>
+<span class="st">OIDC_PROVIDER</span>=<span class="st">avanpost</span>          <span class="cm"># или keycloak</span>
+<span class="st">OIDC_ISSUER_URL</span>=<span class="st">https://sso.company.ru/realms/flowtask</span>
+<span class="st">OIDC_CLIENT_ID</span>=<span class="st">flowtask-prod</span>
+<span class="st">OIDC_CLIENT_SECRET</span>=<span class="st">&lt;секрет из IdP&gt;</span>
+<span class="st">OIDC_REDIRECT_URI</span>=<span class="st">https://flowtask.company.ru/api/auth/sso/callback</span>
+<span class="st">OIDC_SCOPE</span>=<span class="st">openid profile email</span>   <span class="cm"># по умолчанию, amr приходит автоматически</span>
+
+<span class="cm"># Режим SSO-only (опционально)</span>
+<span class="st">SSO_ONLY</span>=<span class="kw">true</span>    <span class="cm"># запретить локальный вход для всех, кроме суперадминов</span>
+      </div>
+      <div class="notice" style="margin-top:14px">
+        <div class="notice-icon">⚠️</div>
+        <div>Дополнительных переменных для TOTP нет — второй фактор настраивается целиком в IdP. FlowTask автоматически читает <code>amr</code> из каждого id_token при SSO-входе.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Принудительный MFA на уровне воркспейса</div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:16px">
+        Владелец воркспейса (OWNER) может включить требование второго фактора для своего воркспейса независимо от других воркспейсов. Это дополнительный уровень защиты поверх настроек IdP.
+      </p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div>
+          <h4>OWNER включает requireMfa в настройках воркспейса</h4>
+          <p>Настройки воркспейса → вкладка Безопасность → переключатель «Обязательная 2FA». После сохранения FlowTask проставляет grace period всем участникам без активного TOTP в сессии.</p>
+        </div></div>
+        <div class="step"><div class="step-num">2</div><div>
+          <h4>Grace period — 7 дней (настраивается)</h4>
+          <p>Участники, у которых нет <code>amr: totp</code> в текущей сессии, получают 7 дней на настройку TOTP в Avanpost / Keycloak. В это время они видят баннер с обратным отсчётом.</p>
+        </div></div>
+        <div class="step"><div class="step-num">3</div><div>
+          <h4>После истечения grace period — доступ заблокирован</h4>
+          <p>Попытка войти в воркспейс без <code>amr: totp</code> → 403. Пользователь получает инструкцию настроить TOTP в корпоративном IdP и зайти повторно.</p>
+        </div></div>
+      </div>
+      <div class="success" style="margin-top:14px">
+        <div class="success-icon">✅</div>
+        <div><strong>Воркспейсы независимы:</strong> включение requireMfa в одном воркспейсе не влияет на другие. Пользователь может работать в воркспейсах без MFA, даже если в одном из них MFA обязателен (при условии, что он не заходит туда без TOTP).</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Что происходит при входе — схема проверки</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div>
+          <h4>Пользователь проходит SSO</h4>
+          <p>FlowTask получает id_token от IdP. Из него извлекается <code>amr</code> (например, <code>["totp"]</code>) и сохраняется в Redis вместе с сессией.</p>
+        </div></div>
+        <div class="step"><div class="step-num">2</div><div>
+          <h4>Пользователь открывает воркспейс</h4>
+          <p>Middleware <code>workspaceMfaGuard</code> проверяет: включён ли <code>requireMfa</code> для этого воркспейса?</p>
+        </div></div>
+        <div class="step"><div class="step-num">3</div><div>
+          <h4>requireMfa = false → пропустить</h4>
+          <p>Проверка amr не выполняется. Запрос продолжается штатно.</p>
+        </div></div>
+        <div class="step"><div class="step-num">4</div><div>
+          <h4>requireMfa = true → проверить amr</h4>
+          <p>Если в сессии есть <code>amr: totp/otp/mfa/hwk/swk</code> → пропустить. Иначе — проверить grace period. Если grace period активен → пропустить с баннером. Если grace period истёк → 403.</p>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Минимальные требования к IdP</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Требование</th><th>Keycloak</th><th>Avanpost</th></tr></thead>
+          <tbody>
+            <tr><td>Версия с поддержкой PKCE</td><td>≥ 7.x</td><td>≥ 3.x</td></tr>
+            <tr><td>amr claim в id_token при TOTP</td><td>≥ 18.x (автоматически)</td><td>≥ 4.x (проверить у вендора)</td></tr>
+            <tr><td>email_verified claim</td><td class="yes">✓ есть</td><td class="yes">✓ есть</td></tr>
+            <tr><td>Поддержка S256 PKCE</td><td class="yes">✓ есть</td><td class="yes">✓ есть</td></tr>
+            <tr><td>Настройка обязательного TOTP через Policy</td><td class="yes">✓ Authentication Flow</td><td class="yes">✓ Security Policy</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Обновления v1.6 — Gap-13</div>
+      <div class="info">
+        <div class="info-icon">🆕</div>
+        <div>
+          <strong>AMR enforcement при SSO-входе:</strong> FlowTask теперь явно проверяет наличие <code>totp</code> или <code>mfa</code> в <code>amr[]</code> id_token при каждом SSO-входе — не только на уровне воркспейса.<br><br>
+          <strong>Grace period:</strong> настраивается через переменную <code>MFA_GRACE_DAYS</code> (по умолчанию 7). Пользователи без активного TOTP видят баннер с обратным отсчётом.<br><br>
+          <strong>Confirm-модал при отключении MFA:</strong> пользователь обязан подтвердить действие перед отключением второго фактора.<br><br>
+          <strong>Audit-события:</strong> <code>mfa.setup.complete</code> при настройке TOTP, <code>mfa.disable</code> при отключении — оба попадают в AuditLog с SIEM-тегами.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ROLES ════ -->
+  <div class="section" id="roles">
+    <div class="section-label">Доступ</div>
+    <div class="section-title">Роли и права</div>
+    <div class="section-sub">Права управляются на двух уровнях: глобальный (суперадмин) и воркспейс (три роли).</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Глобальный уровень</div>
+      <div class="two-col">
+        <div class="card"><div class="card-icon">👑</div><h4><span class="role-badge r-super">Суперадмин</span></h4><p>Полный доступ к панели администрирования: все пользователи, создание учёток, одобрение заявок, выдача суперадмин-прав. <strong>Всегда может войти по паролю</strong>, даже если включён SSO_ONLY.</p></div>
+        <div class="card"><div class="card-icon">👤</div><h4>Обычный пользователь</h4><p>Работает в рамках воркспейсов, к которым добавлен. Видит только свои пространства (если они приватные).</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Роли в воркспейсе</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Действие</th><th><span class="role-badge r-owner">Owner</span></th><th><span class="role-badge r-member">Member</span></th><th><span class="role-badge r-viewer">Viewer</span></th></tr></thead>
+          <tbody>
+            <tr><td>Создание и редактирование задач</td><td class="yes">Да</td><td class="yes">Да</td><td class="no">Нет</td></tr>
+            <tr><td>Просмотр задач (публичные доски)</td><td class="yes">Да</td><td class="yes">Да</td><td class="yes">Да</td></tr>
+            <tr><td>Просмотр приватных досок</td><td class="yes">Да</td><td class="yes">Да</td><td class="no">Нет</td></tr>
+            <tr><td>Создание / настройка досок</td><td class="yes">Да</td><td class="yes">Да</td><td class="no">Нет</td></tr>
+            <tr><td>Управление воркфлоу и метками</td><td class="yes">Да</td><td class="no">Нет</td><td class="no">Нет</td></tr>
+            <tr><td>Приглашение участников</td><td class="yes">Да</td><td class="no">Нет</td><td class="no">Нет</td></tr>
+            <tr><td>Смена ролей участников</td><td class="yes">Да</td><td class="no">Нет</td><td class="no">Нет</td></tr>
+            <tr><td>Удаление воркспейса</td><td class="yes">Да</td><td class="no">Нет</td><td class="no">Нет</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info" style="margin-top:14px">
+        <div class="info-icon">💡</div>
+        <div>Owner не может понизить сам себя — нужен второй Owner. Роль применяется немедленно, без перелогина.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ API KEYS ════ -->
+  <div class="section" id="apikeys">
+    <div class="section-label">Доступ</div>
+    <div class="section-title">API-ключи</div>
+    <div class="section-sub">Для машинной интеграции без сессий пользователя — вместо JWT используются API-ключи.</div>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div><h4>Создание ключа</h4><p>Профиль → вкладка «API Keys» → «Создать ключ». Задайте метку (label) и опциональную дату истечения. Ключ формата <code>ft_&lt;64 символа&gt;</code> отображается <strong>один раз</strong>.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div><h4>Что хранится в БД</h4><p>Только <code>keyHash</code> (SHA-256), <code>keyPrefix</code> (первые 12 символов для идентификации), <code>label</code>, <code>isActive</code>, <code>expiresAt</code>, <code>lastUsedAt</code>.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div><h4>Использование</h4><p>Заголовок <code>Authorization: Bearer ft_ваш_ключ</code>. Права = правам создавшего пользователя.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div><h4>Отзыв</h4><p>Профиль → API Keys → кнопка удаления. Ключ становится недействительным мгновенно.</p></div></div>
+    </div>
+  </div>
+
+  <!-- ════ WORKSPACES ════ -->
+  <div class="section" id="workspaces">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Воркспейсы</div>
+    <div class="section-sub">Воркспейс — изолированное рабочее пространство с досками, участниками и настройками.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Настройки (⚙️ → вкладки)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Вкладка</th><th>Что можно сделать</th></tr></thead>
+          <tbody>
+            <tr><td>Участники</td><td>Список членов с ролями, приглашение по email, смена роли, удаление участника</td></tr>
+            <tr><td>Воркфлоу</td><td>Создание и редактирование наборов статусов для досок воркспейса</td></tr>
+            <tr><td>Метки</td><td>Создание / редактирование / удаление меток с выбором цвета</td></tr>
+            <tr><td>История</td><td>Хронологический лог всех событий воркспейса</td></tr>
+            <tr><td>Основное</td><td>Название, описание, переключатель приватности, удаление воркспейса</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Приватный режим</div>
+      <div class="two-col">
+        <div class="card"><div class="toggle-row"><div class="track off"><div class="thumb"></div></div><strong style="font-size:14px">Публичное</strong></div><p style="font-size:13px;color:var(--muted)">Видно всем авторизованным пользователям в общем списке.</p></div>
+        <div class="card" style="border-color:rgba(99,102,241,.35)"><div class="toggle-row"><div class="track on"><div class="thumb"></div></div><strong style="font-size:14px">Приватное</strong></div><p style="font-size:13px;color:var(--muted)">Скрыто из публичного списка. Только явно добавленные участники.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ WORKFLOWS ════ -->
+  <div class="section" id="workflows">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Воркфлоу</div>
+    <div class="section-sub">Воркфлоу — набор статусов и разрешённых переходов между ними. Каждая доска привязана к одному воркфлоу.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Категории статусов</div>
+      <div class="card-grid">
+        <div class="card"><span class="cat cat-open">OPEN</span><p style="margin-top:10px;font-size:13px;color:var(--muted)">Задача открыта, работа не начата.</p></div>
+        <div class="card"><span class="cat cat-prog">IN_PROGRESS</span><p style="margin-top:10px;font-size:13px;color:var(--muted)">Задача в работе.</p></div>
+        <div class="card"><span class="cat cat-done">DONE</span><p style="margin-top:10px;font-size:13px;color:var(--muted)">Задача завершена успешно.</p></div>
+        <div class="card"><span class="cat cat-cancel">CANCELLED</span><p style="margin-top:10px;font-size:13px;color:var(--muted)">Задача отменена.</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Режимы переходов</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Режим</th><th>Поведение</th><th>Когда использовать</th></tr></thead>
+          <tbody>
+            <tr><td>FORWARD_ONLY</td><td>Только вперёд по списку. Откат невозможен.</td><td>Строгие процессы без возврата</td></tr>
+            <tr><td>BIDIRECTIONAL</td><td>В обоих направлениях между любыми статусами.</td><td>Гибкие команды</td></tr>
+            <tr><td>CUSTOM</td><td>Матрица переходов задаётся вручную.</td><td>Сложные процессы</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ BOARDS ════ -->
+  <div class="section" id="boards">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Доски</div>
+    <div class="section-sub">Доска — основное место работы с задачами. Каждая задача получает уникальный <code>issueKey</code> (например <code>FT-42</code>).</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Режимы отображения</div>
+      <div class="card-grid">
+        <div class="card"><div class="card-icon">🗂️</div><h4>Kanban</h4><p>Колонки по статусам. Карточки перетаскиваются мышкой. Подгрузка до 100 задач на статус.</p></div>
+        <div class="card"><div class="card-icon">📋</div><h4>Список</h4><p>Табличное представление. Сортировка и инлайн-редактирование полей.</p></div>
+        <div class="card"><div class="card-icon">📅</div><h4>Календарь</h4><p>Задачи по датам. Оценка загрузки команды по дням.</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Фильтры на доске <span class="new-badge">улучшено</span></div>
+      <div class="chips">
+        <div class="chip">Статус</div><div class="chip">Приоритет</div><div class="chip">Исполнитель</div>
+        <div class="chip">Метки</div><div class="chip">Дедлайн (от / до)</div><div class="chip">Сброс всех фильтров</div>
+      </div>
+      <div class="info" style="margin-top:14px">
+        <div class="info-icon">💡</div>
+        <div><strong>Серверная фильтрация:</strong> фильтры выполняются на бэкенде, не в браузере. Параметры синхронизируются с URL — можно скопировать ссылку с текущими фильтрами и отправить коллеге. Работает для Kanban и List View одновременно.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ TASKS ════ -->
+  <div class="section" id="tasks">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Задачи</div>
+    <div class="section-sub">Центральная сущность системы. Уникальный ключ, статус, полный набор атрибутов.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Поля задачи</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Поле</th><th>Значения</th><th>Примечание</th></tr></thead>
+          <tbody>
+            <tr><td>Issue Key</td><td><code>FT-1</code>, <code>FT-42</code></td><td>Уникальный ID, автоинкремент на доске</td></tr>
+            <tr><td>Название</td><td>Текст</td><td>Обязательное</td></tr>
+            <tr><td>Описание</td><td>Текст</td><td>Многострочный</td></tr>
+            <tr><td>Статус</td><td>Из воркфлоу доски</td><td>Определяет колонку на Kanban</td></tr>
+            <tr><td>Приоритет</td><td><span class="p-high">HIGH</span> / <span class="p-medium">MEDIUM</span> / <span class="p-low">LOW</span> / не задан</td><td>Иконка на карточке</td></tr>
+            <tr><td>Исполнитель</td><td>Участник воркспейса</td><td>Используется в «Мои задачи»</td></tr>
+            <tr><td>Дедлайн / Дата начала</td><td>Дата</td><td>Календарь и фильтры</td></tr>
+            <tr><td>Метки</td><td>Цветные теги</td><td>Множественный выбор</td></tr>
+            <tr><td>Родительская задача</td><td>ID задачи</td><td>Для вложенности</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Создание задачи</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Быстрое создание на Kanban</h4><p>Кнопка «+ Добавить» сверху нужной колонки → название → Enter.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Подзадача</h4><p>Карточка задачи → вкладка «Подзадачи» → «Добавить подзадачу».</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ DRAWER ════ -->
+  <div class="section" id="drawer">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Карточка задачи (Drawer)</div>
+    <div class="section-sub">Клик по задаче открывает боковую панель с пятью вкладками. Все поля редактируются на месте.</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Вкладка</th><th>Содержимое</th></tr></thead>
+        <tbody>
+          <tr><td>Детали</td><td>Все поля: статус, приоритет, исполнитель, дедлайн, метки, описание</td></tr>
+          <tr><td>Подзадачи</td><td>Дерево дочерних задач — добавить или открыть любую</td></tr>
+          <tr><td>Комментарии</td><td>Тред обсуждения: создание, редактирование, удаление своих</td></tr>
+          <tr><td>Чеклист</td><td>Один или несколько чеклистов с пунктами и чекбоксами</td></tr>
+          <tr><td>История</td><td>Полный audit-лог изменений задачи: кто, что, когда</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Горячие клавиши</div>
+      <div class="two-col">
+        <div class="card"><code>Ctrl+S</code> / <code>Cmd+S</code><p style="margin-top:8px;font-size:13px;color:var(--muted)">Сохранить изменения</p></div>
+        <div class="card"><code>Escape</code><p style="margin-top:8px;font-size:13px;color:var(--muted)">Закрыть карточку</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SUBTASKS ════ -->
+  <div class="section" id="subtasks">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Подзадачи <span class="new-badge">обновлено</span></div>
+    <div class="section-sub">До 5 уровней вложенности задач через materialized path в БД.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Ограничение вложенности</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Уровень</th><th>Пример</th><th>Статус</th></tr></thead>
+          <tbody>
+            <tr><td>Уровень 1 (корневые)</td><td>FT-1</td><td class="yes">Разрешено</td></tr>
+            <tr><td>Уровень 2 (подзадачи)</td><td>Подзадача FT-1</td><td class="yes">Разрешено</td></tr>
+            <tr><td>Уровень 3</td><td>Подзадача подзадачи</td><td class="yes">Разрешено</td></tr>
+            <tr><td>Уровень 4</td><td>…</td><td class="yes">Разрешено</td></tr>
+            <tr><td>Уровень 5</td><td>…</td><td class="yes">Разрешено (максимум)</td></tr>
+            <tr><td>Уровень 6+</td><td>—</td><td class="no">Блокируется (400)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info" style="margin-top:12px">
+        <div class="info-icon">💡</div>
+        <div>Frontend: кнопка «Добавить подзадачу» скрывается на задаче глубины 5. Backend: <code>POST /boards/:bid/tasks</code> с <code>parentId</code> возвращает <code>400 Subtask depth limit exceeded (max 5)</code>.</div>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-top:16px">
+      <div class="notice-icon">⚠️</div>
+      <div>Удаление родительской задачи удаляет всё поддерево. Операция выполняется в одной транзакции — частичного удаления не будет.</div>
+    </div>
+  </div>
+
+  <!-- ════ BULK OPERATIONS ════ -->
+  <div class="section" id="bulk">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Массовые операции <span class="new-badge">новое</span></div>
+    <div class="section-sub">Выберите несколько задач и измените их разом — статус, приоритет, исполнителя или удалите все сразу.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Как выбрать задачи</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Kanban-вид</h4><p>Наведите курсор на карточку — появится чекбокс в верхнем левом углу. Нажмите для выбора. При выборе первой задачи чекбоксы появляются на всех карточках.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>List View (список)</h4><p>Чекбокс в первом столбце каждой строки. В заголовке — «выбрать все» для текущего представления.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Снять выбор</h4><p>Кнопка «✕» в плавающей панели или клик вне задач снимает весь выбор.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Доступные действия (BulkActionBar)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Действие</th><th>Как использовать</th><th>Ограничения</th></tr></thead>
+          <tbody>
+            <tr><td>Изменить статус</td><td>Выпадающий список «Статус…» в панели</td><td>Статус должен быть из текущего воркфлоу доски</td></tr>
+            <tr><td>Изменить приоритет</td><td>Выпадающий список «Приоритет…»</td><td>HIGH / MEDIUM / LOW / Очистить</td></tr>
+            <tr><td>Назначить исполнителя</td><td>Выпадающий список «Исполнитель…»</td><td>Только участники воркспейса; «Очистить» снимает исполнителя</td></tr>
+            <tr><td>Удалить</td><td>Кнопка «Удалить» → подтверждение «Да / Нет»</td><td>Удаляет подзадачи каскадно; необратимо</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Права доступа</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Роль</th><th>Массовое обновление</th><th>Массовое удаление</th></tr></thead>
+          <tbody>
+            <tr><td><span class="role-badge r-owner">Owner</span></td><td class="yes">Разрешено</td><td class="yes">Разрешено</td></tr>
+            <tr><td><span class="role-badge r-member">Member</span></td><td class="yes">Разрешено</td><td class="yes">Разрешено</td></tr>
+            <tr><td><span class="role-badge r-viewer">Viewer</span></td><td class="no">403</td><td class="no">403</td></tr>
+            <tr><td>Не участник</td><td class="no">404</td><td class="no">404</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">API — массовые операции</div>
+      <div class="code-block">
+<span class="cm"># Массовое обновление (до 100 задач)</span>
+PATCH /api/boards/:boardId/tasks/bulk
+{
+  "ids": ["uuid1", "uuid2", ...],   <span class="cm">// 1–100 UUID задач с этой доски</span>
+  "patch": {
+    "statusId": "uuid",             <span class="cm">// опционально — должен быть в воркфлоу доски</span>
+    "priority": "HIGH",             <span class="cm">// HIGH | MEDIUM | LOW | null (очистить)</span>
+    "assigneeId": "userId"          <span class="cm">// UUID участника или null (очистить)</span>
+  }
+}
+<span class="cm"># Ответ: { "updated": N }</span>
+
+<span class="cm"># Массовое удаление (до 100 задач)</span>
+POST /api/boards/:boardId/tasks/bulk-delete
+{
+  "ids": ["uuid1", "uuid2", ...]    <span class="cm">// 1–100 UUID задач с этой доски</span>
+}
+<span class="cm"># Ответ: { "deleted": N }</span>
+      </div>
+      <div class="notice" style="margin-top:12px">
+        <div class="notice-icon">⚠️</div>
+        <div>Задачи из других досок в списке <code>ids</code> <strong>молча игнорируются</strong> (вернётся <code>updated: 0</code>). Это намеренное поведение — не ошибка. Лимит 100 задач за раз.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Аудит — что записывается в историю</div>
+      <div class="info">
+        <div class="info-icon">📋</div>
+        <div>При массовом обновлении каждое изменённое поле записывается в <code>TaskHistory</code> (поле, старое значение, новое значение). При смене статуса также обновляется <code>TaskStatusHistory</code> — закрывается предыдущий интервал и открывается новый. История ведётся точно так же, как для одиночного изменения.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ GLOBAL SEARCH ════ -->
+  <div class="section" id="search">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Глобальный поиск Cmd+K <span class="new-badge">новое</span></div>
+    <div class="section-sub">Быстрый поиск задач из любого места системы по нажатию Cmd+K.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Как пользоваться</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Открыть палитру</h4><p><code>Cmd+K</code> (Mac) или <code>Ctrl+K</code> (Windows/Linux). Работает в любом месте системы, кроме открытых модальных окон.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Ввести запрос</h4><p>Начните вводить заголовок задачи или issueKey (например <code>FT-42</code>). Поиск запускается автоматически через 300ms после остановки ввода.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Перейти к задаче</h4><p>Кликните на результат — откроется TaskDrawer с задачей. Поиск закрывается автоматически.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Закрыть</h4><p><code>Escape</code> или клик вне окна поиска.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">API поиска</div>
+      <div class="code-block">
+GET /api/search?q=текст_запроса&amp;limit=20
+
+<span class="cm"># Ответ:</span>
+{
+  "items": [
+    {
+      "id": "uuid",
+      "issueKey": "FT-42",
+      "title": "Заголовок задачи",
+      "priority": "HIGH",
+      "status": { "name": "В работе", "category": "IN_PROGRESS" },
+      "board": { "id": "...", "name": "...", "prefix": "FT" },
+      "workspace": { "id": "...", "name": "...", "slug": "..." }
+    }
+  ]
+}
+      </div>
+      <div class="info" style="margin-top:12px">
+        <div class="info-icon">💡</div>
+        <div>Поиск ведётся только по задачам воркспейсов, в которых состоит пользователь. Rate limit: 30 запросов в минуту. Параметр <code>limit</code> — от 1 до 50 (по умолчанию 20).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MY TASKS ════ -->
+  <div class="section" id="mytasks">
+    <div class="section-label">Основной функционал</div>
+    <div class="section-title">Мои задачи <span class="new-badge">обновлено</span></div>
+    <div class="section-sub">Персональный дашборд: все задачи, назначенные на вас, из всех воркспейсов и досок. Детали задачи открываются прямо в списке — без перехода в Drawer.</div>
+
+    <div class="card-grid">
+      <div class="card"><div class="card-icon">📅</div><h4>Сегодня</h4><p>Задачи с дедлайном на сегодня.</p></div>
+      <div class="card"><div class="card-icon">🔜</div><h4>Предстоящие</h4><p>Задачи с дедлайном в ближайшие дни.</p></div>
+      <div class="card"><div class="card-icon">🗃️</div><h4>По воркспейсу</h4><p>Фильтр по конкретному пространству.</p></div>
+      <div class="card"><div class="card-icon">🔍</div><h4>Поиск</h4><p>По названию задачи. Debounce 300ms.</p></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Аккордеон — TaskAccordionPanel</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Открыть детали</h4><p>Кликните на строку задачи — она раскрывается вниз и показывает: описание (с рендером @упоминаний), статус, дедлайн, исполнитель, теги.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Один аккордеон за раз</h4><p>Открытие новой задачи автоматически закрывает предыдущую. Повторный клик по открытой строке — закрывает её.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Перейти на доску</h4><p>Кнопка «Открыть задачу» в панели ведёт на доску и открывает полный Drawer. URL доски получает параметр <code>from=my-tasks</code> — появляется кнопка «← Мои задачи» для возврата.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Синхронизация с URL</h4><p>Открытый аккордеон записывается в URL: <code>?open=&lt;taskId&gt;</code>. При нажатии «Назад» в браузере состояние восстанавливается — нужная задача уже раскрыта.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Что показывает панель</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Поле</th><th>Отображение</th><th>Примечание</th></tr></thead>
+          <tbody>
+            <tr><td>Описание</td><td>Текст с подсвеченными @упоминаниями</td><td>Read-only; редактирование — в полном Drawer</td></tr>
+            <tr><td>Статус</td><td>Цветной бейдж категории</td><td>OPEN / IN_PROGRESS / DONE / CANCELLED</td></tr>
+            <tr><td>Дедлайн</td><td>Дата; красный если просрочен</td><td>Пустой если не задан</td></tr>
+            <tr><td>Исполнитель</td><td>Аватар (только <code>https:</code>) + имя</td><td>Initials-заглушка если нет аватара</td></tr>
+            <tr><td>Теги (метки)</td><td>Цветные чипы</td><td>До всех меток задачи</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ LABELS ════ -->
+  <div class="section" id="labels">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Метки</div>
+    <div class="section-sub">Цветные теги для категоризации. Создаются на уровне воркспейса, доступны на всех его досках.</div>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div><h4>Создание</h4><p>Настройки воркспейса → Метки → «Добавить метку». Название + цвет из палитры.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div><h4>Применение</h4><p>Карточка → поле «Метки» → выбрать из списка. Несколько меток на задачу.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div><h4>Фильтрация</h4><p>FilterBar → Метки → задачи фильтруются по тегам.</p></div></div>
+    </div>
+  </div>
+
+  <!-- ════ CHECKLISTS ════ -->
+  <div class="section" id="checklists">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Чеклисты <span class="new-badge">обновлено</span></div>
+    <div class="section-sub">Список дел внутри задачи. Один или несколько чеклистов, каждый с собственными пунктами и счётчиком символов.</div>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div><h4>Создать чеклист</h4><p>Карточка → вкладка «Чеклист» → «Добавить чеклист» → дайте название.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div><h4>Добавить пункты</h4><p>«Добавить пункт» — у каждого пункта чекбокс и текст. Лимит текста пункта: <strong>500 символов</strong>. Счётчик появляется при >450 символах.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div><h4>Отметить выполненным</h4><p>Кликните чекбокс — пункт помечается как <code>isDone</code>.</p></div></div>
+    </div>
+  </div>
+
+  <!-- ════ COMMENTS ════ -->
+  <div class="section" id="comments">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Комментарии <span class="new-badge">обновлено</span></div>
+    <div class="section-sub">Тред обсуждения внутри каждой задачи. Поддержка @упоминаний и счётчика символов.</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Действие</th><th>Кто может</th><th>Как</th></tr></thead>
+        <tbody>
+          <tr><td>Написать комментарий</td><td>Owner, Member</td><td>Карточка → Комментарии → textarea → отправить (или Ctrl+Enter)</td></tr>
+          <tr><td>@упомянуть коллегу</td><td>Owner, Member</td><td>Введите @ в тексте → выберите участника из выпадающего списка</td></tr>
+          <tr><td>Редактировать</td><td>Автор комментария</td><td>Значок редактирования рядом со своим</td></tr>
+          <tr><td>Удалить</td><td>Автор комментария</td><td>Значок корзины рядом со своим</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Счётчик символов <span class="new-badge">новое</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Порог</th><th>Индикация</th></tr></thead>
+          <tbody>
+            <tr><td>Меньше 9 000 символов</td><td>Счётчик не отображается</td></tr>
+            <tr><td>9 001 – 9 999 символов (>90%)</td><td>Счётчик жёлтый: «9 001 / 10 000»</td></tr>
+            <tr><td>10 000 символов (лимит)</td><td>Счётчик красный, поле блокируется</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ NOTIFICATIONS ════ -->
+  <div class="section" id="notifications">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Уведомления <span class="new-badge">новое</span></div>
+    <div class="section-sub">В-приложении уведомления о @упоминаниях и назначении исполнителем. Опциональные email-уведомления.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Когда приходит уведомление</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Событие</th><th>Кому</th><th>Email</th></tr></thead>
+          <tbody>
+            <tr><td>@упоминание в описании задачи</td><td>Упомянутому пользователю</td><td>Если <code>emailNotifications=true</code></td></tr>
+            <tr><td>@упоминание в комментарии</td><td>Упомянутому пользователю</td><td>Если <code>emailNotifications=true</code></td></tr>
+            <tr><td>Назначение исполнителем</td><td>Назначенному пользователю</td><td>Если <code>emailNotifications=true</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info" style="margin-top:12px">
+        <div class="info-icon">💡</div>
+        <div>Самоупоминания не создают уведомлений. Повторные упоминания (при редактировании) создают новое уведомление.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Синтаксис @упоминаний</div>
+      <div class="code-block">
+<span class="cm"># В описании задачи или комментарии введите @</span>
+<span class="cm"># Появится выпадающий список участников</span>
+<span class="cm"># После выбора вставляется маркер:</span>
+@[Иван Иванов](uuid-пользователя)
+
+<span class="cm"># В браузере отображается как синяя ссылка с именем</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Колокольчик уведомлений</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>Иконка в шапке</h4><p>Колокольчик в правом верхнем углу. Красный кружок показывает количество непрочитанных.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Список уведомлений</h4><p>Нажмите колокольчик — открывается дропдаун с последними уведомлениями (максимум 50). Показывает: кто упомянул, в какой задаче, превью текста.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Перейти к задаче</h4><p>Клик по уведомлению → переход на доску с автоматическим открытием карточки задачи. Уведомление помечается прочитанным.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>Прочитать все</h4><p>Кнопка «Прочитать все» в заголовке дропдауна.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Email-уведомления — настройка opt-out</div>
+      <div class="two-col">
+        <div class="card"><div class="toggle-row"><div class="track on"><div class="thumb"></div></div><strong style="font-size:14px">Email вкл (по умолчанию)</strong></div><p style="font-size:13px;color:var(--muted)">Уведомления о @упоминаниях и назначениях приходят на email. Включено автоматически при наличии настроенного SMTP.</p></div>
+        <div class="card"><div class="toggle-row"><div class="track off"><div class="thumb"></div></div><strong style="font-size:14px">Email выкл</strong></div><p style="font-size:13px;color:var(--muted)">Только в-приложении уведомления. Email не отправляется. Настройка: Профиль → «Email-уведомления».</p></div>
+      </div>
+      <div class="info" style="margin-top:12px">
+        <div class="info-icon">💡</div>
+        <div><strong>Путь в интерфейсе:</strong> Аватар в шапке → Профиль → секция «Уведомления» → переключатель «Email-уведомления». Изменение применяется мгновенно.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">API уведомлений</div>
+      <div class="code-block">
+GET    /api/notifications              <span class="cm"># список (до 50), с unread count</span>
+PATCH  /api/notifications/:id/read    <span class="cm"># пометить одно прочитанным</span>
+POST   /api/notifications/read-all    <span class="cm"># пометить все прочитанными</span>
+PATCH  /api/users/me/notifications    <span class="cm"># { emailNotifications: true|false }</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ HISTORY ════ -->
+  <div class="section" id="history">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">История изменений</div>
+    <div class="section-sub">Автоматический audit-лог на двух уровнях: задача и воркспейс.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">История задачи (TaskHistory)</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:12px">Карточка → вкладка «История». Отслеживаемые поля:</p>
+      <div class="chips">
+        <div class="chip">title</div><div class="chip">statusId</div><div class="chip">priority</div>
+        <div class="chip">assigneeId</div><div class="chip">dueDate</div><div class="chip">description</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">История воркспейса (WorkspaceEvent)</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:12px">Настройки воркспейса → История. Фиксируются:</p>
+      <div class="chips">
+        <div class="chip">workspace_created</div><div class="chip">member_added</div>
+        <div class="chip">member_removed</div><div class="chip">member_role_changed</div>
+        <div class="chip">board_created</div><div class="chip">board_deleted</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ FEEDBACK ════ -->
+  <div class="section" id="feedback">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Обратная связь</div>
+    <div class="section-sub">Встроенная форма для баг-репортов и идей. Автоматически создаёт Issue в GitHub.</div>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div><h4>Открыть форму</h4><p>Кнопка «Обратная связь» в интерфейсе. Тип: Баг или Идея. Заголовок + описание.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div><h4>Что происходит</h4><p>Сохраняется в БД (таблица <code>Feedback</code>) и создаётся Issue в GitHub репозитории. Поле <code>githubUrl</code> хранит ссылку на issue.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div><h4>Мета-данные</h4><p>Автоматически прикрепляются: OS, браузер, разрешение экрана, viewport, язык — помогают воспроизвести баг.</p></div></div>
+    </div>
+  </div>
+
+  <!-- ════ ADMIN ════ -->
+  <div class="section" id="admin">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Администрирование</div>
+    <div class="section-sub">Панель доступна только суперадминам. Управление пользователями, заявками и audit-логом.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Вкладка «Пользователи»</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Действие</th><th>Описание</th></tr></thead>
+          <tbody>
+            <tr><td>Список всех пользователей</td><td>Email, имя, дата создания, loginCount, статус суперадмина</td></tr>
+            <tr><td>Создать пользователя</td><td>Форма: имя + email → временный пароль. Все действия пишутся в audit-лог с ID создавшего суперадмина.</td></tr>
+            <tr><td>Выдать / снять суперадмин</td><td>Переключатель рядом с пользователем. Применяется мгновенно.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Вкладка «Заявки»</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Статус</th><th>Что означает</th></tr></thead>
+          <tbody>
+            <tr><td>PENDING</td><td>Заявка ждёт решения администратора</td></tr>
+            <tr><td>APPROVED</td><td>Пользователь может войти</td></tr>
+            <tr><td>REJECTED</td><td>Доступ отклонён</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Вкладка «Audit Log» <span class="new-badge">новое</span></div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:12px">Эндпоинт <code>GET /api/admin/audit-log?limit=100</code> возвращает хронологический лог всех административных действий: кто, что, над кем, когда. Максимум 500 записей за раз.</p>
+      <div class="chips">
+        <div class="chip">user_created</div><div class="chip">superadmin_granted</div>
+        <div class="chip">superadmin_revoked</div><div class="chip">registration_approved</div>
+        <div class="chip">registration_rejected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ INTEGRATIONS ════ -->
+  <div class="section" id="integrations">
+    <div class="section-label">Дополнительно</div>
+    <div class="section-title">Интеграции</div>
+    <div class="section-sub">FlowTask интегрируется с внешними системами через API-ключи.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Pulsar</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>API-ключ</h4><p>Создайте ключ (<code>ft_...</code>) в профиле FlowTask и настройте в Pulsar.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Привязка метки</h4><p><code>POST /api/integrations/tasks/:taskId/pulsar-label</code> — прикрепляет Pulsar-метку к задаче. Защита от IDOR: сервер проверяет что задача принадлежит указанному воркспейсу и что пользователь является его членом.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Навигация</h4><p><code>GET /api/integrations/workspaces</code> и <code>/workspaces/:id/boards</code> — воркспейсы и доски для навигации в Pulsar.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SECURITY ════ -->
+  <div class="section" id="security">
+    <div class="section-label">Безопасность</div>
+    <div class="section-title">Защита системы</div>
+    <div class="section-sub">Многоуровневая защита: от пароля до сетевых заголовков.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Хранение секретов</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Секрет</th><th>Как хранится</th><th>Почему безопасно</th></tr></thead>
+          <tbody>
+            <tr><td>Пароль пользователя</td><td>bcryptjs hash (12 раундов)</td><td>Восстановить пароль из хеша математически невозможно</td></tr>
+            <tr><td>Refresh token</td><td>SHA-256 хеш в БД</td><td>Утечка БД не даёт доступ к сессиям</td></tr>
+            <tr><td>Password reset token</td><td>SHA-256 хеш в БД</td><td>Одноразовый, живёт 1 час, в БД только хеш</td></tr>
+            <tr><td>API key</td><td>SHA-256 хеш + 12-символьный префикс</td><td>Оригинал показывается один раз и нигде не сохраняется</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Middleware-стек</div>
+      <div class="card-grid">
+        <div class="card"><div class="card-icon">🪖</div><h4>Helmet.js</h4><p>Автоматически выставляет security headers: XSS-защита, запрет clickjacking, MIME-type protection.</p></div>
+        <div class="card"><div class="card-icon">🌐</div><h4>CORS</h4><p>Настраивается через <code>CORS_ORIGIN</code>. Только разрешённые домены получают ответы.</p></div>
+        <div class="card"><div class="card-icon">✅</div><h4>Zod-валидация</h4><p>Все входящие данные проверяются по схеме. Неправильный формат — 400 до обработки.</p></div>
+        <div class="card"><div class="card-icon">🔍</div><h4>RBAC-сканер в CI</h4><p>Скрипт проверяет роутеры на незащищённые маршруты. Найдены «голые» эндпоинты — CI не пропускает PR.</p></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Nginx security headers</div>
+      <div class="code-block">
+X-Frame-Options: SAMEORIGIN              <span class="cm"># запрет встройки в iframe</span>
+X-Content-Type-Options: nosniff          <span class="cm"># запрет MIME sniffing</span>
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data: https:;
+  connect-src 'self';
+  frame-ancestors 'self';
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Логирование без утечки секретов</div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:12px">Логгер автоматически редактирует чувствительные поля перед записью. Регулярное выражение проверяет все ключи рекурсивно по вложенным объектам:</p>
+      <div class="chips">
+        <div class="chip">password</div><div class="chip">secret</div><div class="chip">token</div>
+        <div class="chip">authorization</div><div class="chip">cookie</div><div class="chip">session</div>
+        <div class="chip">credential</div><div class="chip">api_key</div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">Вместо значения в логах появляется <code>[REDACTED]</code>. Production-режим — JSON в stdout. Dev-режим — читаемый текст.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Обновления v1.6 — Gap-14, 15, 16</div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-icon">🚦</div>
+          <h4>Rate-limit по email (Gap-14)</h4>
+          <p>Лимит аутентификации ключуется по <strong>email-адресу</strong>, а не по IP. Ротация <code>X-Forwarded-For</code> больше не обходит ограничение. Fallback-бакет <code>no-email</code> для запросов без тела.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🕵️</div>
+          <h4>Email enumeration prevention (Gap-15)</h4>
+          <p><code>POST /api/auth/register</code> возвращает одинаковый ответ для всех сценариев: существующий email, pending заявка, новый пользователь. <code>hashPassword</code> выполняется всегда — защита от timing side-channel.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔴</div>
+          <h4>Account disabled check (Gap-16)</h4>
+          <p>JWT middleware проверяет поле <code>isActive</code> при каждом запросе. Отключённый аккаунт немедленно получает <code>403 ACCOUNT_DISABLED</code> без дальнейшей обработки запроса.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ RATE LIMIT ════ -->
+  <div class="section" id="ratelimit">
+    <div class="section-label">Безопасность</div>
+    <div class="section-title">Лимиты запросов</div>
+    <div class="section-sub">Два уровня: приложение (по маршруту) и Nginx (по IP). Защита от спама и DDoS.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Лимиты на уровне приложения</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Область</th><th>Лимит</th><th>Окно</th><th>Применяется к</th></tr></thead>
+          <tbody>
+            <tr><td>auth</td><td>10 запросов</td><td>1 минута</td><td>Логин, регистрация, сброс пароля</td></tr>
+            <tr><td>sso</td><td>20 запросов</td><td>1 минута</td><td>SSO-логин и SSO-callback</td></tr>
+            <tr><td>invite</td><td>20 запросов</td><td>1 минута</td><td>Приглашение в воркспейс</td></tr>
+            <tr><td>api-key</td><td>20 запросов</td><td>1 минута</td><td>Создание/удаление API-ключей</td></tr>
+            <tr><td>feedback</td><td>5 запросов</td><td>1 час</td><td>Отправка обратной связи</td></tr>
+            <tr><td>search</td><td>30 запросов</td><td>1 минута</td><td>Глобальный поиск задач Cmd+K</td></tr>
+            <tr><td>bulk-tasks</td><td>30 запросов</td><td>1 минута</td><td>Массовые операции с задачами</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Лимиты на уровне Nginx</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Маршрут</th><th>Лимит</th><th>Burst</th></tr></thead>
+          <tbody>
+            <tr><td><code>/api/auth/*</code></td><td>5 req/s</td><td>10</td></tr>
+            <tr><td><code>/api/*</code></td><td>30 req/s</td><td>20</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ EMAIL ════ -->
+  <div class="section" id="email">
+    <div class="section-label">Безопасность</div>
+    <div class="section-title">Email и сброс пароля</div>
+    <div class="section-sub">SMTP-транспорт через nodemailer. Graceful degradation если SMTP не настроен.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Процесс сброса пароля</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><h4>POST /api/auth/forgot-password</h4><p>Пользователь вводит email. Ответ всегда одинаковый — нельзя угадать есть ли такой пользователь (защита от перечисления).</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><h4>Сервер генерирует token</h4><p>Случайный 40-байтный токен. В БД сохраняется только его SHA-256 хеш + expiresAt. Оригинал уходит в письме.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><h4>Письмо с ссылкой</h4><p>Nodemailer отправляет через SMTP. Если SMTP не настроен — логируется предупреждение, ошибка не пробрасывается пользователю.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><h4>POST /api/auth/reset-password</h4><p>Пользователь переходит по ссылке, вводит новый пароль. Сервер ищет SHA-256(token) в БД, проверяет expiresAt и что ещё не использован, меняет пароль.</p></div></div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Переменные SMTP</div>
+      <div class="code-block">
+SMTP_HOST=smtp.example.com
+SMTP_PORT=<span class="nu">587</span>
+SMTP_USER=flowtask@example.com
+SMTP_PASS=...
+SMTP_FROM=<span class="st">"FlowTask &lt;flowtask@example.com&gt;"</span>
+APP_URL=<span class="st">https://flowtask.example.com</span>   <span class="cm"># для формирования ссылки в письме</span>
+      </div>
+      <div class="info" style="margin-top:12px">
+        <div class="info-icon">💡</div>
+        <div>Если SMTP не настроен — функция сброса пароля недоступна. Суперадмин может создать нового пользователя вместо сброса пароля.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ AUDIT LOG ════ -->
+  <div class="section" id="auditlog">
+    <div class="section-label">Безопасность</div>
+    <div class="section-title">Audit-лог и SIEM <span class="new-badge">обновлено v1.6</span></div>
+    <div class="section-sub">Все значимые события системы фиксируются в неизменяемой таблице AuditLog с обязательными SIEM-тегами по ГОСТ 57580.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">SIEM-теги (Gap-17)</div>
+      <div class="info">
+        <div class="info-icon">🏷️</div>
+        <div>Каждое событие содержит поле <code>meta.tags</code> — массив из 5 элементов: <code>['flowtasks', &lt;type&gt;, 'iia', 'production', 'dc1']</code>. Тип зависит от события: <code>auth</code>, <code>rbac</code>, <code>audit</code>, <code>admin</code>.</div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Аутентификация и API-ключи</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>action</th><th>Когда</th><th>Ключевые meta-поля</th></tr></thead>
+          <tbody>
+            <tr><td>auth.login</td><td>Успешный вход (пароль или SSO)</td><td>provider, ip, userAgent</td></tr>
+            <tr><td>auth.login (FAIL)</td><td>Неверный пароль / пользователь не найден</td><td>reason, ip</td></tr>
+            <tr><td>auth.logout</td><td>Явный выход пользователя</td><td>reason: user_initiated</td></tr>
+            <tr><td>auth.credential.change</td><td>Смена пароля (Gap-13)</td><td>ip, userAgent</td></tr>
+            <tr><td>auth.apikey.use</td><td>Успешная аутентификация по API-ключу (Gap-19)</td><td>keyPrefix</td></tr>
+            <tr><td>auth.apikey.fail</td><td>Неверный или истёкший API-ключ (Gap-19)</td><td>keyPrefix, reason</td></tr>
+            <tr><td>mfa.setup.complete</td><td>Пользователь настроил TOTP (Gap-13)</td><td>ip</td></tr>
+            <tr><td>mfa.disable</td><td>Пользователь отключил TOTP (Gap-13)</td><td>ip</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">RBAC и управление ролями (Gap-18)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>action</th><th>Когда</th><th>Ключевые meta-поля</th></tr></thead>
+          <tbody>
+            <tr><td>rbac.role.change</td><td>Изменена роль участника воркспейса</td><td>targetUserId, targetEmail, oldRole, newRole, workspaceId</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Административные действия (Gap-20)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>action</th><th>Когда</th><th>Ключевые meta-поля</th></tr></thead>
+          <tbody>
+            <tr><td>user_created</td><td>Суперадмин создал пользователя</td><td>email, name создаваемого</td></tr>
+            <tr><td>superadmin_granted</td><td>Выдача флага суперадмина</td><td>userId, email целевого пользователя</td></tr>
+            <tr><td>superadmin_revoked</td><td>Снятие флага суперадмина</td><td>userId, email целевого пользователя</td></tr>
+            <tr><td>registration_approved</td><td>Одобрение заявки на регистрацию</td><td>email заявителя</td></tr>
+            <tr><td>registration_rejected</td><td>Отклонение заявки</td><td>email заявителя</td></tr>
+            <tr><td>admin.config.change</td><td>Изменение настроек системы/воркспейса (Gap-20)</td><td>setting, oldValue, newValue</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Аномалии и безопасность (Gap-21)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>action</th><th>Когда</th><th>Ключевые meta-поля</th></tr></thead>
+          <tbody>
+            <tr><td>validation.error</td><td>Некорректный запрос к API (Gap-21)</td><td>endpoint, errors[], ip — помогает обнаруживать зондирование</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Получение лога</div>
+      <div class="code-block">
+<span class="cm"># Последние 100 записей (по умолчанию)</span>
+GET /api/admin/audit-log
+
+<span class="cm"># Последние 200 записей (максимум 500)</span>
+GET /api/admin/audit-log?limit=<span class="nu">200</span>
+      </div>
+      <div class="info" style="margin-top:12px">
+        <div class="info-icon">🔒</div>
+        <div>Доступ только суперадминам. Записи не удаляются и не редактируются — append-only.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MODELS ════ -->
+  <div class="section" id="models">
+    <div class="section-label">Справочник</div>
+    <div class="section-title">Модели данных</div>
+    <div class="section-sub">20 таблиц в PostgreSQL. Управляются через Prisma ORM.</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Модель</th><th>Назначение</th><th>Ключевые поля</th></tr></thead>
+        <tbody>
+          <tr><td>User</td><td>Пользователь системы</td><td>email, password(hash), ssoSubjectId, authProvider, ssoOnly, isSuperadmin, loginCount</td></tr>
+          <tr><td>RegistrationRequest</td><td>Заявки на регистрацию</td><td>email, status (PENDING|APPROVED|REJECTED), reviewedBy</td></tr>
+          <tr><td>RefreshToken</td><td>Сессионные токены</td><td>userId, token (SHA-256 hash), expiresAt</td></tr>
+          <tr><td>PasswordResetToken</td><td>Сброс пароля</td><td>userId, tokenHash (SHA-256), expiresAt, usedAt</td></tr>
+          <tr><td>ApiKey</td><td>API-ключи интеграций</td><td>keyHash, keyPrefix, label, isActive, expiresAt, lastUsedAt</td></tr>
+          <tr><td>AuditLog</td><td>Лог административных действий</td><td>actorId, action, targetId, targetType, meta (JSON)</td></tr>
+          <tr><td>Workspace</td><td>Рабочее пространство</td><td>name, slug, isPrivate, creatorId</td></tr>
+          <tr><td>WorkspaceMember</td><td>Участник воркспейса</td><td>workspaceId, userId, role (OWNER|MEMBER|VIEWER)</td></tr>
+          <tr><td>WorkspaceEvent</td><td>Лог событий воркспейса</td><td>action, entityType, meta (JSON)</td></tr>
+          <tr><td>Workflow</td><td>Набор статусов</td><td>name, mode (FORWARD_ONLY|BIDIRECTIONAL|CUSTOM)</td></tr>
+          <tr><td>WorkflowStatus</td><td>Статус задачи</td><td>name, color, position, category (OPEN|IN_PROGRESS|DONE|CANCELLED)</td></tr>
+          <tr><td>WorkflowTransition</td><td>Разрешённый переход</td><td>fromStatusId → toStatusId</td></tr>
+          <tr><td>Board</td><td>Доска задач</td><td>name, prefix, isPrivate, workflowId, nextNumber</td></tr>
+          <tr><td>Task</td><td>Задача</td><td>issueKey, title, priority, statusId, assigneeId, dueDate, parentId, path, depth (max 5)</td></tr>
+          <tr><td>TaskStatusHistory</td><td>Время в каждом статусе</td><td>taskId, statusId, startedAt, endedAt</td></tr>
+          <tr><td>Label / TaskLabel</td><td>Метки и привязка к задачам</td><td>name, color (hex)</td></tr>
+          <tr><td>Comment</td><td>Комментарий к задаче</td><td>taskId, authorId, body</td></tr>
+          <tr><td>Checklist / ChecklistItem</td><td>Чеклисты</td><td>title, isDone, orderIndex</td></tr>
+          <tr><td>TaskHistory</td><td>История изменений задачи</td><td>field, oldValue, newValue, userId</td></tr>
+          <tr><td>Notification</td><td>Уведомления (@упоминания, назначения)</td><td>userId, type (mention|assigned), payload (JSON: taskId, taskKey, mentionedBy, context, workspaceSlug, boardSlug), isRead</td></tr>
+          <tr><td>Feedback</td><td>Обратная связь</td><td>type (bug|idea), title, body, githubUrl, githubNum</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ ENV VARS ════ -->
+  <div class="section" id="envvars">
+    <div class="section-label">Справочник</div>
+    <div class="section-title">Переменные окружения</div>
+    <div class="section-sub">Все настройки через env. Валидация через Zod при старте — неправильные значения = отказ запуска.</div>
+
+    <div class="code-block">
+<span class="cm"># ── База данных ──────────────────────────────────────────</span>
+DATABASE_URL=postgresql://flowtask:pass@localhost:5434/flowtask
+
+<span class="cm"># ── JWT-токены ───────────────────────────────────────────</span>
+JWT_SECRET=<span class="st">минимум-32-символа-без-простых-слов</span>   <span class="cm"># обязательно</span>
+JWT_REFRESH_SECRET=<span class="st">другая-строка-32-символа</span>          <span class="cm"># обязательно</span>
+JWT_EXPIRES_IN=<span class="st">1h</span>                                    <span class="cm"># default: 1h</span>
+JWT_REFRESH_EXPIRES_IN=<span class="st">7d</span>                            <span class="cm"># default: 7d</span>
+
+<span class="cm"># ── Сервер ──────────────────────────────────────────────</span>
+PORT=<span class="nu">3101</span>
+NODE_ENV=<span class="st">production</span>                                   <span class="cm"># development | production | test</span>
+CORS_ORIGIN=<span class="st">https://flowtask.example.com</span>
+
+<span class="cm"># ── Redis (опционально) ─────────────────────────────────</span>
+REDIS_URL=redis://localhost:6380
+REDIS_CACHE_TTL_SECONDS=<span class="nu">30</span>                            <span class="cm"># 1-3600</span>
+
+<span class="cm"># ── Администрирование ───────────────────────────────────</span>
+SUPERADMIN_EMAIL=admin@example.com
+REGISTRATION_DOMAIN=example.com                       <span class="cm"># суффикс email при регистрации</span>
+MAX_SESSIONS=<span class="nu">5</span>                                         <span class="cm"># макс. сессий на пользователя (1-20)</span>
+
+<span class="cm"># ── Email (опционально) ─────────────────────────────────</span>
+SMTP_HOST=smtp.example.com
+SMTP_PORT=<span class="nu">587</span>
+SMTP_USER=flowtask@example.com
+SMTP_PASS=...
+SMTP_FROM=<span class="st">"FlowTask &lt;flowtask@example.com&gt;"</span>
+APP_URL=<span class="st">https://flowtask.example.com</span>
+
+<span class="cm"># ── GitHub (опционально, для обратной связи) ────────────</span>
+GITHUB_ISSUES_TOKEN=ghp_...
+GITHUB_REPO_OWNER=NovakPAai
+GITHUB_REPO_NAME=flow-tasks
+
+<span class="cm"># ── SSO (опционально) ───────────────────────────────────</span>
+SSO_ENABLED=<span class="kw">false</span>                                    <span class="cm"># по умолчанию выключено</span>
+SSO_ONLY=<span class="kw">false</span>                                        <span class="cm"># запрет паролей для SSO-пользователей</span>
+OIDC_PROVIDER=<span class="st">keycloak</span>                               <span class="cm"># или avanpost</span>
+OIDC_ISSUER_URL=<span class="st">https://auth.example.com/realms/ft</span>
+OIDC_CLIENT_ID=<span class="st">flowtask</span>
+OIDC_CLIENT_SECRET=<span class="st">...</span>
+OIDC_REDIRECT_URI=<span class="st">https://flowtask.example.com/api/auth/sso/callback</span>
+OIDC_SCOPE=<span class="st">openid profile email</span>
+    </div>
+
+    <div class="notice" style="margin-top:16px">
+      <div class="notice-icon">⚠️</div>
+      <div>В production: <code>JWT_SECRET</code> и <code>JWT_REFRESH_SECRET</code> должны быть ≥32 символов и не содержать слов типа <strong>secret, password, change-me</strong>. При нарушении — процесс завершается с ошибкой.</div>
+    </div>
+  </div>
+
+  <!-- ════ API REFERENCE ════ -->
+  <div class="section" id="api">
+    <div class="section-label">Справочник</div>
+    <div class="section-title">API-справочник</div>
+    <div class="section-sub">Базовый URL: <code>https://staging-flowtask.ru/api</code>. Все запросы (кроме SSO status) требуют <code>Authorization: Bearer &lt;token&gt;</code>.</div>
+
+    <div class="subsection">
+      <div class="subsection-title">Auth — локальный вход</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/auth/register</code></td><td>Создать заявку на регистрацию</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/auth/login</code></td><td>Войти по email+password. Brute-force защита.</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/auth/refresh</code></td><td>Обновить access token по HttpOnly cookie</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/auth/logout</code></td><td>Выйти, удалить cookie и refresh token из БД</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/auth/me</code></td><td>Профиль текущего пользователя</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/auth/me</code></td><td>Обновить имя / email</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/auth/forgot-password</code></td><td>Запрос письма для сброса пароля</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/auth/reset-password</code></td><td>Сброс пароля по одноразовому токену</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Auth — SSO <span class="new-badge">новое</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/auth/sso/status</code></td><td>Включён ли SSO и какой провайдер (публичный)</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/auth/sso/login?returnUrl=/</code></td><td>Инициировать OIDC-поток, редирект на IdP</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/auth/sso/callback</code></td><td>OIDC callback, JIT provision, выдача cookie</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Workspaces</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/workspaces</code></td><td>Список воркспейсов пользователя</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/workspaces</code></td><td>Создать воркспейс</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/workspaces/:id</code></td><td>Обновить (название, описание, isPrivate)</td></tr>
+          <tr><td><span class="tag tag-method-delete">DELETE</span></td><td><code>/workspaces/:id</code></td><td>Удалить воркспейс со всем содержимым</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/workspaces/:id/members</code></td><td>Список участников</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/workspaces/:id/invite</code></td><td>Пригласить по email</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/workspaces/:id/members/:uid</code></td><td>Сменить роль участника</td></tr>
+          <tr><td><span class="tag tag-method-delete">DELETE</span></td><td><code>/workspaces/:id/members/:uid</code></td><td>Удалить участника</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/workspaces/:id/history</code></td><td>Лог событий воркспейса</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Boards &amp; Tasks</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/workspaces/:wid/boards</code></td><td>Список досок воркспейса</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/workspaces/:wid/boards</code></td><td>Создать доску</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/boards/:id</code></td><td>Обновить доску</td></tr>
+          <tr><td><span class="tag tag-method-delete">DELETE</span></td><td><code>/boards/:id</code></td><td>Удалить доску</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/boards/:id</code></td><td>Доска со всеми задачами (до 100 на статус)</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/boards/:bid/tasks</code></td><td>Список задач с фильтрами и пагинацией</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/boards/:bid/tasks</code></td><td>Создать задачу</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/boards/:bid/tasks/bulk</code></td><td>Массовое обновление задач (до 100). Body: <code>{ ids, patch: {statusId?, priority?, assigneeId?} }</code>. Rate-limit 30/min. <span class="new-badge">новое</span></td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/boards/:bid/tasks/bulk-delete</code></td><td>Массовое удаление задач (до 100) с каскадом подзадач. Body: <code>{ ids }</code>. Rate-limit 30/min. <span class="new-badge">новое</span></td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/tasks/:id</code></td><td>Обновить задачу</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/tasks/:id/move</code></td><td>Сменить статус задачи</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/tasks/:id/history</code></td><td>История изменений задачи</td></tr>
+          <tr><td><span class="tag tag-method-delete">DELETE</span></td><td><code>/tasks/:id</code></td><td>Удалить задачу (и всё поддерево)</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/my-tasks</code></td><td>Задачи текущего пользователя</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/search?q=&amp;limit=20</code></td><td>Глобальный поиск задач по заголовку и issueKey. Rate-limit 30/min. <span class="new-badge">новое</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Admin</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/admin/users</code></td><td>Все пользователи</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/admin/users</code></td><td>Создать пользователя (записывается в audit-лог)</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/admin/users/:id</code></td><td>Выдать / снять суперадмин (записывается в audit-лог)</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/admin/registration-requests</code></td><td>Заявки на регистрацию</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/admin/registration-requests/:id</code></td><td>Одобрить или отклонить заявку</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/admin/audit-log?limit=100</code></td><td>Лог административных действий (макс. 500)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Уведомления <span class="new-badge">новое</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/notifications</code></td><td>Список уведомлений пользователя (до 50, + unread count)</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/notifications/:id/read</code></td><td>Пометить уведомление прочитанным</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/notifications/read-all</code></td><td>Пометить все уведомления прочитанными</td></tr>
+          <tr><td><span class="tag tag-method-patch">PATCH</span></td><td><code>/users/me/notifications</code></td><td>Обновить настройки: <code>{ emailNotifications: boolean }</code></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Integrations</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Метод</th><th>Путь</th><th>Описание</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/integrations/workspaces</code></td><td>Воркспейсы (для Pulsar)</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/integrations/workspaces/:id/boards</code></td><td>Доски воркспейса (для Pulsar)</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/integrations/tasks/:id/pulsar-label</code></td><td>Прикрепить Pulsar-метку к задаче</td></tr>
+          <tr><td><span class="tag tag-method-get">GET</span></td><td><code>/integrations/api-keys</code></td><td>Список API-ключей пользователя</td></tr>
+          <tr><td><span class="tag tag-method-post">POST</span></td><td><code>/integrations/api-keys</code></td><td>Создать API-ключ</td></tr>
+          <tr><td><span class="tag tag-method-delete">DELETE</span></td><td><code>/integrations/api-keys/:id</code></td><td>Удалить API-ключ</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <footer>
+    FlowTask v1.6.0 · Внутренняя документация · Май 2026 · <code>NovakPAai/flow-tasks</code>
+  </footer>
+
+</div>
+
+<script>
+  const sections = document.querySelectorAll('.section[id]');
+  const links = document.querySelectorAll('.nav-link');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

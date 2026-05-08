@@ -1,5 +1,55 @@
 # Changelog
 
+## [v1.6.0] — 2026-05-08 — Gap Analysis: Security Hardening — gaps 12–21
+
+### Улучшения безопасности
+
+#### Gap-12 — WorkspaceSettingsPage ghost-lock fix
+- Страница настроек воркспейса больше не показывает «Нет доступа» владельцам во время загрузки
+- Добавлен fallback на кешированную роль из workspace list до завершения запроса
+- Добавлены явные состояния loading/error для корректного отображения UI
+
+#### Gap-13 — SSO MFA enforcement via AMR claim
+- Проверка `amr[]` при SSO-входе: FlowTask требует наличие `totp`/`mfa` в id_token
+- Grace period (7 дней по умолчанию, настраивается через `MFA_GRACE_DAYS`) для пользователей без активного TOTP
+- Confirm-модал при отключении MFA — защита от случайного отключения
+- AuditLog-события: `mfa.setup.complete` и `mfa.disable`
+
+#### Gap-14 — Rate-limit IP bypass
+- Лимит запросов теперь ключуется по email-адресу, а не по IP
+- Ротация `X-Forwarded-For` больше не позволяет обходить ограничение
+- Fallback-бакет `no-email` для запросов без тела (e.g. health checks)
+
+#### Gap-15 — Email enumeration prevention
+- `POST /api/auth/register` возвращает одинаковый ответ для всех случаев (существующий email, pending заявка, новый пользователь)
+- `hashPassword` выполняется всегда — защита от timing side-channel атак
+
+#### Gap-16 — Account disabled check
+- JWT middleware проверяет `isActive` при каждом запросе
+- Отключённый аккаунт немедленно получает `403 ACCOUNT_DISABLED` без дополнительных запросов
+
+#### Gap-17 — SIEM mandatory fields
+- Все AuditLog-события содержат обязательные SIEM-теги: `[system, type, segment, env, dc]`
+- Значения по умолчанию: `['flowtasks', 'auth', 'iia', 'production', 'dc1']`
+
+#### Gap-18 — Role change audit
+- Событие `rbac.role.change` при изменении роли участника воркспейса
+- В `meta`: actor, targetUser, oldRole, newRole, workspaceId
+
+#### Gap-19 — API key audit
+- `auth.apikey.use` — событие при успешной аутентификации по API-ключу
+- `auth.apikey.fail` — событие при неверном или истёкшем API-ключе
+
+#### Gap-20 — Config change audit
+- `admin.config.change` при изменении настроек воркспейса или системы через панель суперадмина
+- В `meta`: setting, oldValue, newValue
+
+#### Gap-21 — Validation error audit
+- `validation.error` при получении некорректных запросов к API
+- Помогает обнаруживать зондирование и сканирование через аномальный паттерн ошибок
+
+---
+
 ## [v1.5.0] — 2026-05-06 — Gap Analysis: 11 фичей и улучшений
 
 ### Новые возможности
