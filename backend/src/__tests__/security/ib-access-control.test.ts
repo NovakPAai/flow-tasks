@@ -189,7 +189,7 @@ describe('RBAC: Управление правами доступа — ИБ-тр
       expect(event!.userId).toBe(ownerUser.userId);
     });
 
-    it.todo('изменение роли записывается с oldRole и newRole в мета (было-стало)', async () => {
+    it('изменение роли записывается с oldRole и newRole в мета (было-стало)', async () => {
       await api
         .patch(`/api/workspaces/${workspaceId}/members/${viewerUser.userId}`)
         .set(auth(ownerUser.token))
@@ -209,9 +209,8 @@ describe('RBAC: Управление правами доступа — ИБ-тр
   // ─── Блокировка пользователя ──────────────────────────────────────────────
 
   describe('Блокировка пользователя администратором (Req логирование §2.2)', () => {
-    it.todo('заблокированный пользователь получает 403 при попытке входа', async () => {
+    it('заблокированный пользователь получает 403 при попытке входа', async () => {
       const blocked = await registerUser();
-      // Admin sets isActive=false (endpoint to be implemented)
       await api
         .patch(`/api/admin/users/${blocked.userId}`)
         .set(auth(superToken))
@@ -222,7 +221,7 @@ describe('RBAC: Управление правами доступа — ИБ-тр
       expect(res.body.code).toBe('ACCOUNT_DISABLED');
     });
 
-    it.todo('блокировка пользователя создаёт AuditLog с action=admin.user.deactivate', async () => {
+    it('блокировка пользователя создаёт AuditLog с action=admin.user.deactivate', async () => {
       const blocked = await registerUser();
       await api
         .patch(`/api/admin/users/${blocked.userId}`)

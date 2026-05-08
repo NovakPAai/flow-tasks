@@ -11,14 +11,24 @@ export const reviewRequestDto = z.object({
 });
 
 export const updateUserDto = z.object({
-  isSuperadmin: z.boolean(),
+  isSuperadmin: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+}).refine((d) => d.isSuperadmin !== undefined || d.isActive !== undefined, {
+  message: 'Укажите isSuperadmin или isActive',
 });
 
 export const SetUserActiveSchema = z.object({
   isActive: z.boolean(),
 });
 
+export const updateConfigDto = z.object({
+  registrationDomain: z.string().min(1).optional(),
+}).refine((d) => Object.values(d).some((v) => v !== undefined), {
+  message: 'Укажите хотя бы одну настройку',
+});
+
 export type CreateUserDto = z.infer<typeof createUserDto>;
 export type ReviewRequestDto = z.infer<typeof reviewRequestDto>;
 export type UpdateUserDto = z.infer<typeof updateUserDto>;
 export type SetUserActiveDto = z.infer<typeof SetUserActiveSchema>;
+export type UpdateConfigDto = z.infer<typeof updateConfigDto>;

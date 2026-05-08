@@ -236,11 +236,21 @@ export async function updateMemberRole(
   });
   if (!member) throw new AppError(404, 'Member not found');
 
-  return prisma.workspaceMember.update({
+  const oldRole = member.role;
+
+  const updated = await prisma.workspaceMember.update({
     where: { workspaceId_userId: { workspaceId, userId: targetUserId } },
     data: { role: dto.role },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
+
+  await logEvent(workspaceId, requesterId, 'member_role_changed', 'WorkspaceMember', targetUserId, {
+    oldRole,
+    newRole: dto.role,
+    targetUserId,
+  });
+
+  return updated;
 }
 
 export async function inviteByEmail(workspaceId: string, requesterId: string, dto: InviteByEmailDto) {

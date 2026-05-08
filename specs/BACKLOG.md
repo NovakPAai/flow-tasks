@@ -1,7 +1,7 @@
 # FlowTask — Specs Backlog
 
 Консолидированный бэклог: открытые гепы + out-of-scope из всех спек.
-Последнее обновление: май 2026. Верифицировано по git-истории и кодовой базе.
+Последнее обновление: май 2026 (gap-21). Верифицировано по git-истории и кодовой базе.
 
 ---
 
@@ -22,8 +22,14 @@
 | gap-11 | my-tasks-accordion | feat | P2 | **done** | #145 |
 | **gap-12** | **workflow-settings-unlocked** | **fix** | **P1** | **done** | этa ветка |
 | **gap-13** | **2fa-totp** | **feat** | **P2** | **done** | #151 |
-| **gap-14** | **rate-limit-ip-bypass** | **fix / security** | **P1** | **done** | эта ветка |
-| **gap-15** | **email-enumeration** | **fix / security** | **P2** | **done** | эта ветка |
+| **gap-14** | **rate-limit-ip-bypass** | **fix / security** | **P1** | **done** | PR #152 |
+| **gap-15** | **email-enumeration** | **fix / security** | **P2** | **done** | PR #152 |
+| **gap-16** | **account-disabled** | **fix / security** | **P1** | **done** | эта ветка |
+| **gap-17** | **siem-mandatory-fields** | **fix / security** | **P1** | **done** | эта ветка |
+| **gap-18** | **role-change-audit** | **fix / security** | **P1** | **done** | эта ветка |
+| **gap-19** | **api-key-audit** | **fix / security** | **P1** | **done** | эта ветка |
+| **gap-20** | **config-change-audit** | **fix / security** | **P1** | **done** | эта ветка |
+| **gap-21** | **validation-error-audit** | **fix / security** | **P2** | **done** | эта ветка |
 
 ---
 
@@ -100,7 +106,7 @@
 
 | Раздел | Открыто | Закрыто/Done |
 |--------|---------|--------------|
-| Активные гепы (gap-01..13) | **0** | 13 (все закрыты) |
+| Активные гепы (gap-01..21) | **0** | 21 (все закрыты) |
 | OoS P1 | **2** (rate limit, filter URL) | 2 |
 | OoS P2 | **7** | — |
 | OoS P3 | **13** | — |

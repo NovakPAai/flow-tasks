@@ -1,10 +1,6 @@
 /**
  * BDD: ИБ — Аутентификация (ИАА / iia)
  * Feature: specs/security/ib-authentication.feature
- *
- * GAP-статус: большинство тестов — PENDING (требуется реализация AuditLog для auth-событий)
- * Реализовано: brute-force блокировка, JWT, SSO-flow
- * Не реализовано: запись auth-событий в AuditLog, clientSignature, sessionId в логах
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -14,9 +10,9 @@ import { hashPassword } from '../../shared/utils/password.js';
 
 const email = () => `${uid()}@test.com`;
 
-async function getLastAuditLog(action: string) {
+async function getLastAuditLog(action: string, since?: Date) {
   return prisma.auditLog.findFirst({
-    where: { action },
+    where: { action, ...(since ? { createdAt: { gte: since } } : {}) },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -40,28 +36,23 @@ describe('ИАА: Аутентификация — ИБ-требования', (
 
   describe('Отсутствие email enumeration через /register (gap-15)', () => {
     it('три запроса с разным статусом email возвращают одинаковый message', async () => {
-      // existing user
       const existingUser = await registerUser();
 
-      // pending request (direct via API)
       const pendingEmail = email();
       const pendingRes = await api
         .post('/api/auth/register')
         .send({ email: pendingEmail, name: 'Pending', password: 'Password1' });
       expect(pendingRes.status).toBe(200);
 
-      // new email (never seen)
       const newEmail = email();
       const newRes = await api
         .post('/api/auth/register')
         .send({ email: newEmail, name: 'New', password: 'Password1' });
 
-      // re-submit existing
       const existingRes = await api
         .post('/api/auth/register')
         .send({ email: existingUser.email, name: 'Dup', password: 'Password1' });
 
-      // re-submit pending
       const pendingDupRes = await api
         .post('/api/auth/register')
         .send({ email: pendingEmail, name: 'Dup', password: 'Password1' });
@@ -86,35 +77,43 @@ describe('ИАА: Аутентификация — ИБ-требования', (
       testPassword = user.password;
     });
 
-    it.todo('успешный login создаёт AuditLog с action=auth.login и result=SUCCESS', async () => {
+    it('успешный login создаёт AuditLog с action=auth.login и result=SUCCESS', async () => {
+      const before = new Date();
       await api.post('/api/auth/login').send({ email: testEmail, password: testPassword });
-      const log = await getLastAuditLog('auth.login');
+      await new Promise((r) => setTimeout(r, 80));
+      const log = await getLastAuditLog('auth.login', before);
       expect(log).not.toBeNull();
       expect((log!.meta as Record<string, unknown>)?.result).toBe('SUCCESS');
     });
 
-    it.todo('неуспешный login создаёт AuditLog с action=auth.login и result=FAIL', async () => {
+    it('неуспешный login создаёт AuditLog с action=auth.login и result=FAIL', async () => {
+      const before = new Date();
       await api.post('/api/auth/login').send({ email: testEmail, password: 'WrongPass1' });
-      const log = await getLastAuditLog('auth.login');
+      await new Promise((r) => setTimeout(r, 80));
+      const log = await getLastAuditLog('auth.login', before);
       expect(log).not.toBeNull();
       expect((log!.meta as Record<string, unknown>)?.result).toBe('FAIL');
     });
 
-    it.todo('событие login содержит ip и userAgent из заголовков запроса', async () => {
+    it('событие login содержит ip и userAgent из заголовков запроса', async () => {
+      const before = new Date();
       await api
         .post('/api/auth/login')
         .set('User-Agent', 'TestBrowser/1.0')
-        .set('X-Real-IP', '10.0.0.1')
+        .set('X-Forwarded-For', '10.0.0.1')
         .send({ email: testEmail, password: testPassword });
-      const log = await getLastAuditLog('auth.login');
+      await new Promise((r) => setTimeout(r, 80));
+      const log = await getLastAuditLog('auth.login', before);
       const meta = log!.meta as Record<string, unknown>;
       expect(meta.ip).toBe('10.0.0.1');
       expect(meta.userAgent).toContain('TestBrowser');
     });
 
-    it.todo('событие login содержит sessionId', async () => {
+    it('событие login содержит sessionId', async () => {
+      const before = new Date();
       await api.post('/api/auth/login').send({ email: testEmail, password: testPassword });
-      const log = await getLastAuditLog('auth.login');
+      await new Promise((r) => setTimeout(r, 80));
+      const log = await getLastAuditLog('auth.login', before);
       const meta = log!.meta as Record<string, unknown>;
       expect(typeof meta.sessionId).toBe('string');
       expect((meta.sessionId as string).length).toBeGreaterThan(0);
@@ -175,7 +174,8 @@ describe('ИАА: Аутентификация — ИБ-требования', (
       expect(res.status).toBe(429);
     });
 
-    it.todo('блокировка создаёт AuditLog с action=auth.lockout', async () => {
+    it.skip('блокировка создаёт AuditLog с action=auth.lockout', async () => {
+      // auth.lockout is emitted only when Redis brute-force counter triggers (disabled in test env)
       const e = email();
       await registerUser({ email: e });
       for (let i = 0; i < 5; i++) {
@@ -191,13 +191,13 @@ describe('ИАА: Аутентификация — ИБ-требования', (
   describe('Выход из системы (ГОСТ 57580 РД-41)', () => {
     it('POST /api/auth/logout возвращает 200', async () => {
       const user = await registerUser();
-      const res = await api.post('/api/auth/logout').set(auth(user.token));
+      const res = await api.post('/api/auth/logout').set('Cookie', user.cookie);
       expect(res.status).toBe(200);
     });
 
-    it.todo('logout создаёт AuditLog с action=auth.logout и reason=user_initiated', async () => {
+    it('logout создаёт AuditLog с action=auth.logout и reason=user_initiated', async () => {
       const user = await registerUser();
-      await api.post('/api/auth/logout').set(auth(user.token));
+      await api.post('/api/auth/logout').set('Cookie', user.cookie);
       const log = await getLastAuditLog('auth.logout');
       expect(log).not.toBeNull();
       const meta = log!.meta as Record<string, unknown>;
@@ -208,12 +208,13 @@ describe('ИАА: Аутентификация — ИБ-требования', (
   // ─── Смена пароля (ГОСТ 57580 РД-43) ─────────────────────────────────────
 
   describe('Изменение аутентификационных данных (ГОСТ 57580 РД-43)', () => {
-    it.todo('смена пароля создаёт AuditLog с action=auth.credential.change', async () => {
+    it('смена пароля создаёт AuditLog с action=auth.credential.change', async () => {
       const user = await registerUser();
-      await api
+      const res = await api
         .patch('/api/auth/profile')
         .set(auth(user.token))
         .send({ currentPassword: user.password, newPassword: 'NewPassword1' });
+      expect(res.status).toBe(200);
       const log = await getLastAuditLog('auth.credential.change');
       expect(log).not.toBeNull();
     });
@@ -222,10 +223,12 @@ describe('ИАА: Аутентификация — ИБ-требования', (
   // ─── SIEM-тег ─────────────────────────────────────────────────────────────
 
   describe('SIEM-тегирование событий (Req логирование §4)', () => {
-    it.todo('событие auth.login содержит SIEM-тег в формате [system,type,segment,env,dc]', async () => {
+    it('событие auth.login содержит SIEM-тег в формате [system,type,segment,env,dc]', async () => {
       const user = await registerUser();
+      const before = new Date();
       await api.post('/api/auth/login').send({ email: user.email, password: user.password });
-      const log = await getLastAuditLog('auth.login');
+      await new Promise((r) => setTimeout(r, 80));
+      const log = await getLastAuditLog('auth.login', before);
       const meta = log!.meta as Record<string, unknown>;
       expect(Array.isArray(meta.tags)).toBe(true);
       const tags = meta.tags as string[];
@@ -238,13 +241,13 @@ describe('ИАА: Аутентификация — ИБ-требования', (
   // ─── API Key auth ─────────────────────────────────────────────────────────
 
   describe('API Key аутентификация (Req §1.3.4)', () => {
-    it.todo('использование валидного API-ключа создаёт AuditLog с action=auth.apikey.use', async () => {
-      // Setup: create API key via /api/auth/api-keys endpoint
+    it('использование валидного API-ключа создаёт AuditLog с action=auth.apikey.use', async () => {
       const user = await registerUser();
       const keyRes = await api
-        .post('/api/auth/api-keys')
+        .post('/api/integrations/api-keys')
         .set(auth(user.token))
         .send({ label: 'test-key' });
+      expect(keyRes.status).toBe(201);
       const rawKey = keyRes.body.key as string;
 
       await api.get('/api/my-tasks').set('Authorization', `Bearer ${rawKey}`);
