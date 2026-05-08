@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import { apiReference } from '@scalar/express-api-reference';
+import swaggerUi from 'swagger-ui-express';
 import { generateOpenApiSpec } from './shared/openapi/index.js';
 
 import { errorHandler } from './shared/middleware/error-handler.js';
@@ -43,13 +43,16 @@ export function createApp() {
     });
   });
 
-  // OpenAPI spec + Scalar UI
+  // OpenAPI spec + Swagger UI (self-contained, no CDN)
   let cachedSpec: ReturnType<typeof generateOpenApiSpec> | null = null;
-  app.get('/api/openapi.json', (_req, res) => {
+  const getSpec = () => {
     if (!cachedSpec) cachedSpec = generateOpenApiSpec();
-    res.json(cachedSpec);
+    return cachedSpec;
+  };
+  app.get('/api/openapi.json', (_req, res) => res.json(getSpec()));
+  app.use('/api/docs', swaggerUi.serve, (_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    swaggerUi.setup(getSpec())(_req, res, next);
   });
-  app.use('/api/docs', apiReference({ url: '/api/openapi.json', theme: 'saturn' }));
 
   // Routes
   app.use('/api/auth', authRouter);
