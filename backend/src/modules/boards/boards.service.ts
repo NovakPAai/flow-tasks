@@ -142,9 +142,18 @@ export async function getRoadmapTasks(boardId: string, userId: string, from?: st
   const member = await assertMember(board.workspaceId, userId);
   if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
 
-  const fromDate = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
-  const toDate   = to   ? new Date(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
+  function parseIsoDate(s: string): Date {
+    const d = new Date(s);
+    if (isNaN(d.getTime())) throw new AppError(400, `Invalid date: ${s}`);
+    return d;
+  }
 
+  const fromDate = from ? parseIsoDate(from) : new Date(new Date().getFullYear(), 0, 1);
+  const toDate   = to   ? parseIsoDate(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
+
+  if (toDate <= fromDate) {
+    throw new AppError(400, 'to must be after from');
+  }
   const MAX_RANGE_DAYS = 730;
   if ((toDate.getTime() - fromDate.getTime()) / 86_400_000 > MAX_RANGE_DAYS) {
     throw new AppError(400, 'Date range too large (max 2 years)');
