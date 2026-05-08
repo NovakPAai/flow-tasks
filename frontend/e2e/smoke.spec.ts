@@ -56,17 +56,19 @@ test('CIO demo smoke: full user journey', async ({ page }) => {
 
   // ── 7. Open task drawer ──────────────────────────────────────────────────────
   // dispatchEvent на outer div TaskCard — надёжнее .click() по тексту (тот тригерит inline-edit)
-  await page.locator('[data-rfd-draggable-id]').filter({ hasText: taskTitle }).locator('> div').first().dispatchEvent('click');
-  // Task drawer opens — wait for the comments tab to be available
-  await expect(page.locator('text=Комментарии')).toBeVisible({ timeout: 10000 });
+  const taskCard = page.locator('[data-rfd-draggable-id]').filter({ hasText: taskTitle });
+  await taskCard.waitFor({ timeout: 10_000 });
+  await taskCard.locator('> div').first().dispatchEvent('click');
+  // Confirm drawer opened by waiting for Details tab (matches openDrawer helper pattern)
+  await expect(page.getByText('Детали')).toBeVisible({ timeout: 10_000 });
 
   // ── 8. Add a comment (click Comments tab first) ───────────────────────────────
   await page.getByText('Комментарии').click();
-  const commentInput = page.locator('textarea[placeholder="Написать комментарий..."]');
-  await commentInput.waitFor({ timeout: 15_000 });
+  // getByPlaceholder is more resilient; fill() waits for the element to be actionable
+  const commentInput = page.getByPlaceholder('Написать комментарий...');
   await commentInput.fill('Hello from e2e smoke test');
-  await page.locator('button:has-text("Отправить")').click();
-  await expect(page.locator('text=Hello from e2e smoke test')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Отправить' }).click();
+  await expect(page.getByText('Hello from e2e smoke test')).toBeVisible({ timeout: 10_000 });
 
   // ── 9. Logout ────────────────────────────────────────────────────────────────
   // Close drawer first if needed
