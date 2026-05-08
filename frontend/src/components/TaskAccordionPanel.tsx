@@ -42,7 +42,7 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, bp, no
   const isDone = task.status?.category === 'DONE';
   const isOverdue = due !== null && due < now && !isDone;
 
-  const panelBg = isDark ? '#0D1025' : 'rgba(79,110,247,0.03)';
+  const panelBg = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)';
 
   const labelStyle = useMemo<CSSProperties>(() => ({
     fontSize: 10, fontWeight: 600, color: c.muted,
@@ -90,7 +90,7 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, bp, no
                 aria-expanded={descExpanded}
                 onClick={() => setDescExpanded((v) => !v)}
                 style={{
-                  marginTop: 4, fontSize: 11, color: '#4F6EF7',
+                  marginTop: 4, fontSize: 11, color: 'var(--brand-8)',
                   background: 'transparent', border: 'none',
                   cursor: 'pointer', padding: 0,
                   fontFamily: '"Inter",system-ui,sans-serif',
@@ -107,7 +107,7 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, bp, no
       <div>
         <div style={labelStyle}>Дедлайн</div>
         {due ? (
-          <span style={{ ...valueStyle, color: isOverdue ? '#EF4444' : c.text }}>
+          <span style={{ ...valueStyle, color: isOverdue ? 'var(--error-10)' : c.text }}>
             {isOverdue ? 'Просрочено, ' : ''}
             {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
@@ -133,11 +133,11 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, bp, no
                 aria-hidden="true"
                 style={{
                   width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                  background: '#4F6EF7',
+                  background: 'var(--brand-8)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                <span style={{ color: '#fff', fontSize: 9, fontWeight: 700 }}>
+                <span style={{ color: 'var(--neutral-0)', fontSize: 9, fontWeight: 700 }}>
                   {task.assignee.name[0]?.toUpperCase()}
                 </span>
               </div>
@@ -203,20 +203,20 @@ export default function TaskAccordionPanel({ id, task, colors: c, isDark, bp, no
           onClick={() => onOpenInBoard(task)}
           style={{
             fontSize: 12, fontWeight: 500,
-            color: '#4F6EF7',
+            color: 'var(--brand-8)',
             background: 'transparent',
-            border: '1px solid #4F6EF788',
+            border: '1px solid var(--component-border-brand-medium)',
             borderRadius: 7, padding: '5px 14px',
             cursor: 'pointer', transition: 'background 0.12s',
             fontFamily: '"Inter",system-ui,sans-serif',
             display: 'flex', alignItems: 'center', gap: 5,
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(79,110,247,0.08)'; }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--component-fill-brand-soft-default)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
         >
           Открыть
           <svg aria-hidden="true" width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M2 9L9 2M9 2H4M9 2V7" stroke="#4F6EF7" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M2 9L9 2M9 2H4M9 2V7" stroke="var(--brand-8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       </div>

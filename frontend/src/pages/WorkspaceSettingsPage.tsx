@@ -14,25 +14,25 @@ import { useAuthStore } from '../store/auth.store';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  bg: '#03050F', sidebar: '#0A0D1A', sidebarBorder: '#1C2236',
-  border: '#1C2236', cardBg: '#0F1320',
-  text: '#E2E8F8', muted: '#8B949E', label: '#484F58',
-  inputBg: '#0F1320', inputBorder: '#1C2236',
-  navActive: 'rgba(79,110,247,0.12)', navActiveText: '#4F6EF7',
-  navHover: 'rgba(255,255,255,0.04)',
-  rowHover: '#131729',
+  bg: 'var(--static-background-base)', sidebar: 'var(--static-background-base)', sidebarBorder: 'var(--static-border-neutral-tertiary)',
+  border: 'var(--static-border-neutral-tertiary)', cardBg: 'var(--static-background-lightest)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--neutral-8)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)',
+  navActive: 'var(--component-fill-brand-soft-hover)', navActiveText: 'var(--brand-8)',
+  navHover: 'var(--component-fill-neutral-ghost-hover)',
+  rowHover: 'var(--static-background-light)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', sidebar: '#FDFCFF', sidebarBorder: '#E8E5F0',
-  border: '#E8E5F0', cardBg: '#FDFCFF',
-  text: '#1A1A2E', muted: '#9B96B8', label: '#B8B3D0',
-  inputBg: '#F5F3FF', inputBorder: '#E8E5F0',
-  navActive: 'rgba(79,110,247,0.10)', navActiveText: '#4F6EF7',
-  navHover: 'rgba(0,0,0,0.03)',
-  rowHover: '#F0EEF8',
+  bg: 'var(--static-background-base)', sidebar: 'var(--static-background-lightest)', sidebarBorder: 'var(--static-border-neutral-tertiary)',
+  border: 'var(--static-border-neutral-tertiary)', cardBg: 'var(--static-background-lightest)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--neutral-6)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--static-border-neutral-tertiary)',
+  navActive: 'var(--component-fill-brand-soft-default)', navActiveText: 'var(--brand-8)',
+  navHover: 'var(--component-fill-neutral-ghost-hover)',
+  rowHover: 'var(--static-background-light)',
 };
 
-const AVATAR_COLORS = ['#4F6EF7', '#8B5CF6', '#22C55E', '#F59E0B', '#EC4899', '#EF4444', '#0EA5E9'];
+const AVATAR_COLORS = ['var(--brand-8)', 'var(--brand-gold-8)', 'var(--success-8)', 'var(--warning-6)', 'var(--brand-7)', 'var(--error-10)', 'var(--info-8)'];
 function avatarColor(name: string) { return AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length]; }
 function avatarInitials(name: string) { return name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
@@ -57,7 +57,7 @@ function Avatar({ name, size = 28 }: { name: string; size?: number }) {
       background: avatarColor(name),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <span style={{ fontSize: size * 0.38, fontWeight: 700, color: '#fff', fontFamily: '"Inter",system-ui,sans-serif' }}>
+      <span style={{ fontSize: size * 0.38, fontWeight: 700, color: 'var(--neutral-0)', fontFamily: '"Inter",system-ui,sans-serif' }}>
         {avatarInitials(name)}
       </span>
     </div>
@@ -74,13 +74,13 @@ function PrimaryBtn({
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
         fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 500,
-        background: disabled || loading ? '#4F6EF788' : '#4F6EF7',
-        color: '#fff', border: 'none', borderRadius: 8,
+        background: disabled || loading ? 'var(--component-disable-fill)' : 'var(--brand-8)',
+        color: 'var(--neutral-0)', border: 'none', borderRadius: 8,
         padding: '8px 16px', cursor: disabled || loading ? 'not-allowed' : 'pointer',
         ...style,
       }}
     >
-      {loading && <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #ffffff44', borderTopColor: '#fff', animation: 'spin 0.7s linear infinite' }} />}
+      {loading && <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--component-disable-border)', borderTopColor: 'var(--neutral-0)', animation: 'spin 0.7s linear infinite' }} />}
       {children}
     </button>
   );
@@ -102,12 +102,12 @@ function Modal({ open, onClose, title, children }: { open: boolean; onClose: () 
   return (
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ position: 'fixed', inset: 0, background: 'var(--component-fill-neutral-soft-active)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <div ref={ref} style={{
         background: c.sidebar, border: `1px solid ${c.border}`, borderRadius: 12,
         padding: 24, width: 400, maxWidth: '90vw',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+        boxShadow: 'var(--shadow-lg)',
         fontFamily: '"Inter",system-ui,sans-serif',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -159,7 +159,7 @@ export default function WorkspaceSettingsPage() {
   const [labelModal, setLabelModal] = useState(false);
   const [editLabelId, setEditLabelId] = useState<string | null>(null);
   const [labelName, setLabelName]   = useState('');
-  const [labelColor, setLabelColor] = useState('#4F6EF7');
+  const [labelColor, setLabelColor] = useState('#FF0508');
   const [savingLabel, setSavingLabel] = useState(false);
 
   // Workflow modal + editing
@@ -275,7 +275,7 @@ export default function WorkspaceSettingsPage() {
     } finally { setInviting(false); }
   };
 
-  const openCreateLabel = () => { setEditLabelId(null); setLabelName(''); setLabelColor('#4F6EF7'); setLabelModal(true); };
+  const openCreateLabel = () => { setEditLabelId(null); setLabelName(''); setLabelColor('#FF0508'); setLabelModal(true); };
   const openEditLabel = (l: Label) => { setEditLabelId(l.id); setLabelName(l.name); setLabelColor(l.color); setLabelModal(true); };
 
   const handleSaveLabel = async () => {
@@ -312,9 +312,9 @@ export default function WorkspaceSettingsPage() {
       const created = await wfApi.createWorkflow(workspace.id, {
         name: wfName.trim(), mode: wfMode,
         statuses: [
-          { name: 'To Do',       color: '#6B7280', category: 'OPEN' },
-          { name: 'In Progress', color: '#4F6EF7', category: 'IN_PROGRESS' },
-          { name: 'Done',        color: '#22C55E', category: 'DONE' },
+          { name: 'To Do',       color: '#7A8187', category: 'OPEN' },
+          { name: 'In Progress', color: '#FF0508', category: 'IN_PROGRESS' },
+          { name: 'Done',        color: '#2C9205', category: 'DONE' },
         ],
       });
       setWorkflows((prev) => [...prev, created]);
@@ -405,10 +405,10 @@ export default function WorkspaceSettingsPage() {
           <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Участники</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
-          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <span style={{ fontSize: 13, color: 'var(--error-10)' }}>{loadError}</span>
           <button
             onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
-            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            style={{ fontSize: 12, color: 'var(--brand-8)', background: 'var(--component-fill-brand-soft-default)', border: '1px solid var(--component-border-brand-medium)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
           >
             Повторить
           </button>
@@ -486,8 +486,8 @@ export default function WorkspaceSettingsPage() {
               ) : (
                 <span style={{
                   fontSize: 11, fontWeight: 500, borderRadius: 5, padding: '3px 8px',
-                  background: m.role === 'OWNER' ? 'rgba(79,110,247,0.12)' : `${c.border}`,
-                  color: m.role === 'OWNER' ? '#4F6EF7' : c.muted,
+                  background: m.role === 'OWNER' ? 'var(--component-fill-brand-soft-hover)' : `${c.border}`,
+                  color: m.role === 'OWNER' ? 'var(--brand-8)' : c.muted,
                 }}>
                   {ROLE_LABEL[m.role]}
                 </span>
@@ -496,7 +496,7 @@ export default function WorkspaceSettingsPage() {
             {/* Remove */}
             <div style={{ textAlign: 'right' }}>
               {isOwner && m.userId !== currentUser?.id ? (
-                <button onClick={() => handleRemoveMember(m.userId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontSize: 12, fontFamily: '"Inter",system-ui,sans-serif' }}>
+                <button onClick={() => handleRemoveMember(m.userId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error-10)', fontSize: 12, fontFamily: '"Inter",system-ui,sans-serif' }}>
                   Удалить
                 </button>
               ) : <span style={{ color: c.label, fontSize: 12 }}>—</span>}
@@ -533,10 +533,10 @@ export default function WorkspaceSettingsPage() {
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
-          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <span style={{ fontSize: 13, color: 'var(--error-10)' }}>{loadError}</span>
           <button
             onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
-            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            style={{ fontSize: 12, color: 'var(--brand-8)', background: 'var(--component-fill-brand-soft-default)', border: '1px solid var(--component-border-brand-medium)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
           >
             Повторить
           </button>
@@ -552,12 +552,12 @@ export default function WorkspaceSettingsPage() {
             <span style={{ fontSize: 12, color: c.muted }}>Управляйте статусами и переходами для ваших досок</span>
           </div>
         </div>
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(79,110,247,0.06)', borderRadius: 8, borderLeft: '3px solid #4F6EF7', border: `1px solid rgba(79,110,247,0.18)`, fontSize: 13, color: c.text, fontWeight: 500 }}>
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'var(--component-fill-brand-soft-default)', borderRadius: 8, borderLeft: '3px solid var(--brand-8)', border: `1px solid var(--component-fill-brand-soft-hover)`, fontSize: 13, color: c.text, fontWeight: 500 }}>
           Редактирование workflow доступно только владельцу воркспейса
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {workflows.map((wf) => {
-            const modeColor = wf.mode === 'FORWARD_ONLY' ? '#22C55E' : wf.mode === 'BIDIRECTIONAL' ? '#4F6EF7' : '#F59E0B';
+            const modeColor = wf.mode === 'FORWARD_ONLY' ? 'var(--success-8)' : wf.mode === 'BIDIRECTIONAL' ? 'var(--brand-8)' : 'var(--warning-6)';
             return (
               <div key={wf.id} style={{ background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
@@ -565,7 +565,7 @@ export default function WorkspaceSettingsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 600, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>{wf.name}</span>
                       {wf.isDefault && (
-                        <span style={{ fontSize: 10, fontWeight: 500, color: '#4F6EF7', background: 'rgba(79,110,247,0.12)', borderRadius: 4, padding: '2px 6px' }}>По умолчанию</span>
+                        <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--brand-8)', background: 'var(--component-fill-brand-soft-hover)', borderRadius: 4, padding: '2px 6px' }}>По умолчанию</span>
                       )}
                       <span style={{ fontSize: 10, fontWeight: 500, color: modeColor, background: `${modeColor}18`, borderRadius: 4, padding: '2px 7px' }}>
                         {WF_MODE_LABEL[wf.mode]}
@@ -611,7 +611,7 @@ export default function WorkspaceSettingsPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {workflows.map((wf) => {
-          const modeColor = wf.mode === 'FORWARD_ONLY' ? '#22C55E' : wf.mode === 'BIDIRECTIONAL' ? '#4F6EF7' : '#F59E0B';
+          const modeColor = wf.mode === 'FORWARD_ONLY' ? 'var(--success-8)' : wf.mode === 'BIDIRECTIONAL' ? 'var(--brand-8)' : 'var(--warning-6)';
           return (
             <div key={wf.id} style={{ background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
@@ -619,7 +619,7 @@ export default function WorkspaceSettingsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>{wf.name}</span>
                     {wf.isDefault && (
-                      <span style={{ fontSize: 10, fontWeight: 500, color: '#4F6EF7', background: 'rgba(79,110,247,0.12)', borderRadius: 4, padding: '2px 6px' }}>По умолчанию</span>
+                      <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--brand-8)', background: 'var(--component-fill-brand-soft-hover)', borderRadius: 4, padding: '2px 6px' }}>По умолчанию</span>
                     )}
                     <span style={{ fontSize: 10, fontWeight: 500, color: modeColor, background: `${modeColor}18`, borderRadius: 4, padding: '2px 7px' }}>
                       {WF_MODE_LABEL[wf.mode]}
@@ -651,7 +651,7 @@ export default function WorkspaceSettingsPage() {
                   {!wf.isDefault && isOwner && (
                     <button
                       onClick={() => handleSetDefaultWorkflow(wf.id)}
-                      style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+                      style={{ fontSize: 12, color: 'var(--brand-8)', background: 'var(--component-fill-brand-soft-default)', border: '1px solid var(--component-border-brand-medium)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
                     >
                       По умолчанию
                     </button>
@@ -665,7 +665,7 @@ export default function WorkspaceSettingsPage() {
                   {!wf.isDefault && isOwner && (
                     <button
                       onClick={() => handleDeleteWorkflow(wf.id)}
-                      style={{ fontSize: 12, color: '#EF4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+                      style={{ fontSize: 12, color: 'var(--error-10)', background: 'var(--component-fill-negative-soft-default)', border: '1px solid var(--component-border-negative-medium)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
                     >
                       Удалить
                     </button>
@@ -708,10 +708,10 @@ export default function WorkspaceSettingsPage() {
           <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Метки</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
-          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <span style={{ fontSize: 13, color: 'var(--error-10)' }}>{loadError}</span>
           <button
             onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
-            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            style={{ fontSize: 12, color: 'var(--brand-8)', background: 'var(--component-fill-brand-soft-default)', border: '1px solid var(--component-border-brand-medium)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
           >
             Повторить
           </button>
@@ -792,15 +792,15 @@ export default function WorkspaceSettingsPage() {
             onClick={() => isOwner && setIsPrivate(v => !v)}
             style={{
               width: 40, height: 22, borderRadius: 11, flexShrink: 0,
-              background: isPrivate ? '#4F6EF7' : (mode === 'dark' ? '#1C2236' : '#D1CBF0'),
+              background: isPrivate ? 'var(--brand-8)' : (mode === 'dark' ? 'var(--static-border-neutral-tertiary)' : 'var(--component-border-neutral-medium)'),
               position: 'relative', transition: 'background 0.2s',
               cursor: isOwner ? 'pointer' : 'not-allowed', opacity: isOwner ? 1 : 0.5,
             }}
           >
             <div style={{
               position: 'absolute', top: 3, left: isPrivate ? 21 : 3,
-              width: 16, height: 16, borderRadius: '50%', background: '#fff',
-              transition: 'left 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              width: 16, height: 16, borderRadius: '50%', background: 'var(--neutral-0)',
+              transition: 'left 0.18s', boxShadow: 'var(--shadow-md)',
             }} />
           </div>
           <div>
@@ -815,16 +815,16 @@ export default function WorkspaceSettingsPage() {
       </div>
 
       {isOwner && (
-        <div style={{ maxWidth: 480, marginTop: 48, border: `1px solid #EF444440`, borderRadius: 10, padding: '20px 24px' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#EF4444', letterSpacing: '0.04em', marginBottom: 8, textTransform: 'uppercase' }}>Опасная зона</div>
+        <div style={{ maxWidth: 480, marginTop: 48, border: `1px solid var(--component-border-negative-medium)`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--error-10)', letterSpacing: '0.04em', marginBottom: 8, textTransform: 'uppercase' }}>Опасная зона</div>
           <div style={{ fontSize: 13, color: c.muted, marginBottom: 16 }}>
             Удаление пространства необратимо. Все доски, задачи и участники будут удалены.
           </div>
           <button
             onClick={handleDeleteWorkspace}
             style={{
-              background: 'transparent', border: '1px solid #EF4444', borderRadius: 8,
-              color: '#EF4444', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif',
+              background: 'transparent', border: '1px solid var(--error-10)', borderRadius: 8,
+              color: 'var(--error-10)', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif',
               fontSize: 13, fontWeight: 600, padding: '8px 18px',
             }}
           >
@@ -870,12 +870,12 @@ export default function WorkspaceSettingsPage() {
               style={{
                 flexShrink: 0, width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
                 border: 'none', outline: 'none', position: 'relative', transition: 'background 0.2s',
-                background: mfaEnabled ? '#4F6EF7' : c.label,
+                background: mfaEnabled ? 'var(--brand-8)' : c.label,
               }}
             >
               <span style={{
                 position: 'absolute', top: 3, left: mfaEnabled ? 23 : 3,
-                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                width: 18, height: 18, borderRadius: '50%', background: 'var(--neutral-0)',
                 transition: 'left 0.2s',
               }} />
             </button>
@@ -899,7 +899,7 @@ export default function WorkspaceSettingsPage() {
                 </div>
               </div>
               {!workspace?.requireMfa && (
-                <div style={{ fontSize: 12, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px' }}>
+                <div style={{ fontSize: 12, color: 'var(--warning-6)', background: 'var(--component-fill-warning-soft-default)', border: '1px solid var(--component-border-warning-medium)', borderRadius: 8, padding: '10px 14px' }}>
                   При включении: все участники получат {mfaGraceDays} дней для настройки TOTP в Avanpost/Keycloak
                 </div>
               )}
@@ -1024,7 +1024,7 @@ export default function WorkspaceSettingsPage() {
             </button>
             <button
               onClick={() => { const fn = confirmModal?.onConfirm; setConfirmModal(null); void fn?.(); }}
-              style={{ fontSize: 13, fontWeight: 500, color: '#fff', background: '#EF4444', border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+              style={{ fontSize: 13, fontWeight: 500, color: 'var(--neutral-0)', background: 'var(--error-10)', border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
             >
               Удалить
             </button>

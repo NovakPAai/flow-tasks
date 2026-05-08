@@ -17,8 +17,8 @@ export default function FeedbackFAB() {
   if (!user) return null;
 
   const shadow = isDark
-    ? '0 4px 20px rgba(79,110,247,.45)'
-    : '0 4px 16px rgba(79,110,247,.35)';
+    ? 'var(--shadow-md)'
+    : 'var(--shadow-sm)';
 
   return (
     <>
@@ -36,7 +36,7 @@ export default function FeedbackFAB() {
           width: 48,
           height: 48,
           borderRadius: '50%',
-          background: '#4F6EF7',
+          background: 'var(--brand-8)',
           border: 'none',
           cursor: 'pointer',
           display: 'flex',
@@ -60,10 +60,10 @@ export default function FeedbackFAB() {
         >
           <path
             d="M17.5 2.5H2.5C2.04 2.5 1.67 2.87 1.67 3.33v10c0 .46.37.84.83.84h3.33v3.33L9.17 14.17h8.33c.46 0 .83-.37.83-.83v-10c0-.46-.37-.84-.83-.84Z"
-            stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round"
+            stroke="var(--neutral-0)" strokeWidth="1.5" strokeLinejoin="round"
           />
-          <line x1="6" y1="7.5" x2="14" y2="7.5" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round"/>
-          <line x1="6" y1="10.5" x2="11" y2="10.5" stroke="#ffffff" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="6" y1="7.5" x2="14" y2="7.5" stroke="var(--neutral-0)" strokeWidth="1.4" strokeLinecap="round"/>
+          <line x1="6" y1="10.5" x2="11" y2="10.5" stroke="var(--neutral-0)" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
       </button>
 

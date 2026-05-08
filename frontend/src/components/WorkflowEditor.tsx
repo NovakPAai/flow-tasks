@@ -8,31 +8,31 @@ import * as wfApi from '../api/workflows';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#03050F', panelBg: '#0F1320', border: '#1C2236',
-  text: '#E2E8F8', muted: '#8B95B0', dimmed: '#3A4060',
-  inputBg: '#0F1320', inputBorder: '#1C2236',
-  tabBg: '#0F1320', tabActiveBg: '#1C2236', tabActiveText: '#4F6EF7',
-  rowBg: '#0F1320', rowHoverBg: '#111828',
-  categoryBg: '#1C2236', categoryText: '#8B95B0',
-  matrixSelf: '#0A0D1A', matrixDisabled: '#0A0D1A',
-  addDash: '#2A3456',
+  bg: 'var(--static-background-base)', panelBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dimmed: 'var(--neutral-8)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)',
+  tabBg: 'var(--static-background-lightest)', tabActiveBg: 'var(--static-border-neutral-tertiary)', tabActiveText: 'var(--brand-8)',
+  rowBg: 'var(--static-background-lightest)', rowHoverBg: 'var(--static-background-light)',
+  categoryBg: 'var(--static-border-neutral-tertiary)', categoryText: 'var(--static-text-neutral-tertiary)',
+  matrixSelf: 'var(--static-background-base)', matrixDisabled: 'var(--static-background-base)',
+  addDash: 'var(--component-border-neutral-medium)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', panelBg: '#FDFCFF', border: '#E8E5F0',
-  text: '#1A1A2E', muted: '#6B7194', dimmed: '#C4C0D8',
-  inputBg: '#F5F3FF', inputBorder: '#E8E5F0',
-  tabBg: '#F5F3FF', tabActiveBg: '#EEF0FF', tabActiveText: '#4F6EF7',
-  rowBg: '#FDFCFF', rowHoverBg: '#F5F3FF',
-  categoryBg: '#F5F3FF', categoryText: '#6B7194',
-  matrixSelf: '#F9F8FC', matrixDisabled: '#F9F8FC',
-  addDash: '#E8E5F0',
+  bg: 'var(--static-background-base)', panelBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dimmed: 'var(--neutral-6)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--static-border-neutral-tertiary)',
+  tabBg: 'var(--static-background-base)', tabActiveBg: 'var(--component-fill-info-soft-default)', tabActiveText: 'var(--brand-8)',
+  rowBg: 'var(--static-background-lightest)', rowHoverBg: 'var(--static-background-base)',
+  categoryBg: 'var(--static-background-base)', categoryText: 'var(--static-text-neutral-tertiary)',
+  matrixSelf: 'var(--static-background-lightest)', matrixDisabled: 'var(--static-background-lightest)',
+  addDash: 'var(--static-border-neutral-tertiary)',
 };
 
 const CATEGORY_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  OPEN:        { label: 'OPEN',        color: '#8B95B0', bg: 'rgba(139,149,176,0.12)' },
-  IN_PROGRESS: { label: 'IN_PROGRESS', color: '#4F6EF7', bg: 'rgba(79,110,247,0.12)' },
-  DONE:        { label: 'DONE',        color: '#34D399', bg: 'rgba(52,211,153,0.12)' },
-  CANCELLED:   { label: 'CANCELLED',   color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
+  OPEN:        { label: 'OPEN',        color: 'var(--static-text-neutral-tertiary)', bg: 'var(--component-fill-neutral-soft-default)' },
+  IN_PROGRESS: { label: 'IN_PROGRESS', color: 'var(--brand-8)', bg: 'var(--component-fill-brand-soft-hover)' },
+  DONE:        { label: 'DONE',        color: 'var(--success-7)', bg: 'var(--component-fill-positive-soft-default)' },
+  CANCELLED:   { label: 'CANCELLED',   color: 'var(--error-10)', bg: 'var(--component-fill-negative-soft-hover)' },
 };
 
 const MODE_TABS: { value: WorkflowMode; label: string }[] = [
@@ -80,7 +80,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
   // Add status form
   const [showAdd, setShowAdd] = useState(false);
   const [addName, setAddName] = useState('');
-  const [addColor, setAddColor] = useState('#6B7280');
+  const [addColor, setAddColor] = useState('var(--neutral-8)');
   const [addCategory, setAddCategory] = useState<StatusCategory>('OPEN');
   const [addingStatus, setAddingStatus] = useState(false);
 
@@ -151,7 +151,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
     setAddingStatus(true);
     try {
       await wfApi.addStatus(workflowId, { name: addName.trim(), color: addColor, category: addCategory });
-      setAddName(''); setAddColor('#6B7280'); setAddCategory('OPEN');
+      setAddName(''); setAddColor('var(--neutral-8)'); setAddCategory('OPEN');
       setShowAdd(false);
       load();
     } catch { message.error('Не удалось добавить статус'); }
@@ -222,8 +222,8 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
             onChange={(e) => setWfName(e.target.value)}
             disabled={!isOwner}
             style={{ ...inputStyle, width: '100%', boxSizing: 'border-box',
-              borderColor: isDark ? '#2A3456' : '#E8E5F0',
-              ...(isDark ? {} : { background: '#FDFCFF' }),
+              borderColor: isDark ? 'var(--component-border-neutral-medium)' : 'var(--static-border-neutral-tertiary)',
+              ...(isDark ? {} : { background: 'var(--static-background-lightest)' }),
             }}
           />
         </div>
@@ -289,9 +289,9 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     padding: '10px 12px', borderRadius: 8,
-                    background: isDragOver ? (isDark ? '#111828' : '#EDE9FE') : c.rowBg,
-                    border: `1px solid ${isEditing ? '#4F6EF7' : c.border}`,
-                    boxShadow: isEditing ? '0 0 0 1px #4F6EF7' : 'none',
+                    background: isDragOver ? (isDark ? 'var(--static-background-light)' : 'var(--component-fill-brand-soft-default)') : c.rowBg,
+                    border: `1px solid ${isEditing ? 'var(--brand-8)' : c.border}`,
+                    boxShadow: isEditing ? '0 0 0 1px var(--brand-8)' : 'none',
                     opacity: isDragging ? 0.4 : 1,
                     transition: 'border-color 0.12s, background 0.12s',
                   }}
@@ -325,7 +325,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                       <button
                         onClick={() => handleSaveEdit(status.id)}
                         disabled={savingEdit}
-                        style={{ fontSize: 11, color: '#fff', background: '#4F6EF7', border: 'none', borderRadius: 5, padding: '4px 10px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif', flexShrink: 0 }}
+                        style={{ fontSize: 11, color: 'var(--neutral-0)', background: 'var(--brand-8)', border: 'none', borderRadius: 5, padding: '4px 10px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif', flexShrink: 0 }}
                       >
                         OK
                       </button>
@@ -360,7 +360,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                       {isOwner && (
                         <button
                           onClick={() => handleDeleteStatus(status.id)}
-                          style={{ fontSize: 11, color: '#F87171', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif', flexShrink: 0, padding: '0 2px' }}
+                          style={{ fontSize: 11, color: 'var(--error-8)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif', flexShrink: 0, padding: '0 2px' }}
                         >
                           ✕
                         </button>
@@ -383,9 +383,9 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                 }}
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M6 1v10M1 6h10" stroke="#4F6EF7" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M6 1v10M1 6h10" stroke="var(--brand-8)" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
-                <span style={{ fontSize: 12, color: '#4F6EF7' }}>Добавить статус</span>
+                <span style={{ fontSize: 12, color: 'var(--brand-8)' }}>Добавить статус</span>
               </button>
             )}
 
@@ -420,7 +420,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                 <button
                   onClick={handleAddStatus}
                   disabled={addingStatus || !addName.trim()}
-                  style={{ fontSize: 11, color: '#fff', background: '#4F6EF7', border: 'none', borderRadius: 5, padding: '4px 10px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif', flexShrink: 0, opacity: !addName.trim() ? 0.5 : 1 }}
+                  style={{ fontSize: 11, color: 'var(--neutral-0)', background: 'var(--brand-8)', border: 'none', borderRadius: 5, padding: '4px 10px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif', flexShrink: 0, opacity: !addName.trim() ? 0.5 : 1 }}
                 >
                   {addingStatus ? '…' : 'Добавить'}
                 </button>
@@ -461,7 +461,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                     padding: '10px 12px', width: 120, textAlign: 'left',
                     borderBottom: `1px solid ${c.border}`,
                     borderRight: `1px solid ${c.border}`,
-                    background: isDark ? c.panelBg : '#F9F8FC',
+                    background: isDark ? c.panelBg : 'var(--static-background-lightest)',
                     color: c.muted, fontFamily: '"Inter",system-ui,sans-serif', fontWeight: 400, fontSize: 10, letterSpacing: '0.04em',
                   }}>
                     ИЗ → В
@@ -486,7 +486,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                       padding: '10px 12px', width: 120,
                       borderBottom: `1px solid ${c.border}`,
                       borderRight: `1px solid ${c.border}`,
-                      background: isDark ? c.panelBg : '#F9F8FC',
+                      background: isDark ? c.panelBg : 'var(--static-background-lightest)',
                       color: from.color, fontSize: 11, fontWeight: 500,
                       fontFamily: '"Inter",system-ui,sans-serif',
                     }}>
@@ -513,7 +513,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
                                 width: '100%', height: 38, border: 'none',
                                 background: 'transparent',
                                 cursor: canToggle ? 'pointer' : 'default',
-                                fontSize: 14, color: allowed ? '#34D399' : c.dimmed,
+                                fontSize: 14, color: allowed ? 'var(--success-7)' : c.dimmed,
                               }}
                             >
                               {allowed ? '✓' : '—'}
@@ -542,7 +542,7 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
               onClick={onClose}
               style={{
                 padding: '8px 16px', borderRadius: 8,
-                background: isDark ? '#1C2236' : '#F5F3FF',
+                background: isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-background-base)',
                 border: `1px solid ${c.border}`,
                 color: c.text, fontSize: 13, cursor: 'pointer',
                 fontFamily: '"Inter",system-ui,sans-serif',
@@ -555,8 +555,8 @@ export default function WorkflowEditor({ workflowId, isOwner, onClose }: Props) 
             onClick={handleSave}
             style={{
               padding: '8px 16px', borderRadius: 8,
-              background: '#4F6EF7', border: 'none',
-              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              background: 'var(--brand-8)', border: 'none',
+              color: 'var(--neutral-0)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               fontFamily: '"Inter",system-ui,sans-serif',
             }}
           >

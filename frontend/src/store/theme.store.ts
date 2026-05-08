@@ -13,9 +13,11 @@ const STORAGE_KEY = 'ft-theme';
 function applyTheme(mode: ThemeMode) {
   if (mode === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.removeAttribute('data-mode');
     document.documentElement.style.colorScheme = 'light';
   } else {
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.setAttribute('data-mode', 'dark');
     document.documentElement.style.colorScheme = 'dark';
   }
 }

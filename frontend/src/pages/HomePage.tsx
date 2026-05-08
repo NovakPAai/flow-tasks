@@ -2,8 +2,8 @@ import { useAuthStore } from '../store/auth.store';
 import { useThemeStore } from '../store/theme.store';
 
 type C = Record<string, string>;
-const DARK: C = { bg: '#03050F', title: '#E2E8F8', sub: '#8B95B0', btnBg: '#1C2236', btnBorder: '#2A3456', btnText: '#E2E8F8' };
-const LIGHT: C = { bg: '#F5F3FF', title: '#1A1A2E', sub: '#6B7194', btnBg: '#FDFCFF', btnBorder: '#E8E5F0', btnText: '#1A1A2E' };
+const DARK: C = { bg: 'var(--static-background-base)', title: 'var(--static-text-neutral-primary)', sub: 'var(--static-text-neutral-tertiary)', btnBg: 'var(--static-border-neutral-tertiary)', btnBorder: 'var(--component-border-neutral-medium)', btnText: 'var(--static-text-neutral-primary)' };
+const LIGHT: C = { bg: 'var(--static-background-base)', title: 'var(--static-text-neutral-primary)', sub: 'var(--static-text-neutral-tertiary)', btnBg: 'var(--static-background-lightest)', btnBorder: 'var(--static-border-neutral-tertiary)', btnText: 'var(--static-text-neutral-primary)' };
 
 export default function HomePage() {
   const user = useAuthStore(s => s.user);

@@ -7,56 +7,56 @@ import * as tasksApi from '../api/tasks';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#03050F',
-  headerBg: '#0A0D1A',      headerBorder: '#1C2236',     headerText: '#8B95B0',
-  groupBg: '#0D1017',       groupBorder: '#151A2E',
-  rowBg: 'transparent',     rowBorder: '#0D1017',         rowActiveBg: '#0F1420',
-  countBadgeBg: '#1C2236',  countBadgeText: '#8B95B0',
-  keyText: '#8B95B0',       keyActiveText: '#4F6EF7',
-  titleText: '#E2E8F8',     doneTitleText: '#8B95B0',
-  metaText: '#8B95B0',      overdueText: '#F87171',
-  avatarName: '#A0AABF',
-  addBtnText: '#4A5578',
-  inputBg: '#0F1320',       inputBorder: '#4F6EF7',       inputText: '#E2E8F8',
-  inputPlaceholder: '#4A5578',
+  bg: 'var(--static-background-base)',
+  headerBg: 'var(--static-background-base)',      headerBorder: 'var(--static-border-neutral-tertiary)',     headerText: 'var(--static-text-neutral-tertiary)',
+  groupBg: 'var(--static-background-lightest)',       groupBorder: 'var(--static-background-light)',
+  rowBg: 'transparent',     rowBorder: 'var(--static-background-lightest)',         rowActiveBg: 'var(--component-fill-info-soft-hover)',
+  countBadgeBg: 'var(--static-border-neutral-tertiary)',  countBadgeText: 'var(--static-text-neutral-tertiary)',
+  keyText: 'var(--static-text-neutral-tertiary)',       keyActiveText: 'var(--brand-8)',
+  titleText: 'var(--static-text-neutral-primary)',     doneTitleText: 'var(--static-text-neutral-tertiary)',
+  metaText: 'var(--static-text-neutral-tertiary)',      overdueText: 'var(--error-8)',
+  avatarName: 'var(--static-text-neutral-secondary)',
+  addBtnText: 'var(--neutral-8)',
+  inputBg: 'var(--static-background-lightest)',       inputBorder: 'var(--brand-8)',       inputText: 'var(--static-text-neutral-primary)',
+  inputPlaceholder: 'var(--neutral-8)',
 };
 
 const LIGHT: C = {
-  bg: '#F5F3FF',
-  headerBg: '#F8F7FE',      headerBorder: '#E8E5F0',      headerText: '#6B7194',
-  groupBg: '#F5F3FF',       groupBorder: '#EDE9F8',
-  rowBg: '#FDFCFF',         rowBorder: '#F0EEF8',          rowActiveBg: '#F0F1FF',
-  countBadgeBg: '#E8E5F0',  countBadgeText: '#6B7194',
-  keyText: '#6B7194',       keyActiveText: '#4F6EF7',
-  titleText: '#1A1A2E',     doneTitleText: '#9CA3AF',
-  metaText: '#6B7194',      overdueText: '#EF4444',
-  avatarName: '#4B5280',
-  addBtnText: '#6B7194',
-  inputBg: '#FDFCFF',       inputBorder: '#4F6EF7',       inputText: '#1A1A2E',
-  inputPlaceholder: '#9B96B8',
+  bg: 'var(--static-background-base)',
+  headerBg: 'var(--static-background-lightest)',      headerBorder: 'var(--static-border-neutral-tertiary)',      headerText: 'var(--static-text-neutral-tertiary)',
+  groupBg: 'var(--static-background-base)',       groupBorder: 'var(--static-background-light)',
+  rowBg: 'var(--static-background-lightest)',         rowBorder: 'var(--static-background-light)',          rowActiveBg: 'var(--component-fill-info-soft-hover)',
+  countBadgeBg: 'var(--static-border-neutral-tertiary)',  countBadgeText: 'var(--static-text-neutral-tertiary)',
+  keyText: 'var(--static-text-neutral-tertiary)',       keyActiveText: 'var(--brand-8)',
+  titleText: 'var(--static-text-neutral-primary)',     doneTitleText: 'var(--neutral-8)',
+  metaText: 'var(--static-text-neutral-tertiary)',      overdueText: 'var(--error-10)',
+  avatarName: 'var(--static-text-neutral-tertiary)',
+  addBtnText: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)',       inputBorder: 'var(--brand-8)',       inputText: 'var(--static-text-neutral-primary)',
+  inputPlaceholder: 'var(--static-text-neutral-tertiary)',
 };
 
 // ── Status badge configs per category ──────────────────────────────────────────
 type BadgeCfg = { bg: string; border: string; dot: string; text: string };
 const STATUS_BADGE: Record<string, [BadgeCfg, BadgeCfg]> = {
   // [dark, light]
-  OPEN:        [{ bg:'#151A2E', border:'#1C2236', dot:'#6B7280', text:'#8B95B0' }, { bg:'#F5F3FF', border:'#E8E5F0', dot:'#9CA3AF', text:'#6B7194' }],
-  IN_PROGRESS: [{ bg:'#1A2144', border:'#4F6EF7', dot:'#4F6EF7', text:'#4F6EF7' }, { bg:'#EEF0FF', border:'#C7D0FF', dot:'#4F6EF7', text:'#4F6EF7' }],
-  DONE:        [{ bg:'#0D2020', border:'#34D399', dot:'#34D399', text:'#34D399' }, { bg:'#F0FDF4', border:'#BBF7D0', dot:'#10B981', text:'#10B981' }],
-  CANCELLED:   [{ bg:'#1A0E0E', border:'#EF4444', dot:'#EF4444', text:'#EF4444' }, { bg:'#FEF2F2', border:'#FECACA', dot:'#EF4444', text:'#EF4444' }],
+  OPEN:        [{ bg:'var(--static-background-light)', border:'var(--static-border-neutral-tertiary)', dot:'var(--neutral-8)', text:'var(--static-text-neutral-tertiary)' }, { bg:'var(--static-background-base)', border:'var(--static-border-neutral-tertiary)', dot:'var(--neutral-8)', text:'var(--static-text-neutral-tertiary)' }],
+  IN_PROGRESS: [{ bg:'var(--component-fill-info-soft-default)', border:'var(--brand-8)', dot:'var(--brand-8)', text:'var(--brand-8)' }, { bg:'var(--component-fill-info-soft-default)', border:'var(--component-border-info-medium)', dot:'var(--brand-8)', text:'var(--brand-8)' }],
+  DONE:        [{ bg:'var(--component-fill-positive-soft-default)', border:'var(--success-7)', dot:'var(--success-7)', text:'var(--success-7)' }, { bg:'var(--component-fill-positive-soft-default)', border:'var(--component-border-positive-medium)', dot:'var(--success-8)', text:'var(--success-8)' }],
+  CANCELLED:   [{ bg:'var(--component-fill-negative-soft-default)', border:'var(--error-10)', dot:'var(--error-10)', text:'var(--error-10)' }, { bg:'var(--component-fill-negative-soft-default)', border:'var(--component-border-negative-medium)', dot:'var(--error-10)', text:'var(--error-10)' }],
 };
 
 // ── Priority badge configs ─────────────────────────────────────────────────────
 type PrioCfg = { bg: string; border: string; text: string; label: string };
 const PRIO: Record<string, [PrioCfg, PrioCfg]> = {
   // [dark, light]
-  HIGH:   [{ bg:'#1A1A2E', border:'#F87171', text:'#F87171', label:'HIGH' }, { bg:'#FEF2F2', border:'#FECACA', text:'#EF4444', label:'HIGH' }],
-  MEDIUM: [{ bg:'#1A1500', border:'#FBBF24', text:'#FBBF24', label:'MED'  }, { bg:'#FFFBEB', border:'#FDE68A', text:'#D97706', label:'MED'  }],
-  LOW:    [{ bg:'#151A2E', border:'#1C2236', text:'#8B95B0', label:'LOW'  }, { bg:'#F9FAFB', border:'#E5E7EB', text:'#9CA3AF', label:'LOW'  }],
+  HIGH:   [{ bg:'var(--static-text-neutral-primary)', border:'var(--error-8)', text:'var(--error-8)', label:'HIGH' }, { bg:'var(--component-fill-negative-soft-default)', border:'var(--component-border-negative-medium)', text:'var(--error-10)', label:'HIGH' }],
+  MEDIUM: [{ bg:'var(--component-fill-warning-soft-default)', border:'var(--warning-5)', text:'var(--warning-5)', label:'MED'  }, { bg:'var(--component-fill-warning-soft-default)', border:'var(--component-border-warning-medium)', text:'var(--warning-8)', label:'MED'  }],
+  LOW:    [{ bg:'var(--static-background-light)', border:'var(--static-border-neutral-tertiary)', text:'var(--static-text-neutral-tertiary)', label:'LOW'  }, { bg:'var(--static-background-lightest)', border:'var(--component-border-neutral-medium)', text:'var(--neutral-8)', label:'LOW'  }],
 };
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
-const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const AVATAR_PALETTE = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 function avatarInitials(name: string): string { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
@@ -127,15 +127,15 @@ export default function BoardListView({
                   onClick={() => onSelectAll(allSelected ? [] : allIds)}
                   style={{
                     width: 14, height: 14, borderRadius: 3,
-                    border: `1.5px solid ${allSelected ? '#4F6EF7' : c.headerText}`,
-                    background: allSelected ? '#4F6EF7' : 'transparent',
+                    border: `1.5px solid ${allSelected ? 'var(--brand-8)' : c.headerText}`,
+                    background: allSelected ? 'var(--brand-8)' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}
                 >
                   {allSelected && (
                     <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                      <path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M1 3l2 2 4-4" stroke="var(--neutral-0)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </div>
@@ -225,18 +225,18 @@ export default function BoardListView({
                       style={{
                         display: 'flex', alignItems: 'center',
                         background: isRowSelected
-                          ? (isDark ? '#111A30' : '#F0F1FF')
+                          ? (isDark ? 'var(--component-fill-info-soft-hover)' : 'var(--component-fill-info-soft-hover)')
                           : (isActive ? c.rowActiveBg : c.rowBg),
                         borderBottom: `1px solid ${c.rowBorder}`,
                         borderLeft: isRowSelected
-                          ? '3px solid #4F6EF7'
-                          : (!isDark && isActive) ? '3px solid #4F6EF7' : 'none',
+                          ? '3px solid var(--brand-8)'
+                          : (!isDark && isActive) ? '3px solid var(--brand-8)' : 'none',
                         padding: '12px 24px',
                         opacity: isDoneRow ? 0.65 : 1,
                         transition: 'background 0.1s',
                       }}
-                      onMouseEnter={e => { if (!isActive && !isRowSelected) (e.currentTarget as HTMLDivElement).style.background = isDark ? '#0D1017' : '#F7F5FD'; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isRowSelected ? (isDark ? '#111A30' : '#F0F1FF') : (isActive ? c.rowActiveBg : c.rowBg); }}
+                      onMouseEnter={e => { if (!isActive && !isRowSelected) (e.currentTarget as HTMLDivElement).style.background = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isRowSelected ? (isDark ? 'var(--component-fill-info-soft-hover)' : 'var(--component-fill-info-soft-hover)') : (isActive ? c.rowActiveBg : c.rowBg); }}
                     >
                       {/* Checkbox */}
                       {onToggleSelect && (
@@ -245,15 +245,15 @@ export default function BoardListView({
                             onClick={e => { e.stopPropagation(); onToggleSelect(task.id); }}
                             style={{
                               width: 14, height: 14, borderRadius: 3,
-                              border: `1.5px solid ${isRowSelected ? '#4F6EF7' : c.keyText}`,
-                              background: isRowSelected ? '#4F6EF7' : 'transparent',
+                              border: `1.5px solid ${isRowSelected ? 'var(--brand-8)' : c.keyText}`,
+                              background: isRowSelected ? 'var(--brand-8)' : 'transparent',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0,
                             }}
                           >
                             {isRowSelected && (
                               <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                                <path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M1 3l2 2 4-4" stroke="var(--neutral-0)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                             )}
                           </div>
@@ -381,7 +381,7 @@ export default function BoardListView({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                               }}
                             >
-                              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: '#fff' }}>
+                              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: 'var(--neutral-0)' }}>
                                 {avatarInitials(task.assignee.name)}
                               </span>
                             </div>
@@ -477,7 +477,7 @@ export default function BoardListView({
                       cursor: 'pointer',
                     }}
                     onClick={() => onQuickAddStart(status.id)}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isDark ? '#0D1017' : '#F7F5FD'; }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)'; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

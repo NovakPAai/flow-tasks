@@ -10,25 +10,25 @@ import * as adminApi from '../api/admin';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  bg: '#03050F', sidebar: '#0A0D1A', sidebarBorder: '#1C2236',
-  border: '#1C2236', cardBg: '#0F1320',
-  text: '#E2E8F8', muted: '#8B949E', label: '#484F58',
-  inputBg: '#0F1320', inputBorder: '#1C2236',
-  navActive: 'rgba(79,110,247,0.12)', navActiveText: '#4F6EF7',
-  navHover: 'rgba(255,255,255,0.04)',
-  rowHover: '#131729',
+  bg: 'var(--static-background-base)', sidebar: 'var(--static-background-base)', sidebarBorder: 'var(--static-border-neutral-tertiary)',
+  border: 'var(--static-border-neutral-tertiary)', cardBg: 'var(--static-background-lightest)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--neutral-8)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)',
+  navActive: 'var(--component-fill-brand-soft-hover)', navActiveText: 'var(--brand-8)',
+  navHover: 'var(--component-fill-neutral-ghost-hover)',
+  rowHover: 'var(--static-background-light)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', sidebar: '#FDFCFF', sidebarBorder: '#E8E5F0',
-  border: '#E8E5F0', cardBg: '#FDFCFF',
-  text: '#1A1A2E', muted: '#9B96B8', label: '#B8B3D0',
-  inputBg: '#F5F3FF', inputBorder: '#E8E5F0',
-  navActive: 'rgba(79,110,247,0.10)', navActiveText: '#4F6EF7',
-  navHover: 'rgba(0,0,0,0.03)',
-  rowHover: '#F0EEF8',
+  bg: 'var(--static-background-base)', sidebar: 'var(--static-background-lightest)', sidebarBorder: 'var(--static-border-neutral-tertiary)',
+  border: 'var(--static-border-neutral-tertiary)', cardBg: 'var(--static-background-lightest)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--neutral-6)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--static-border-neutral-tertiary)',
+  navActive: 'var(--component-fill-brand-soft-default)', navActiveText: 'var(--brand-8)',
+  navHover: 'var(--component-fill-neutral-ghost-hover)',
+  rowHover: 'var(--static-background-light)',
 };
 
-const AVATAR_COLORS = ['#4F6EF7', '#8B5CF6', '#22C55E', '#F59E0B', '#EC4899', '#EF4444', '#0EA5E9'];
+const AVATAR_COLORS = ['var(--brand-8)', 'var(--brand-gold-8)', 'var(--success-8)', 'var(--warning-6)', 'var(--brand-7)', 'var(--error-10)', 'var(--info-8)'];
 function avatarColor(name: string) { return AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length]; }
 function avatarInitials(name: string) { return name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
@@ -39,7 +39,7 @@ function Avatar({ name, size = 28 }: { name: string; size?: number }) {
       background: avatarColor(name),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <span style={{ fontSize: size * 0.38, fontWeight: 700, color: '#fff', fontFamily: '"Inter",system-ui,sans-serif' }}>
+      <span style={{ fontSize: size * 0.38, fontWeight: 700, color: 'var(--neutral-0)', fontFamily: '"Inter",system-ui,sans-serif' }}>
         {avatarInitials(name)}
       </span>
     </div>
@@ -54,8 +54,8 @@ function PrimaryBtn({ children, onClick, disabled, loading, style }: {
     <button onClick={onClick} disabled={disabled || loading} style={{
       display: 'flex', alignItems: 'center', gap: 6,
       fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 500,
-      background: disabled || loading ? '#4F6EF788' : '#4F6EF7',
-      color: '#fff', border: 'none', borderRadius: 8,
+      background: disabled || loading ? 'var(--component-disable-fill)' : 'var(--brand-8)',
+      color: 'var(--neutral-0)', border: 'none', borderRadius: 8,
       padding: '8px 16px', cursor: disabled || loading ? 'not-allowed' : 'pointer',
       transition: 'opacity .15s', ...style,
     }}>
@@ -73,7 +73,7 @@ function DangerBtn({ children, onClick, disabled, loading, style }: {
       display: 'flex', alignItems: 'center', gap: 6,
       fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 500,
       background: 'transparent',
-      color: '#EF4444', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 8,
+      color: 'var(--error-10)', border: '1px solid var(--component-border-negative-medium)', borderRadius: 8,
       padding: '6px 14px', cursor: disabled || loading ? 'not-allowed' : 'pointer',
       transition: 'opacity .15s', opacity: disabled || loading ? 0.5 : 1, ...style,
     }}>
@@ -91,7 +91,7 @@ function SuccessBtn({ children, onClick, disabled, loading, style }: {
       display: 'flex', alignItems: 'center', gap: 6,
       fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 500,
       background: 'transparent',
-      color: '#22C55E', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 8,
+      color: 'var(--success-8)', border: '1px solid var(--component-border-positive-medium)', borderRadius: 8,
       padding: '6px 14px', cursor: disabled || loading ? 'not-allowed' : 'pointer',
       transition: 'opacity .15s', opacity: disabled || loading ? 0.5 : 1, ...style,
     }}>
@@ -102,10 +102,10 @@ function SuccessBtn({ children, onClick, disabled, loading, style }: {
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = {
-    PENDING:  { label: 'Ожидает', bg: 'rgba(245,158,11,0.12)', color: '#F59E0B' },
-    APPROVED: { label: 'Одобрена', bg: 'rgba(34,197,94,0.12)',  color: '#22C55E' },
-    REJECTED: { label: 'Отклонена', bg: 'rgba(239,68,68,0.12)', color: '#EF4444' },
-  }[status] ?? { label: status, bg: 'rgba(139,149,158,0.12)', color: '#8B949E' };
+    PENDING:  { label: 'Ожидает', bg: 'var(--component-fill-warning-soft-hover)', color: 'var(--warning-6)' },
+    APPROVED: { label: 'Одобрена', bg: 'var(--component-fill-positive-soft-default)',  color: 'var(--success-8)' },
+    REJECTED: { label: 'Отклонена', bg: 'var(--component-fill-negative-soft-hover)', color: 'var(--error-10)' },
+  }[status] ?? { label: status, bg: 'var(--component-fill-neutral-soft-default)', color: 'var(--static-text-neutral-tertiary)' };
   return (
     <span style={{
       padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
@@ -263,8 +263,8 @@ export default function AdminUsersPage() {
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '8px 16px', marginBottom: -1,
               fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
-              color: tab === t.key ? '#4F6EF7' : C.muted,
-              borderBottom: tab === t.key ? '2px solid #4F6EF7' : '2px solid transparent',
+              color: tab === t.key ? 'var(--brand-8)' : C.muted,
+              borderBottom: tab === t.key ? '2px solid var(--brand-8)' : '2px solid transparent',
               transition: 'color .15s',
               ...font,
             }}>
@@ -329,7 +329,7 @@ export default function AdminUsersPage() {
                     <span style={{ fontSize: 12, color: C.muted }}>{formatDate(u.lastLoginAt)}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {u.isSuperadmin && (
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'rgba(79,110,247,0.12)', color: '#4F6EF7' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'var(--component-fill-brand-soft-hover)', color: 'var(--brand-8)' }}>
                           Суперадмин
                         </span>
                       )}
@@ -339,8 +339,8 @@ export default function AdminUsersPage() {
                           disabled={togglingId === u.id}
                           style={{
                             fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
-                            background: 'transparent', border: `1px solid ${u.isSuperadmin ? 'rgba(239,68,68,0.35)' : 'rgba(79,110,247,0.35)'}`,
-                            color: u.isSuperadmin ? '#EF4444' : '#4F6EF7', opacity: togglingId === u.id ? 0.5 : 1,
+                            background: 'transparent', border: `1px solid ${u.isSuperadmin ? 'var(--component-border-negative-medium)' : 'var(--component-border-brand-medium)'}`,
+                            color: u.isSuperadmin ? 'var(--error-10)' : 'var(--brand-8)', opacity: togglingId === u.id ? 0.5 : 1,
                             ...font,
                           }}
                         >
@@ -396,7 +396,7 @@ export default function AdminUsersPage() {
                   />
                   <span style={{
                     padding: '8px 12px', fontSize: 13, color: C.muted,
-                    background: mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                    background: mode === 'dark' ? 'var(--component-fill-neutral-ghost-hover)' : 'var(--component-fill-neutral-ghost-hover)',
                     borderLeft: `1px solid ${C.inputBorder}`, flexShrink: 0,
                     whiteSpace: 'nowrap',
                   }}>
@@ -493,39 +493,39 @@ export default function AdminUsersPage() {
         title={null}
         width={420}
         styles={{
-          content: { background: mode === 'dark' ? '#0F1320' : '#FDFCFF', borderRadius: 12, padding: 28 },
+          content: { background: mode === 'dark' ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)', borderRadius: 12, padding: 28 },
           mask: { backdropFilter: 'blur(4px)' },
         }}
       >
         <div style={{ ...font }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: mode === 'dark' ? '#E2E8F8' : '#1A1A2E', marginBottom: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: mode === 'dark' ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)', marginBottom: 8 }}>
             Пользователь создан
           </div>
-          <div style={{ fontSize: 13, color: mode === 'dark' ? '#8B949E' : '#9B96B8', marginBottom: 20 }}>
-            Передайте данные для входа сотруднику. Пароль показывается <strong style={{ color: '#F59E0B' }}>только один раз</strong>.
+          <div style={{ fontSize: 13, color: mode === 'dark' ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)', marginBottom: 20 }}>
+            Передайте данные для входа сотруднику. Пароль показывается <strong style={{ color: 'var(--warning-6)' }}>только один раз</strong>.
           </div>
 
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: mode === 'dark' ? '#484F58' : '#B8B3D0', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: mode === 'dark' ? 'var(--neutral-8)' : 'var(--neutral-6)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</div>
             <div style={{
               padding: '8px 12px', borderRadius: 8, fontSize: 13,
-              background: mode === 'dark' ? '#161B22' : '#F5F3FF',
-              color: mode === 'dark' ? '#E2E8F8' : '#1A1A2E',
-              border: `1px solid ${mode === 'dark' ? '#30363D' : '#E8E5F0'}`,
+              background: mode === 'dark' ? 'var(--static-background-light)' : 'var(--static-background-base)',
+              color: mode === 'dark' ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)',
+              border: `1px solid ${mode === 'dark' ? 'var(--component-border-neutral-medium)' : 'var(--static-border-neutral-tertiary)'}`,
             }}>
               {createdEmail}
             </div>
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: mode === 'dark' ? '#484F58' : '#B8B3D0', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Пароль</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: mode === 'dark' ? 'var(--neutral-8)' : 'var(--neutral-6)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Пароль</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
                 flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 13,
                 fontFamily: '"Menlo","Consolas","Monaco",monospace',
-                background: mode === 'dark' ? '#161B22' : '#F5F3FF',
-                color: mode === 'dark' ? '#E2E8F8' : '#1A1A2E',
-                border: `1px solid ${mode === 'dark' ? '#30363D' : '#E8E5F0'}`,
+                background: mode === 'dark' ? 'var(--static-background-light)' : 'var(--static-background-base)',
+                color: mode === 'dark' ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)',
+                border: `1px solid ${mode === 'dark' ? 'var(--component-border-neutral-medium)' : 'var(--static-border-neutral-tertiary)'}`,
                 letterSpacing: '0.08em',
               }}>
                 {generatedPassword}
@@ -538,7 +538,7 @@ export default function AdminUsersPage() {
                 }}
                 style={{
                   padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-                  background: '#4F6EF7', color: '#fff', border: 'none', cursor: 'pointer',
+                  background: 'var(--brand-8)', color: 'var(--neutral-0)', border: 'none', cursor: 'pointer',
                   flexShrink: 0, ...font,
                 }}
               >
@@ -551,9 +551,9 @@ export default function AdminUsersPage() {
             onClick={() => setPasswordModalOpen(false)}
             style={{
               width: '100%', padding: '10px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-              background: mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-              color: mode === 'dark' ? '#E2E8F8' : '#1A1A2E',
-              border: `1px solid ${mode === 'dark' ? '#1C2236' : '#E8E5F0'}`,
+              background: mode === 'dark' ? 'var(--component-fill-neutral-soft-default)' : 'var(--component-fill-neutral-soft-default)',
+              color: mode === 'dark' ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)',
+              border: `1px solid ${mode === 'dark' ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)'}`,
               cursor: 'pointer', ...font,
             }}
           >

@@ -56,7 +56,7 @@ export function renderMentions(text: string): React.ReactNode[] {
   while ((match = MENTION_RE.exec(text)) !== null) {
     if (match.index > last) parts.push(text.slice(last, match.index));
     parts.push(
-      <span key={match.index} style={{ color: '#4F6EF7', fontWeight: 500 }}>@{match[1]}</span>
+      <span key={match.index} style={{ color: 'var(--brand-8)', fontWeight: 500 }}>@{match[1]}</span>
     );
     last = match.index + match[0].length;
   }
@@ -67,13 +67,13 @@ export function renderMentions(text: string): React.ReactNode[] {
 export default function MentionTextarea({ value, onChange, members, placeholder, rows = 4, maxLength, style, onKeyDown, onFocus, onBlur }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
-  const inputBg = isDark ? '#1C2236' : '#FAFAFA';
-  const inputBorder = isDark ? '#2A3352' : '#E8E5F0';
-  const textColor = isDark ? '#E2E8F8' : '#1A1A2E';
-  const dropBg = isDark ? '#0F1320' : '#FFFFFF';
-  const dropBorder = isDark ? '#1C2236' : '#E8E5F0';
-  const hoverBg = isDark ? '#1C2236' : '#F5F5FF';
-  const mutedColor = isDark ? '#8B949E' : '#9B96B8';
+  const inputBg = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-background-lightest)';
+  const inputBorder = isDark ? 'var(--component-border-neutral-medium)' : 'var(--static-border-neutral-tertiary)';
+  const textColor = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const dropBg = isDark ? 'var(--static-background-lightest)' : 'var(--neutral-0)';
+  const dropBorder = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const hoverBg = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--component-fill-info-soft-default)';
+  const mutedColor = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
 
   // displayValue is what the textarea renders; value prop holds @[Name](userId) format
   const storedRef = useRef(value);
@@ -216,7 +216,7 @@ export default function MentionTextarea({ value, onChange, members, placeholder,
         <div style={{
           position: 'absolute', top: dropdownPos.top, left: dropdownPos.left,
           background: dropBg, border: `1px solid ${dropBorder}`,
-          borderRadius: 8, boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+          borderRadius: 8, boxShadow: 'var(--shadow-md)',
           zIndex: 600, minWidth: 200, maxWidth: 280,
         }}>
           {filtered.map(m => (
@@ -235,7 +235,7 @@ export default function MentionTextarea({ value, onChange, members, placeholder,
             >
               <span style={{
                 width: 24, height: 24, borderRadius: '50%',
-                background: '#4F6EF7', color: '#fff', flexShrink: 0,
+                background: 'var(--brand-8)', color: 'var(--neutral-0)', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 9, fontWeight: 700,
               }}>

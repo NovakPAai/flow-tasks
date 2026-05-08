@@ -60,13 +60,13 @@ export default function OnboardingTooltip({ step, total, title, message, target,
   }, [target]);
 
   // ── Theme tokens ──────────────────────────────────────────────────────────
-  const cardBg      = isDark ? '#0F1320' : '#FDFCFF';
-  const cardBorder  = isDark ? '#1C2236' : '#E8E5F0';
-  const cardShadow  = isDark ? '0px 20px 60px #00000099' : '0px 20px 60px #1A1A2E1F';
-  const title_c     = isDark ? '#E2E8F8' : '#1A1A2E';
-  const muted       = isDark ? '#8B95B0' : '#6B7194';
-  const trackBg     = isDark ? '#1C2236' : '#E8E5F0';
-  const overlayBg   = isDark ? 'rgba(3,5,15,0.75)' : 'rgba(245,243,255,0.82)';
+  const cardBg      = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)';
+  const cardBorder  = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const cardShadow  = isDark ? 'var(--shadow-lg)' : 'var(--shadow-lg)';
+  const title_c     = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const muted       = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const trackBg     = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const overlayBg   = isDark ? 'var(--component-fill-neutral-soft-active)' : 'var(--component-fill-neutral-soft-active)';
 
   const pct = ((step + 1) / total) * 100;
 
@@ -129,7 +129,7 @@ export default function OnboardingTooltip({ step, total, title, message, target,
             position: 'absolute',
             inset: -8,
             borderRadius: 16,
-            border: '2px solid #4F6EF7',
+            border: '2px solid var(--brand-8)',
             animation: 'ob-pulse-ring 2s ease-out infinite',
             pointerEvents: 'none',
           }} />
@@ -138,7 +138,7 @@ export default function OnboardingTooltip({ step, total, title, message, target,
             position: 'absolute',
             inset: -16,
             borderRadius: 22,
-            border: '1.5px solid #4F6EF7',
+            border: '1.5px solid var(--brand-8)',
             animation: 'ob-pulse-ring 2s ease-out infinite 0.35s',
             pointerEvents: 'none',
           }} />
@@ -169,10 +169,10 @@ export default function OnboardingTooltip({ step, total, title, message, target,
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
               width: 20, height: 20, borderRadius: '50%',
-              background: '#4F6EF7', flexShrink: 0,
+              background: 'var(--brand-8)', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: '"Inter",system-ui,sans-serif' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--neutral-0)', fontFamily: '"Inter",system-ui,sans-serif' }}>
                 {step + 1}
               </span>
             </div>
@@ -192,7 +192,7 @@ export default function OnboardingTooltip({ step, total, title, message, target,
         <div style={{ height: 3, background: trackBg, borderRadius: 2, marginBottom: 16, overflow: 'hidden' }}>
           <div style={{
             height: '100%', width: `${pct}%`,
-            background: '#4F6EF7', borderRadius: 2,
+            background: 'var(--brand-8)', borderRadius: 2,
             transition: 'width 0.3s ease',
           }} />
         </div>
@@ -224,7 +224,7 @@ export default function OnboardingTooltip({ step, total, title, message, target,
                 key={i}
                 style={{
                   width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                  background: i === step ? '#4F6EF7' : (isDark ? '#1C2236' : '#E8E5F0'),
+                  background: i === step ? 'var(--brand-8)' : (isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)'),
                   transition: 'background 0.2s',
                 }}
               />
@@ -237,8 +237,8 @@ export default function OnboardingTooltip({ step, total, title, message, target,
               onClick={onNext}
               style={{
                 padding: '8px 20px', borderRadius: 8,
-                background: '#4F6EF7', border: 'none',
-                color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                background: 'var(--brand-8)', border: 'none',
+                color: 'var(--neutral-0)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 fontFamily: '"Inter",system-ui,sans-serif',
               }}
             >

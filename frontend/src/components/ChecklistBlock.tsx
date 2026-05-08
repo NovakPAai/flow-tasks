@@ -7,28 +7,28 @@ import * as checklistsApi from '../api/checklists';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  titleText: '#E2E8F8', metaText: '#4A5578', itemText: '#C8D0E8', doneItemText: '#4A5578',
-  trackBg: '#1E2640', barBg: '#4F6EF7',
-  checkBg: 'transparent', checkBorder: '#2D3748',
-  checkActiveBg: 'rgba(79,110,247,0.12)', checkActiveBorder: '#4F6EF7',
-  delText: '#4A5578', delHover: '#EF4444',
-  addText: '#4A5578', addHover: '#8B95B0',
-  inputBg: '#0F1320', inputBorder: '#1E2640', inputBorderFocus: '#4F6EF7', inputText: '#E2E8F8',
-  inputPlaceholder: '#4A5578',
-  newChecklistBg: '#0F1320', newChecklistBorder: '#1E2640',
-  addBtnBg: '#1C2236', addBtnBorder: '#2A3456', addBtnText: '#8B95B0',
+  titleText: 'var(--static-text-neutral-primary)', metaText: 'var(--neutral-8)', itemText: 'var(--static-text-neutral-secondary)', doneItemText: 'var(--neutral-8)',
+  trackBg: 'var(--static-border-neutral-tertiary)', barBg: 'var(--brand-8)',
+  checkBg: 'transparent', checkBorder: 'var(--component-border-neutral-medium)',
+  checkActiveBg: 'var(--component-fill-brand-soft-hover)', checkActiveBorder: 'var(--brand-8)',
+  delText: 'var(--neutral-8)', delHover: 'var(--error-10)',
+  addText: 'var(--neutral-8)', addHover: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)', inputBorderFocus: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)',
+  inputPlaceholder: 'var(--neutral-8)',
+  newChecklistBg: 'var(--static-background-lightest)', newChecklistBorder: 'var(--static-border-neutral-tertiary)',
+  addBtnBg: 'var(--static-border-neutral-tertiary)', addBtnBorder: 'var(--component-border-neutral-medium)', addBtnText: 'var(--static-text-neutral-tertiary)',
 };
 const LIGHT: C = {
-  titleText: '#1A1A2E', metaText: '#9B96B8', itemText: '#3A3A5C', doneItemText: '#9B96B8',
-  trackBg: '#E8E5F0', barBg: '#4F6EF7',
-  checkBg: '#FDFCFF', checkBorder: '#D1C8EC',
-  checkActiveBg: 'rgba(79,110,247,0.08)', checkActiveBorder: '#4F6EF7',
-  delText: '#9B96B8', delHover: '#EF4444',
-  addText: '#9B96B8', addHover: '#6B7194',
-  inputBg: '#F5F3FF', inputBorder: '#E8E5F0', inputBorderFocus: '#4F6EF7', inputText: '#1A1A2E',
-  inputPlaceholder: '#9B96B8',
-  newChecklistBg: '#F5F3FF', newChecklistBorder: '#E8E5F0',
-  addBtnBg: '#FDFCFF', addBtnBorder: '#E8E5F0', addBtnText: '#6B7194',
+  titleText: 'var(--static-text-neutral-primary)', metaText: 'var(--static-text-neutral-tertiary)', itemText: 'var(--static-text-neutral-secondary)', doneItemText: 'var(--static-text-neutral-tertiary)',
+  trackBg: 'var(--static-border-neutral-tertiary)', barBg: 'var(--brand-8)',
+  checkBg: 'var(--static-background-lightest)', checkBorder: 'var(--component-border-neutral-medium)',
+  checkActiveBg: 'var(--component-fill-brand-soft-default)', checkActiveBorder: 'var(--brand-8)',
+  delText: 'var(--static-text-neutral-tertiary)', delHover: 'var(--error-10)',
+  addText: 'var(--static-text-neutral-tertiary)', addHover: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--static-border-neutral-tertiary)', inputBorderFocus: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)',
+  inputPlaceholder: 'var(--static-text-neutral-tertiary)',
+  newChecklistBg: 'var(--static-background-base)', newChecklistBorder: 'var(--static-border-neutral-tertiary)',
+  addBtnBg: 'var(--static-background-lightest)', addBtnBorder: 'var(--static-border-neutral-tertiary)', addBtnText: 'var(--static-text-neutral-tertiary)',
 };
 
 // ── Character limits ──────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ function CharCounter({ len, max, dimColor }: { len: number; max: number; dimColo
   return (
     <span style={{
       fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10, flexShrink: 0,
-      color: len >= max ? '#EF4444' : len > max * 0.9 ? '#F59E0B' : dimColor,
+      color: len >= max ? 'var(--error-10)' : len > max * 0.9 ? 'var(--warning-6)' : dimColor,
     }}>
       {len}/{max}
     </span>
@@ -133,7 +133,7 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
               {/* Checklist icon */}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
                 <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
-                  stroke={isDark ? '#8B95B0' : '#6B7194'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  stroke={isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span style={{
                 fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
@@ -153,15 +153,15 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
                   <button
                     onClick={() => removeChecklist(checklist.id)}
                     style={{
-                      background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                      background: 'var(--component-fill-negative-soft-hover)', border: '1px solid var(--component-border-negative-medium)',
                       borderRadius: 3, padding: '1px 6px', cursor: 'pointer',
-                      fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: '#EF4444',
+                      fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: 'var(--error-10)',
                     }}
                   >Да</button>
                   <button
                     onClick={() => setConfirmClId(null)}
                     style={{
-                      background: 'none', border: `1px solid ${isDark ? '#1C2236' : '#E8E5F0'}`,
+                      background: 'none', border: `1px solid ${isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)'}`,
                       borderRadius: 3, padding: '1px 6px', cursor: 'pointer',
                       fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.metaText,
                     }}
@@ -219,7 +219,7 @@ export default function ChecklistBlock({ taskId, checklists, onChecklistsChanged
                 >
                   {item.isDone && (
                     <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                      <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="#4F6EF7" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="var(--brand-8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </div>

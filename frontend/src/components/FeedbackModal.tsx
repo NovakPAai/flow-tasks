@@ -118,6 +118,7 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
       footer={null}
       title="Обратная связь"
       width={480}
+      className="feedback-modal"
     >
       <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ type: 'bug' }}>
         <Form.Item name="type" label="Тип">
@@ -143,11 +144,11 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
           />
           {preview ? (
             <div style={{ position: 'relative', display: 'inline-block' }}>
-              <img src={preview} alt="Скриншот" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 6, border: '1px solid #d9d9d9', display: 'block' }} />
+              <img src={preview} alt="Скриншот" style={{ maxWidth: '100%', maxHeight: 160, borderRadius: 6, border: '1px solid var(--component-border-neutral-medium)', display: 'block' }} />
               <button
                 type="button"
                 onClick={removeScreenshot}
-                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', color: '#fff', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ position: 'absolute', top: 4, right: 4, background: 'var(--component-fill-neutral-soft-active)', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', color: 'var(--neutral-0)', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 title="Удалить скриншот"
               >
                 ✕

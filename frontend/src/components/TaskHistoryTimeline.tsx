@@ -6,15 +6,15 @@ import * as tasksApi from '../api/tasks';
 
 type C = Record<string, string>;
 const DARK: C = {
-  text: '#E2E8F8', muted: '#8B95B0', dim: '#4A5578',
-  line: '#1C2236', removed: '#F87171', added: '#4ADE80',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dim: 'var(--neutral-8)',
+  line: 'var(--static-border-neutral-tertiary)', removed: 'var(--error-8)', added: 'var(--success-7)',
 };
 const LIGHT: C = {
-  text: '#1A1A2E', muted: '#6B7194', dim: '#9B96B8',
-  line: '#E8E5F0', removed: '#EF4444', added: '#10B981',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dim: 'var(--static-text-neutral-tertiary)',
+  line: 'var(--static-border-neutral-tertiary)', removed: 'var(--error-10)', added: 'var(--success-8)',
 };
 
-const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const AVATAR_PALETTE = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -104,7 +104,7 @@ export default function TaskHistoryTimeline({ taskId, statuses }: Props) {
               width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
               background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1,
             }}>
-              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: '#fff' }}>
+              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: 'var(--neutral-0)' }}>
                 {entry.user.name?.[0]?.toUpperCase() ?? '?'}
               </span>
             </div>

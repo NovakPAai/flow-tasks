@@ -14,22 +14,22 @@ import SubtaskTree from './SubtaskTree';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#0A0D1A', border: '#1C2236', text: '#E2E8F8', muted: '#8B949E', label: '#484F58',
-  inputBg: '#0F1320', inputBorder: '#1C2236', sectionBorder: '#1C2236',
-  dropdownBg: '#0F1320', rowHover: '#131729', tabActive: '#4F6EF7', tabBorder: '#1C2236',
-  backdrop: 'rgba(0,0,0,0.45)',
+  bg: 'var(--static-background-base)', border: 'var(--static-border-neutral-tertiary)', text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--neutral-8)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)', sectionBorder: 'var(--static-border-neutral-tertiary)',
+  dropdownBg: 'var(--static-background-lightest)', rowHover: 'var(--static-background-light)', tabActive: 'var(--brand-8)', tabBorder: 'var(--static-border-neutral-tertiary)',
+  backdrop: 'var(--component-fill-neutral-soft-active)',
 };
 const LIGHT: C = {
-  bg: '#FDFCFF', border: '#E8E5F0', text: '#1A1A2E', muted: '#9B96B8', label: '#B8B3D0',
-  inputBg: '#F5F3FF', inputBorder: '#E8E5F0', sectionBorder: '#E8E5F0',
-  dropdownBg: '#FDFCFF', rowHover: '#F0EEF8', tabActive: '#4F6EF7', tabBorder: '#E8E5F0',
-  backdrop: 'rgba(0,0,0,0.2)',
+  bg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)', text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--neutral-6)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--static-border-neutral-tertiary)', sectionBorder: 'var(--static-border-neutral-tertiary)',
+  dropdownBg: 'var(--static-background-lightest)', rowHover: 'var(--static-background-light)', tabActive: 'var(--brand-8)', tabBorder: 'var(--static-border-neutral-tertiary)',
+  backdrop: 'var(--shadow-md)',
 };
 
 const PRIO: Record<string, { bg: string; text: string; label: string }> = {
-  HIGH:   { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444', label: 'HIGH' },
-  MEDIUM: { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B', label: 'MED' },
-  LOW:    { bg: 'rgba(107,114,128,0.12)', text: '#6B7280', label: 'LOW' },
+  HIGH:   { bg: 'var(--component-fill-negative-soft-hover)',   text: 'var(--error-10)', label: 'HIGH' },
+  MEDIUM: { bg: 'var(--component-fill-warning-soft-hover)',  text: 'var(--warning-6)', label: 'MED' },
+  LOW:    { bg: 'var(--component-fill-neutral-soft-default)', text: 'var(--neutral-8)', label: 'LOW' },
 };
 
 const PRIO_OPTS = [
@@ -38,7 +38,7 @@ const PRIO_OPTS = [
   { value: 'LOW', label: 'LOW' },
 ];
 
-const AVATAR_COLORS = ['#4F6EF7', '#8B5CF6', '#22C55E', '#F59E0B', '#EC4899', '#EF4444', '#0EA5E9'];
+const AVATAR_COLORS = ['var(--brand-8)', 'var(--brand-gold-8)', 'var(--success-8)', 'var(--warning-6)', 'var(--brand-7)', 'var(--error-10)', 'var(--info-8)'];
 function avatarColor(name: string) { return AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_COLORS.length]; }
 function avatarInitials(name: string) { return name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
@@ -51,7 +51,7 @@ function Avatar({ name, size = 22 }: { name: string; size?: number }) {
       background: avatarColor(name),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      <span style={{ fontSize: size * 0.38, fontWeight: 700, color: '#fff', fontFamily: '"Inter",system-ui,sans-serif' }}>
+      <span style={{ fontSize: size * 0.38, fontWeight: 700, color: 'var(--neutral-0)', fontFamily: '"Inter",system-ui,sans-serif' }}>
         {avatarInitials(name)}
       </span>
     </div>
@@ -259,7 +259,7 @@ export default function TaskDrawer({
                 style={{
                   top: 'calc(100% + 4px)', left: 0,
                   background: c.dropdownBg, border: `1px solid ${c.border}`,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                  boxShadow: 'var(--shadow-lg)',
                 }}
               >
                 {statuses.map((s) => (
@@ -302,7 +302,7 @@ export default function TaskDrawer({
                 style={{
                   top: 'calc(100% + 4px)', left: 0,
                   background: c.dropdownBg, border: `1px solid ${c.border}`,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                  boxShadow: 'var(--shadow-lg)',
                 }}
               >
                 <button
@@ -439,7 +439,7 @@ export default function TaskDrawer({
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}>
               <div style={{
                 width: 22, height: 22, borderRadius: '50%',
-                border: `2px solid ${c.border}`, borderTopColor: '#4F6EF7',
+                border: `2px solid ${c.border}`, borderTopColor: 'var(--brand-8)',
                 animation: 'spin 0.7s linear infinite',
               }} />
               <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -491,7 +491,7 @@ export default function TaskDrawer({
                     <span style={{ width: 80, fontSize: 12, color: c.label, flexShrink: 0 }}>Срок</span>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {dueStr && (
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, color: isOverdue ? '#EF4444' : c.muted }}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, color: isOverdue ? 'var(--error-10)' : c.muted }}>
                           <rect x="0.5" y="1.5" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1"/>
                           <path d="M3 0.5v2M9 0.5v2M0.5 5h11" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                         </svg>
@@ -506,7 +506,7 @@ export default function TaskDrawer({
                         disabled={saving}
                         style={{
                           ...selectStyle, width: 'auto',
-                          color: isOverdue ? '#EF4444' : c.text,
+                          color: isOverdue ? 'var(--error-10)' : c.text,
                         }}
                       />
                     </div>

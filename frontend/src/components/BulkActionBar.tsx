@@ -21,12 +21,12 @@ export default function BulkActionBar({ count, statuses, members, onBulkUpdate, 
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
 
-  const bg = isDark ? '#0F1320' : '#FFFFFF';
-  const border = isDark ? '#1C2236' : '#E8E5F0';
-  const text = isDark ? '#E2E8F8' : '#1A1A2E';
-  const muted = isDark ? '#8B95B0' : '#9B96B8';
-  const inputBg = isDark ? '#07091A' : '#F5F3FF';
-  const inputBorder = isDark ? '#2A3250' : '#DDD9F0';
+  const bg = isDark ? 'var(--static-background-lightest)' : 'var(--neutral-0)';
+  const border = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const text = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const muted = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const inputBg = isDark ? 'var(--static-background-base)' : 'var(--static-background-base)';
+  const inputBorder = isDark ? 'var(--component-border-neutral-medium)' : 'var(--neutral-5)';
 
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -91,8 +91,8 @@ export default function BulkActionBar({ count, statuses, members, onBulkUpdate, 
       borderRadius: 12,
       padding: '8px 12px',
       boxShadow: isDark
-        ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(79,110,247,0.15)'
-        : '0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(79,110,247,0.1)',
+        ? 'var(--shadow-lg), 0 0 0 1px var(--component-fill-brand-soft-hover)'
+        : 'var(--shadow-sm), 0 0 0 1px var(--component-fill-brand-soft-default)',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       whiteSpace: 'nowrap',
@@ -112,7 +112,7 @@ export default function BulkActionBar({ count, statuses, members, onBulkUpdate, 
         </svg>
         <span style={{
           fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
-          color: '#4F6EF7',
+          color: 'var(--brand-8)',
         }}>
           {count} {count === 1 ? 'задача' : count < 5 ? 'задачи' : 'задач'}
         </span>
@@ -166,13 +166,13 @@ export default function BulkActionBar({ count, statuses, members, onBulkUpdate, 
       {/* Delete */}
       {confirmDelete ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: '#EF4444' }}>
+          <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: 'var(--error-10)' }}>
             Удалить {count}?
           </span>
           <button
             onClick={handleDelete}
             style={{
-              background: '#EF4444', color: '#fff', border: 'none',
+              background: 'var(--error-10)', color: 'var(--neutral-0)', border: 'none',
               borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
               fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 600,
             }}
@@ -198,8 +198,8 @@ export default function BulkActionBar({ count, statuses, members, onBulkUpdate, 
           title="Удалить выбранные задачи"
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            background: 'rgba(239,68,68,0.1)', color: '#EF4444',
-            border: '1px solid rgba(239,68,68,0.25)',
+            background: 'var(--component-fill-negative-soft-default)', color: 'var(--error-10)',
+            border: '1px solid var(--component-border-negative-medium)',
             borderRadius: 7, padding: '5px 10px', cursor: 'pointer',
             fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500,
             height: 30,

@@ -31,17 +31,17 @@ export default function FilterBar({ filters, statuses, members, labels, onChange
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
 
-  const rowBg       = isDark ? '#03050F'  : '#F5F3FF';
-  const border      = isDark ? '#1C2236'  : '#E8E5F0';
-  const chipBg      = isDark ? '#1C2236'  : '#EDE9FE';
-  const chipText    = isDark ? '#8B949E'  : '#7C6FA8';
-  const chipActive  = 'rgba(79,110,247,0.12)';
-  const chipActiveT = '#4F6EF7';
-  const chipOverdue = isDark ? 'rgba(239,68,68,0.12)' : '#FEE2E2';
-  const chipOverdueT= '#EF4444';
+  const rowBg       = isDark ? 'var(--static-background-base)'  : 'var(--static-background-base)';
+  const border      = isDark ? 'var(--static-border-neutral-tertiary)'  : 'var(--static-border-neutral-tertiary)';
+  const chipBg      = isDark ? 'var(--static-border-neutral-tertiary)'  : 'var(--component-fill-brand-soft-default)';
+  const chipText    = isDark ? 'var(--static-text-neutral-tertiary)'  : 'var(--static-text-neutral-tertiary)';
+  const chipActive  = 'var(--component-fill-brand-soft-hover)';
+  const chipActiveT = 'var(--brand-8)';
+  const chipOverdue = isDark ? 'var(--component-fill-negative-soft-hover)' : 'var(--component-fill-negative-soft-default)';
+  const chipOverdueT= 'var(--error-10)';
 
-  const inputText   = isDark ? '#E2E8F8'  : '#1A1A2E';
-  const selectBg    = isDark ? '#0F1320'  : '#FDFCFF';
+  const inputText   = isDark ? 'var(--static-text-neutral-primary)'  : 'var(--static-text-neutral-primary)';
+  const selectBg    = isDark ? 'var(--static-background-lightest)'  : 'var(--static-background-lightest)';
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -102,7 +102,7 @@ export default function FilterBar({ filters, statuses, members, labels, onChange
           </svg>
           Фильтры
           {hasAdvanced && (
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0 }} />
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--brand-8)', flexShrink: 0 }} />
           )}
         </button>
 

@@ -6,7 +6,7 @@ import type { Notification, MentionPayload, TaskAssignedPayload, CommentAddedPay
 
 const POLL_MS = 30_000;
 
-const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const AVATAR_PALETTE = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function avatarColor(name: string) { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 function avatarInitials(name: string) { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 function bodyPreview(body?: string): string {
@@ -45,14 +45,14 @@ function getSubtitle(n: Notification): string | null {
 export default function NotificationBell() {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
-  const bg = isDark ? '#0F1320' : '#FFFFFF';
-  const border = isDark ? '#1C2236' : '#E8E5F0';
-  const text = isDark ? '#E2E8F8' : '#1A1A2E';
-  const subText = isDark ? '#8B95B0' : '#6B7194';
-  const muted = isDark ? '#8B949E' : '#9B96B8';
-  const hoverBg = isDark ? '#141928' : '#F8F7FF';
-  const previewBg = isDark ? '#0A0E1A' : '#F5F5FF';
-  const unreadDot = isDark ? 'rgba(79,110,247,0.08)' : 'rgba(79,110,247,0.05)';
+  const bg = isDark ? 'var(--static-background-lightest)' : 'var(--neutral-0)';
+  const border = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const text = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const subText = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const muted = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const hoverBg = isDark ? 'var(--static-background-light)' : 'var(--static-background-lightest)';
+  const previewBg = isDark ? 'var(--static-background-base)' : 'var(--component-fill-info-soft-default)';
+  const unreadDot = isDark ? 'var(--component-fill-brand-soft-default)' : 'var(--component-fill-brand-soft-default)';
 
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
@@ -127,7 +127,7 @@ export default function NotificationBell() {
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: 2, right: 2,
-            background: '#EF4444', color: '#fff',
+            background: 'var(--error-10)', color: 'var(--neutral-0)',
             fontSize: 9, fontWeight: 700, fontFamily: '"Inter",system-ui,sans-serif',
             borderRadius: '50%', width: 14, height: 14,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -141,14 +141,14 @@ export default function NotificationBell() {
         <div style={{
           position: 'fixed', top: dropPos.top, right: dropPos.right, width: 380,
           background: bg, border: `1px solid ${border}`, borderRadius: 10,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.22)', zIndex: 9999,
+          boxShadow: 'var(--shadow-lg)', zIndex: 9999,
           fontFamily: '"Inter",system-ui,sans-serif',
         }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: `1px solid ${border}` }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: text }}>Уведомления</span>
             {unread > 0 && (
-              <button onClick={handleMarkAllRead} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#4F6EF7', padding: 0 }}>
+              <button onClick={handleMarkAllRead} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'var(--brand-8)', padding: 0 }}>
                 Прочитать все
               </button>
             )}
@@ -182,7 +182,7 @@ export default function NotificationBell() {
                       background: avatarColor(actor.name),
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--neutral-0)' }}>
                         {avatarInitials(actor.name)}
                       </span>
                     </div>
@@ -192,7 +192,7 @@ export default function NotificationBell() {
                       <div style={{ fontSize: 13, color: text, lineHeight: '18px', marginBottom: 2 }}>
                         <span style={{ fontWeight: 600 }}>{actor.name}</span>
                         <span style={{ color: subText }}>{getActionText(n)}</span>
-                        <span style={{ color: '#4F6EF7', fontWeight: 500 }}>{getTarget(n)}</span>
+                        <span style={{ color: 'var(--brand-8)', fontWeight: 500 }}>{getTarget(n)}</span>
                       </div>
 
                       {/* Task title / subtitle */}
@@ -220,7 +220,7 @@ export default function NotificationBell() {
                         <span style={{ fontSize: 11, color: muted }}>
                           {new Date(n.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </span>
-                        <span style={{ fontSize: 11, color: '#4F6EF7', fontWeight: 500 }}>
+                        <span style={{ fontSize: 11, color: 'var(--brand-8)', fontWeight: 500 }}>
                           {isTaskLink ? 'Открыть задачу →' : 'Открыть воркспейс →'}
                         </span>
                       </div>
@@ -228,7 +228,7 @@ export default function NotificationBell() {
 
                     {/* Unread dot */}
                     {!n.isRead && (
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0, marginTop: 6 }} />
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--brand-8)', flexShrink: 0, marginTop: 6 }} />
                     )}
                   </div>
                 </div>

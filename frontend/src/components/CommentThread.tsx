@@ -9,26 +9,26 @@ import MentionTextarea, { renderMentions } from './MentionTextarea';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  authorText: '#E2E8F8', metaText: '#4A5578', bodyText: '#C8D0E8',
-  actionText: '#4A5578', actionHover: '#8B95B0',
-  inputBg: '#0F1320', inputBorder: '#1E2640', inputBorderFocus: '#4F6EF7', inputText: '#E2E8F8',
-  inputPlaceholder: '#4A5578',
-  btnBg: '#4F6EF7', btnText: '#fff',
-  cancelBg: '#1C2236', cancelBorder: '#2A3456', cancelText: '#E2E8F8',
-  confirmBg: '#1C2236', confirmBorder: '#1C2236', confirmText: '#8B95B0',
+  authorText: 'var(--static-text-neutral-primary)', metaText: 'var(--neutral-8)', bodyText: 'var(--static-text-neutral-secondary)',
+  actionText: 'var(--neutral-8)', actionHover: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)', inputBorderFocus: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)',
+  inputPlaceholder: 'var(--neutral-8)',
+  btnBg: 'var(--brand-8)', btnText: 'var(--neutral-0)',
+  cancelBg: 'var(--static-border-neutral-tertiary)', cancelBorder: 'var(--component-border-neutral-medium)', cancelText: 'var(--static-text-neutral-primary)',
+  confirmBg: 'var(--static-border-neutral-tertiary)', confirmBorder: 'var(--static-border-neutral-tertiary)', confirmText: 'var(--static-text-neutral-tertiary)',
 };
 const LIGHT: C = {
-  authorText: '#1A1A2E', metaText: '#9B96B8', bodyText: '#3A3A5C',
-  actionText: '#9B96B8', actionHover: '#6B7194',
-  inputBg: '#FDFCFF', inputBorder: '#E8E5F0', inputBorderFocus: '#4F6EF7', inputText: '#1A1A2E',
-  inputPlaceholder: '#9B96B8',
-  btnBg: '#4F6EF7', btnText: '#fff',
-  cancelBg: '#FDFCFF', cancelBorder: '#E8E5F0', cancelText: '#1A1A2E',
-  confirmBg: '#FDFCFF', confirmBorder: '#E8E5F0', confirmText: '#6B7194',
+  authorText: 'var(--static-text-neutral-primary)', metaText: 'var(--static-text-neutral-tertiary)', bodyText: 'var(--static-text-neutral-secondary)',
+  actionText: 'var(--static-text-neutral-tertiary)', actionHover: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)', inputBorderFocus: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)',
+  inputPlaceholder: 'var(--static-text-neutral-tertiary)',
+  btnBg: 'var(--brand-8)', btnText: 'var(--neutral-0)',
+  cancelBg: 'var(--static-background-lightest)', cancelBorder: 'var(--static-border-neutral-tertiary)', cancelText: 'var(--static-text-neutral-primary)',
+  confirmBg: 'var(--static-background-lightest)', confirmBorder: 'var(--static-border-neutral-tertiary)', confirmText: 'var(--static-text-neutral-tertiary)',
 };
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
-const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const AVATAR_PALETTE = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 function avatarInitials(name: string): string { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
@@ -38,7 +38,7 @@ function commentCharCounterStyle(len: number, metaColor: string): React.CSSPrope
   return {
     fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, textAlign: 'right',
     marginBottom: 6,
-    color: len >= COMMENT_MAX ? '#EF4444' : len > COMMENT_MAX * 0.9 ? '#F59E0B' : metaColor,
+    color: len >= COMMENT_MAX ? 'var(--error-10)' : len > COMMENT_MAX * 0.9 ? 'var(--warning-6)' : metaColor,
   };
 }
 
@@ -116,7 +116,7 @@ export default function CommentThread({ taskId, comments, onCommentsChanged, mem
             background: avatarColor(comment.author.name),
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 10, fontWeight: 700, color: '#fff' }}>
+            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 10, fontWeight: 700, color: 'var(--neutral-0)' }}>
               {avatarInitials(comment.author.name)}
             </span>
           </div>
@@ -194,9 +194,9 @@ export default function CommentThread({ taskId, comments, onCommentsChanged, mem
                         <button
                           onClick={() => remove(comment.id)}
                           style={{
-                            background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                            background: 'var(--component-fill-negative-soft-hover)', border: '1px solid var(--component-border-negative-medium)',
                             borderRadius: 4, padding: '2px 7px', cursor: 'pointer',
-                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: '#EF4444',
+                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: 'var(--error-10)',
                           }}
                         >
                           Да
@@ -238,7 +238,7 @@ export default function CommentThread({ taskId, comments, onCommentsChanged, mem
                             background: 'none', border: 'none', cursor: 'pointer',
                             padding: '3px 5px', borderRadius: 4, color: c.actionText,
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--error-10)'; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = c.actionText; }}
                         >
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
@@ -263,7 +263,7 @@ export default function CommentThread({ taskId, comments, onCommentsChanged, mem
           background: avatarColor(currentUser?.name ?? ''),
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 10, fontWeight: 700, color: '#fff' }}>
+          <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 10, fontWeight: 700, color: 'var(--neutral-0)' }}>
             {avatarInitials(currentUser?.name ?? '')}
           </span>
         </div>

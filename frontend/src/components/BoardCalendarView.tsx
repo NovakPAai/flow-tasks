@@ -6,46 +6,46 @@ import type { Task, WorkflowStatus } from '../types';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#03050F',
+  bg: 'var(--static-background-base)',
   calendarBg: 'transparent', calendarBorder: 'none', calendarRadius: '0',
-  divider: '#1C2236',
-  headerText: '#8B95B0', headerWeekend: '#4B5280',
-  dayText: '#E2E8F8', dayWeekend: '#4B5280', dayOther: '#8B95B0',
-  weekendBg: '#0D1017',
-  sidebarBg: '#0A0D1A', sidebarBorder: '#1C2236', sidebarLabel: '#8B95B0',
-  cardBg: '#0F1320', cardBorder: '#1C2236',
-  keyText: '#8B95B0', titleText: '#E2E8F8', emptyText: '#4B5280',
+  divider: 'var(--static-border-neutral-tertiary)',
+  headerText: 'var(--static-text-neutral-tertiary)', headerWeekend: 'var(--static-text-neutral-tertiary)',
+  dayText: 'var(--static-text-neutral-primary)', dayWeekend: 'var(--static-text-neutral-tertiary)', dayOther: 'var(--static-text-neutral-tertiary)',
+  weekendBg: 'var(--static-background-lightest)',
+  sidebarBg: 'var(--static-background-base)', sidebarBorder: 'var(--static-border-neutral-tertiary)', sidebarLabel: 'var(--static-text-neutral-tertiary)',
+  cardBg: 'var(--static-background-lightest)', cardBorder: 'var(--static-border-neutral-tertiary)',
+  keyText: 'var(--static-text-neutral-tertiary)', titleText: 'var(--static-text-neutral-primary)', emptyText: 'var(--static-text-neutral-tertiary)',
 };
 
 const LIGHT: C = {
-  bg: '#F5F3FF',
-  calendarBg: '#FDFCFF', calendarBorder: '1px solid #E8E5F0', calendarRadius: '12px',
-  divider: '#E8E5F0',
-  headerText: '#6B7194', headerWeekend: '#6B7194',
-  dayText: '#1A1A2E', dayWeekend: '#B0AACC', dayOther: '#B0AACC',
-  weekendBg: '#F9F8FC',
-  sidebarBg: 'transparent', sidebarBorder: 'transparent', sidebarLabel: '#4F6EF7',
-  cardBg: '#FDFCFF', cardBorder: '#E8E5F0',
-  keyText: '#6B7194', titleText: '#1A1A2E', emptyText: '#9B96B8',
+  bg: 'var(--static-background-base)',
+  calendarBg: 'var(--static-background-lightest)', calendarBorder: '1px solid var(--static-border-neutral-tertiary)', calendarRadius: '12px',
+  divider: 'var(--static-border-neutral-tertiary)',
+  headerText: 'var(--static-text-neutral-tertiary)', headerWeekend: 'var(--static-text-neutral-tertiary)',
+  dayText: 'var(--static-text-neutral-primary)', dayWeekend: 'var(--neutral-6)', dayOther: 'var(--neutral-6)',
+  weekendBg: 'var(--static-background-lightest)',
+  sidebarBg: 'transparent', sidebarBorder: 'transparent', sidebarLabel: 'var(--brand-8)',
+  cardBg: 'var(--static-background-lightest)', cardBorder: 'var(--static-border-neutral-tertiary)',
+  keyText: 'var(--static-text-neutral-tertiary)', titleText: 'var(--static-text-neutral-primary)', emptyText: 'var(--static-text-neutral-tertiary)',
 };
 
 // ── Task chip configs ──────────────────────────────────────────────────────────
 type ChipCfg = { bg: string; border: string; text: string };
 const CHIP: Record<string, { dark: ChipCfg; light: ChipCfg }> = {
-  done:    { dark: { bg:'#0D2020', border:'#34D399', text:'#34D399' }, light: { bg:'#D1FAE5', border:'#10B981', text:'#065F46' } },
-  overdue: { dark: { bg:'#1A0A0A', border:'#F87171', text:'#F87171' }, light: { bg:'#FEE2E2', border:'#EF4444', text:'#991B1B' } },
-  default: { dark: { bg:'#0D2040', border:'#4F6EF7', text:'#4F6EF7' }, light: { bg:'#EEF0FF', border:'#4F6EF7', text:'#3730A3' } },
+  done:    { dark: { bg:'var(--component-fill-positive-soft-default)', border:'var(--success-7)', text:'var(--success-7)' }, light: { bg:'var(--component-fill-positive-soft-default)', border:'var(--success-8)', text:'var(--success-10)' } },
+  overdue: { dark: { bg:'var(--component-fill-negative-soft-default)', border:'var(--error-8)', text:'var(--error-8)' }, light: { bg:'var(--component-fill-negative-soft-default)', border:'var(--error-10)', text:'var(--error-10)' } },
+  default: { dark: { bg:'var(--component-fill-info-soft-default)', border:'var(--brand-8)', text:'var(--brand-8)' }, light: { bg:'var(--component-fill-info-soft-default)', border:'var(--brand-8)', text:'var(--info-10)' } },
 };
 
 // ── Priority badge configs ─────────────────────────────────────────────────────
 const PRIO: Record<string, { dark: ChipCfg; light: ChipCfg }> = {
-  HIGH:   { dark:{bg:'#1A1A2E', border:'#F87171', text:'#F87171'}, light:{bg:'#FEF2F2', border:'#FECACA', text:'#EF4444'} },
-  MEDIUM: { dark:{bg:'#1A1500', border:'#FBBF24', text:'#FBBF24'}, light:{bg:'#FEF3C7', border:'transparent', text:'#92400E'} },
-  LOW:    { dark:{bg:'#151A2E', border:'#1C2236', text:'#8B95B0'}, light:{bg:'#F0FDF4', border:'#BBF7D0', text:'#166534'} },
+  HIGH:   { dark:{bg:'var(--static-text-neutral-primary)', border:'var(--error-8)', text:'var(--error-8)'}, light:{bg:'var(--component-fill-negative-soft-default)', border:'var(--component-border-negative-medium)', text:'var(--error-10)'} },
+  MEDIUM: { dark:{bg:'var(--component-fill-warning-soft-default)', border:'var(--warning-5)', text:'var(--warning-5)'}, light:{bg:'var(--component-fill-warning-soft-default)', border:'transparent', text:'var(--warning-10)'} },
+  LOW:    { dark:{bg:'var(--static-background-light)', border:'var(--static-border-neutral-tertiary)', text:'var(--static-text-neutral-tertiary)'}, light:{bg:'var(--component-fill-positive-soft-default)', border:'var(--component-border-positive-medium)', text:'var(--success-10)'} },
 };
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
-const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const AVATAR_PALETTE = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 function avatarInitials(name: string): string { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
@@ -122,7 +122,7 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
         }}>
           <span style={{
             fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13, fontWeight: 600,
-            color: isDark ? '#E2E8F8' : '#1A1A2E',
+            color: isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)',
           }}>
             {MONTHS_RU[month]} {year}
           </span>
@@ -135,7 +135,7 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
                   background: 'none', border: 'none', cursor: 'pointer',
                   padding: '4px 10px', borderRadius: 6,
                   fontFamily: '"Inter",system-ui,sans-serif', fontSize: 18, lineHeight: 1,
-                  color: isDark ? '#8B95B0' : '#6B7194',
+                  color: isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)',
                 }}
               >
                 {ch}
@@ -206,10 +206,10 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
                         {isToday ? (
                           <span style={{
                             width: isDark ? 24 : 20, height: isDark ? 24 : 20,
-                            borderRadius: '50%', background: '#4F6EF7',
+                            borderRadius: '50%', background: 'var(--brand-8)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontFamily: '"Inter",system-ui,sans-serif',
-                            fontSize: isDark ? 12 : 11, fontWeight: 700, color: '#fff',
+                            fontSize: isDark ? 12 : 11, fontWeight: 700, color: 'var(--neutral-0)',
                           }}>
                             {cell.getDate()}
                           </span>
@@ -225,7 +225,7 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
                         {isCurrent && hasOverdue && (
                           <span style={{
                             fontFamily: '"Inter",system-ui,sans-serif', fontSize: 9, fontWeight: 600,
-                            letterSpacing: '0.02em', color: isDark ? '#F87171' : '#EF4444',
+                            letterSpacing: '0.02em', color: isDark ? 'var(--error-8)' : 'var(--error-10)',
                           }}>
                             просрочено
                           </span>
@@ -265,7 +265,7 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
                       {dayTasks.length > 3 && (
                         <span style={{
                           fontFamily: '"Inter",system-ui,sans-serif', fontSize: 10,
-                          color: isDark ? '#8B95B0' : '#6B7194', paddingLeft: 2,
+                          color: isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)', paddingLeft: 2,
                         }}>
                           +{dayTasks.length - 3}
                         </span>
@@ -298,10 +298,10 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
             Без даты · {noDateTasks.length}
           </span>
         ) : (
-          <div style={{ background: '#EEF0FF', borderRadius: 8, padding: '8px 12px' }}>
+          <div style={{ background: 'var(--component-fill-info-soft-default)', borderRadius: 8, padding: '8px 12px' }}>
             <span style={{
               fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 600,
-              letterSpacing: '0.02em', textTransform: 'uppercase', color: '#4F6EF7',
+              letterSpacing: '0.02em', textTransform: 'uppercase', color: 'var(--brand-8)',
             }}>
               Без даты · {noDateTasks.length}
             </span>
@@ -354,7 +354,7 @@ export default function BoardCalendarView({ statuses, tasks, onTaskClick }: Prop
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
-                    <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 7, fontWeight: 700, color: '#fff' }}>
+                    <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 7, fontWeight: 700, color: 'var(--neutral-0)' }}>
                       {avatarInitials(task.assignee.name)}
                     </span>
                   </div>

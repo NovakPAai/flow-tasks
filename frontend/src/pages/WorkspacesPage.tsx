@@ -12,68 +12,66 @@ import * as workspacesApi from '../api/workspaces';
 // ─── Design tokens (Paper: 135-0 dark, 16D-0 light) ──────────────────────────
 type Theme = Record<string, string>;
 const DARK_C: Theme = {
-  rootBg:       '#03050F',
-  greeting:     '#8B95B0',
-  title:        '#E2E8F8',
-  cardBg:       '#0F1320',
-  cardBorder:   '#1C2236',
+  rootBg:       'var(--static-background-base)',
+  greeting:     'var(--static-text-neutral-tertiary)',
+  title:        'var(--static-text-neutral-primary)',
+  cardBg:       'var(--static-background-lightest)',
+  cardBorder:   'var(--static-border-neutral-tertiary)',
   cardShadow:   'none',
-  cardTitle:    '#E2E8F8',
-  cardSlug:     '#8B95B0',
-  roleBg:       '#151A2E',
-  roleBorder:   '#1C2236',
-  roleText:     '#8B95B0',
-  statNum:      '#E2E8F8',
-  statLabel:    '#8B95B0',
-  statDivBg:    '#1C2236',
-  statRowBg:    '#151A2E',
-  statRowBorder:'#151A2E',
-  avBorder:     '#0F1320',
-  avCountBg:    '#1C2236',
-  avCountText:  '#8B95B0',
-  actStatus:    '#8B95B0',
-  actText:      '#A0AABF',
-  actTime:      '#8B95B0',
-  actHeader:    '#8B95B0',
-  newCardBg:    '#0F1320',
-  newCardBorder:'#1C2236',
-  newIconBg:    '#151A2E',
-  newIconBorder:'#1C2236',
-  newText:      '#8B95B0',
+  cardTitle:    'var(--static-text-neutral-primary)',
+  cardSlug:     'var(--static-text-neutral-tertiary)',
+  roleBg:       'var(--static-background-light)',
+  roleBorder:   'var(--static-border-neutral-tertiary)',
+  roleText:     'var(--static-text-neutral-tertiary)',
+  statNum:      'var(--static-text-neutral-primary)',
+  statLabel:    'var(--static-text-neutral-tertiary)',
+  statDivBg:    'var(--static-border-neutral-tertiary)',
+  statRowBg:    'var(--static-background-light)',
+  statRowBorder:'var(--static-background-light)',
+  avBorder:     'var(--static-background-lightest)',
+  avCountBg:    'var(--static-border-neutral-tertiary)',
+  avCountText:  'var(--static-text-neutral-tertiary)',
+  actStatus:    'var(--static-text-neutral-tertiary)',
+  actText:      'var(--static-text-neutral-secondary)',
+  actTime:      'var(--static-text-neutral-tertiary)',
+  actHeader:    'var(--static-text-neutral-tertiary)',
+  newCardBg:    'var(--static-background-lightest)',
+  newCardBorder:'var(--static-border-neutral-tertiary)',
+  newIconBg:    'var(--static-background-light)',
+  newIconBorder:'var(--static-border-neutral-tertiary)',
+  newText:      'var(--static-text-neutral-tertiary)',
 } as const;
 
 const LIGHT_C: Theme = {
-  rootBg:       '#F5F3FF',
-  greeting:     '#6B7194',
-  title:        '#1A1A2E',
-  cardBg:       '#FDFCFF',
-  cardBorder:   '#E8E5F0',
-  cardShadow:   '#4F6EF70F 0px 2px 8px',
-  cardTitle:    '#1A1A2E',
-  cardSlug:     '#6B7194',
-  roleBg:       '#F0ECF8',
-  roleBorder:   '#D1CBF0',
-  roleText:     '#6B7194',
-  statNum:      '#1A1A2E',
-  statLabel:    '#6B7194',
-  statDivBg:    '#E8E5F0',
-  statRowBg:    '#F5F3FF',
-  statRowBorder:'#E8E5F0',
-  avBorder:     '#FDFCFF',
-  avCountBg:    '#F0ECF8',
-  avCountText:  '#6B7194',
-  actStatus:    '#9CA3AF',
-  actText:      '#374151',
-  actTime:      '#9CA3AF',
-  actHeader:    '#6B7194',
-  newCardBg:    '#FDFCFF',
-  newCardBorder:'#D1CBF0',
-  newIconBg:    '#F0ECF8',
-  newIconBorder:'#D1CBF0',
-  newText:      '#9CA3AF',
+  rootBg:       'var(--static-background-base)',
+  greeting:     'var(--static-text-neutral-tertiary)',
+  title:        'var(--static-text-neutral-primary)',
+  cardBg:       'var(--static-background-lightest)',
+  cardBorder:   'var(--static-border-neutral-tertiary)',
+  cardShadow:   'var(--shadow-sm)',
+  cardTitle:    'var(--static-text-neutral-primary)',
+  cardSlug:     'var(--static-text-neutral-tertiary)',
+  roleBg:       'var(--static-background-light)',
+  roleBorder:   'var(--component-border-neutral-medium)',
+  roleText:     'var(--static-text-neutral-tertiary)',
+  statNum:      'var(--static-text-neutral-primary)',
+  statLabel:    'var(--static-text-neutral-tertiary)',
+  statDivBg:    'var(--static-border-neutral-tertiary)',
+  statRowBg:    'var(--static-background-base)',
+  statRowBorder:'var(--static-border-neutral-tertiary)',
+  avBorder:     'var(--static-background-lightest)',
+  avCountBg:    'var(--static-background-light)',
+  avCountText:  'var(--static-text-neutral-tertiary)',
+  actStatus:    'var(--neutral-8)',
+  actText:      'var(--static-text-neutral-secondary)',
+  actTime:      'var(--neutral-8)',
+  actHeader:    'var(--static-text-neutral-tertiary)',
+  newCardBg:    'var(--static-background-lightest)',
+  newCardBorder:'var(--component-border-neutral-medium)',
+  newIconBg:    'var(--static-background-light)',
+  newIconBorder:'var(--component-border-neutral-medium)',
+  newText:      'var(--neutral-8)',
 } as const;
-
-const LOGO_GRAD = 'linear-gradient(in oklab 135deg, oklab(59.3% -0.002 -0.207) 0%, oklab(50.3% -.0006 -0.200) 100%)';
 
 const WS_GRADIENTS: Record<number, string> = {
   0: 'linear-gradient(in oklab 135deg, oklab(59.3% -0.002 -0.207) 0%, oklab(65.1% -0.002 -0.186) 100%)',
@@ -82,7 +80,7 @@ const WS_GRADIENTS: Record<number, string> = {
   3: 'linear-gradient(in oklab 135deg, oklab(60% -0.05 0.12) 0%, oklab(50% -0.04 0.10) 100%)',
 };
 
-const AVATAR_COLORS = ['#4F6EF7', '#8B5CF6', '#F59E0B', '#34D399', '#F87171', '#38BDF8', '#FB923C'];
+const AVATAR_COLORS = ['var(--brand-8)', 'var(--brand-gold-8)', 'var(--warning-6)', 'var(--success-7)', 'var(--error-8)', 'var(--info-7)', 'var(--warning-7)'];
 
 function initials(name: string): string {
   return name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
@@ -118,7 +116,7 @@ function WorkspaceCard({ ws, idx, onClick, C, isDark }: {
         border: `1px solid ${C.cardBorder}`,
         borderRadius: 12,
         boxShadow: hovered
-          ? `${C.cardShadow}, 0 0 0 1px ${isDark ? '#2A3352' : '#D1CBF0'}`
+          ? `${C.cardShadow}, 0 0 0 1px ${isDark ? 'var(--component-border-neutral-medium)' : 'var(--component-border-neutral-medium)'}`
           : C.cardShadow,
         boxSizing: 'border-box', cursor: 'pointer',
         overflow: 'clip', paddingBlock: 24, paddingInline: 24,
@@ -133,7 +131,7 @@ function WorkspaceCard({ ws, idx, onClick, C, isDark }: {
             alignItems: 'center', backgroundImage: grad, borderRadius: 10,
             display: 'flex', flexShrink: 0, height: 44, justifyContent: 'center', width: 44,
           }}>
-            <span style={{ color: '#FFFFFF', fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 18, fontWeight: 700, lineHeight: '22px' }}>
+            <span style={{ color: 'var(--neutral-0)', fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 18, fontWeight: 700, lineHeight: '22px' }}>
               {letter}
             </span>
           </div>
@@ -192,7 +190,7 @@ function WorkspaceCard({ ws, idx, onClick, C, isDark }: {
               display: 'flex', flexShrink: 0, height: 28, justifyContent: 'center',
               marginLeft: i > 0 ? -8 : 0, width: 28,
             }}>
-              <span style={{ color: '#FFFFFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 10, fontWeight: 700, lineHeight: '12px' }}>
+              <span style={{ color: 'var(--neutral-0)', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 10, fontWeight: 700, lineHeight: '12px' }}>
                 {initials(m.user.name)}
               </span>
             </div>
@@ -305,19 +303,19 @@ function CreateModal({ open, onClose, onCreate, C, isDark }: {
 
   if (!open) return null;
 
-  const overlayBg = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(15,19,32,0.25)';
-  const modalBg = isDark ? '#0F1320' : '#FDFCFF';
-  const modalBorder = isDark ? '#1C2236' : '#E8E5F0';
-  const labelColor = isDark ? '#8B95B0' : '#374151';
-  const inputBg = isDark ? '#151A2E' : '#F5F3FF';
-  const inputBorder = isDark ? '#1C2236' : '#E8E5F0';
-  const inputText = isDark ? '#E2E8F8' : '#1A1A2E';
-  const inputPh = isDark ? '#3D4D6B' : '#9CA3AF';
+  const overlayBg = isDark ? 'var(--component-fill-neutral-soft-active)' : 'var(--component-fill-neutral-soft-active)';
+  const modalBg = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)';
+  const modalBorder = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const labelColor = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-secondary)';
+  const inputBg = isDark ? 'var(--static-background-light)' : 'var(--static-background-base)';
+  const inputBorder = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const inputText = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const inputPh = isDark ? 'var(--neutral-8)' : 'var(--neutral-8)';
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: overlayBg, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ backgroundColor: modalBg, border: `1px solid ${modalBorder}`, borderRadius: 12, padding: 32, width: 480, boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+      <div style={{ backgroundColor: modalBg, border: `1px solid ${modalBorder}`, borderRadius: 12, padding: 32, width: 480, boxShadow: 'var(--shadow-lg)' }}>
         <div style={{ color: C.title, fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 24 }}>
           Новое пространство
         </div>
@@ -346,20 +344,10 @@ function CreateModal({ open, onClose, onCreate, C, isDark }: {
             </div>
           ))}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
-            <button type="button" onClick={onClose} style={{
-              backgroundColor: 'transparent', border: `1px solid ${modalBorder}`,
-              borderRadius: 8, color: C.actText, cursor: 'pointer',
-              fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, fontWeight: 500,
-              padding: '9px 20px',
-            }}>
+            <button type="button" onClick={onClose} className="sigma-btn sigma-btn-md sigma-btn-neutral-outline">
               Отмена
             </button>
-            <button type="submit" disabled={creating} style={{
-              backgroundImage: LOGO_GRAD, border: 'none', borderRadius: 8,
-              color: '#FFFFFF', cursor: creating ? 'not-allowed' : 'pointer',
-              fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, fontWeight: 600,
-              opacity: creating ? 0.7 : 1, padding: '9px 24px',
-            }}>
+            <button type="submit" disabled={creating} className="sigma-btn sigma-btn-md sigma-btn-brand-solid">
               {creating ? '...' : 'Создать'}
             </button>
           </div>
@@ -420,16 +408,15 @@ export default function WorkspacesPage() {
         </div>
         <button
           onClick={() => setModalOpen(true)}
+          className="sigma-btn sigma-btn-md sigma-btn-brand-solid"
           style={{
-            alignItems: 'center', backgroundImage: LOGO_GRAD,
-            border: 'none', borderRadius: 8, cursor: 'pointer',
-            display: 'flex', gap: 6, paddingBlock: '10px', paddingInline: '18px',
+            paddingInline: 18,
           }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M7 2v10M2 7h10" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round"/>
+            <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
           </svg>
-          <span style={{ color: '#FFFFFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, fontWeight: 600, lineHeight: '18px' }}>
+          <span>
             Создать
           </span>
         </button>
@@ -480,7 +467,7 @@ export default function WorkspacesPage() {
               const time = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
               return (
                 <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0, marginTop: 5 }} />
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--brand-8)', flexShrink: 0, marginTop: 5 }} />
                   <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, color: C.actText, flex: 1, overflow: 'hidden' }}>
                     <span style={{ fontWeight: 600 }}>{name}</span>
                     {' '}{label}{ws ? ` «${ws.name}»` : ''}

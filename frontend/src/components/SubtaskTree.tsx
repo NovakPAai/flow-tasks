@@ -7,22 +7,22 @@ import * as tasksApi from '../api/tasks';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  line: '#1C2236', rowHover: '#0F1320',
-  titleText: '#C8D0E8', doneTitleText: '#4A5578',
-  keyText: '#2D3748', dimText: '#4A5578', addText: '#4A5578',
-  inputBg: '#0F1320', inputBorder: '#4F6EF7', inputText: '#E2E8F8',
-  btnBg: '#4F6EF7', btnText: '#fff',
-  cancelText: '#4A5578',
-  checkBorder: '#2D3748', checkBg: 'transparent', doneCheckBorder: '#34D399', doneCheckBg: 'rgba(52,211,153,0.13)',
+  line: 'var(--static-border-neutral-tertiary)', rowHover: 'var(--static-background-lightest)',
+  titleText: 'var(--static-text-neutral-secondary)', doneTitleText: 'var(--neutral-8)',
+  keyText: 'var(--component-border-neutral-medium)', dimText: 'var(--neutral-8)', addText: 'var(--neutral-8)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)',
+  btnBg: 'var(--brand-8)', btnText: 'var(--neutral-0)',
+  cancelText: 'var(--neutral-8)',
+  checkBorder: 'var(--component-border-neutral-medium)', checkBg: 'transparent', doneCheckBorder: 'var(--success-7)', doneCheckBg: 'var(--component-fill-positive-soft-default)',
 };
 const LIGHT: C = {
-  line: '#E8E5F0', rowHover: '#F5F3FF',
-  titleText: '#1A1A2E', doneTitleText: '#9B96B8',
-  keyText: '#B0AACC', dimText: '#9B96B8', addText: '#9B96B8',
-  inputBg: '#FDFCFF', inputBorder: '#4F6EF7', inputText: '#1A1A2E',
-  btnBg: '#4F6EF7', btnText: '#fff',
-  cancelText: '#9B96B8',
-  checkBorder: '#D1C8EC', checkBg: '#FDFCFF', doneCheckBorder: '#10B981', doneCheckBg: 'rgba(16,185,129,0.08)',
+  line: 'var(--static-border-neutral-tertiary)', rowHover: 'var(--static-background-base)',
+  titleText: 'var(--static-text-neutral-primary)', doneTitleText: 'var(--static-text-neutral-tertiary)',
+  keyText: 'var(--neutral-6)', dimText: 'var(--static-text-neutral-tertiary)', addText: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)',
+  btnBg: 'var(--brand-8)', btnText: 'var(--neutral-0)',
+  cancelText: 'var(--static-text-neutral-tertiary)',
+  checkBorder: 'var(--component-border-neutral-medium)', checkBg: 'var(--static-background-lightest)', doneCheckBorder: 'var(--success-8)', doneCheckBg: 'var(--component-fill-positive-soft-default)',
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ export default function SubtaskTree({
               >
                 {done && (
                   <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                    <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="#34D399" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="var(--success-7)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
               </span>
@@ -201,7 +201,7 @@ export default function SubtaskTree({
                   cursor: onOpenTask ? 'pointer' : 'default',
                 }}
                 onMouseEnter={e => {
-                  if (onOpenTask) (e.currentTarget as HTMLSpanElement).style.color = isDark ? '#A8B4D0' : '#4F6EF7';
+                  if (onOpenTask) (e.currentTarget as HTMLSpanElement).style.color = isDark ? 'var(--static-text-neutral-secondary)' : 'var(--brand-8)';
                 }}
                 onMouseLeave={e => {
                   (e.currentTarget as HTMLSpanElement).style.color = done ? c.doneTitleText : c.titleText;
@@ -225,9 +225,9 @@ export default function SubtaskTree({
                   <button
                     onClick={() => handleDelete(task.id)}
                     style={{
-                      background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+                      background: 'var(--component-fill-negative-soft-hover)', border: '1px solid var(--component-border-negative-medium)',
                       borderRadius: 3, padding: '1px 6px', cursor: 'pointer',
-                      fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: '#EF4444',
+                      fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: 'var(--error-10)',
                     }}
                   >Да</button>
                   <button
@@ -251,7 +251,7 @@ export default function SubtaskTree({
                   }}
                   onMouseEnter={e => {
                     (e.currentTarget as HTMLButtonElement).style.opacity = '1';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#EF4444';
+                    (e.currentTarget as HTMLButtonElement).style.color = 'var(--error-10)';
                   }}
                   onMouseLeave={e => {
                     (e.currentTarget as HTMLButtonElement).style.opacity = '0.4';
@@ -342,7 +342,7 @@ export default function SubtaskTree({
           }}
           onClick={() => setAdding(true)}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setAdding(true); }}
-          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.color = isDark ? '#8B9DC8' : '#6B7194'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.color = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.color = c.addText; }}
         >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">

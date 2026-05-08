@@ -10,19 +10,19 @@ import * as boardsApi from '../api/boards';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#03050F', border: '#1C2236',
-  title: '#E2E8F8', sub: '#8B949E', muted: '#484F58',
-  cardBg: '#0F1320', cardBorder: '#1C2236', cardTitle: '#E2E8F8', cardSub: '#484F58',
-  pillBg: '#1C2236', pillText: '#8B949E', backText: '#484F58',
+  bg: 'var(--static-background-base)', border: 'var(--static-border-neutral-tertiary)',
+  title: 'var(--static-text-neutral-primary)', sub: 'var(--static-text-neutral-tertiary)', muted: 'var(--neutral-8)',
+  cardBg: 'var(--static-background-lightest)', cardBorder: 'var(--static-border-neutral-tertiary)', cardTitle: 'var(--static-text-neutral-primary)', cardSub: 'var(--neutral-8)',
+  pillBg: 'var(--static-border-neutral-tertiary)', pillText: 'var(--static-text-neutral-tertiary)', backText: 'var(--neutral-8)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', border: '#E8E5F0',
-  title: '#1A1A2E', sub: '#9B96B8', muted: '#9B96B8',
-  cardBg: '#FDFCFF', cardBorder: '#E8E5F0', cardTitle: '#1A1A2E', cardSub: '#9B96B8',
-  pillBg: '#F0ECF8', pillText: '#7C6FA8', backText: '#9B96B8',
+  bg: 'var(--static-background-base)', border: 'var(--static-border-neutral-tertiary)',
+  title: 'var(--static-text-neutral-primary)', sub: 'var(--static-text-neutral-tertiary)', muted: 'var(--static-text-neutral-tertiary)',
+  cardBg: 'var(--static-background-lightest)', cardBorder: 'var(--static-border-neutral-tertiary)', cardTitle: 'var(--static-text-neutral-primary)', cardSub: 'var(--static-text-neutral-tertiary)',
+  pillBg: 'var(--static-background-light)', pillText: 'var(--static-text-neutral-tertiary)', backText: 'var(--static-text-neutral-tertiary)',
 };
 
-const BD_COLORS = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const BD_COLORS = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function boardColor(name: string) {
   return BD_COLORS[(name.charCodeAt(0) ?? 0) % BD_COLORS.length];
 }
@@ -126,12 +126,12 @@ export default function RoadmapsPage() {
       <div style={{ flex: 1, padding, overflowY: 'auto' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
-            <div style={{ width: 28, height: 28, border: `2px solid ${c.border}`, borderTopColor: '#4F6EF7', borderRadius: '50%', animation: 'rm-spin .8s linear infinite' }} />
+            <div style={{ width: 28, height: 28, border: `2px solid ${c.border}`, borderTopColor: 'var(--brand-8)', borderRadius: '50%', animation: 'rm-spin .8s linear infinite' }} />
             <style>{`@keyframes rm-spin{to{transform:rotate(360deg)}}`}</style>
           </div>
         ) : boards.length === 0 ? (
           <div style={{ padding: '60px 24px', textAlign: 'center', color: c.sub, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 14 }}>
-            Нет досок. Создайте первую в разделе <span style={{ color: '#4F6EF7', cursor: 'pointer' }} onClick={() => navigate(`/w/${slug}`)}>Доски</span>.
+            Нет досок. Создайте первую в разделе <span style={{ color: 'var(--brand-8)', cursor: 'pointer' }} onClick={() => navigate(`/w/${slug}`)}>Доски</span>.
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
@@ -147,14 +147,14 @@ export default function RoadmapsPage() {
                     background: c.cardBg, border: `1px solid ${c.cardBorder}`,
                     borderRadius: 14, padding: '20px 22px', cursor: 'default',
                     display: 'flex', flexDirection: 'column', gap: 0,
-                    boxShadow: isDark ? 'none' : '0 2px 8px rgba(79,110,247,.05)',
+                    boxShadow: isDark ? 'none' : 'var(--shadow-sm)',
                     transition: 'border-color .14s, box-shadow .12s',
                   }}
                 >
                   {/* Card header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <div style={{ width: 34, height: 34, background: color, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13, fontWeight: 700, color: '#fff' }}>
+                      <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13, fontWeight: 700, color: 'var(--neutral-0)' }}>
                         {board.name[0]?.toUpperCase()}
                       </span>
                     </div>
@@ -182,7 +182,7 @@ export default function RoadmapsPage() {
 
                   {/* Mini preview */}
                   <div style={{
-                    background: isDark ? 'rgba(255,255,255,.025)' : 'rgba(79,110,247,.04)',
+                    background: isDark ? 'var(--component-fill-neutral-ghost-hover)' : 'var(--component-fill-brand-soft-default)',
                     borderRadius: 8, padding: '8px 12px', marginBottom: 16, position: 'relative', overflow: 'hidden',
                   }}>
                     <MiniPreview color={color} />
@@ -197,21 +197,21 @@ export default function RoadmapsPage() {
                       onClick={() => navigate(`/w/${slug}/boards/${board.prefix.toLowerCase()}?view=roadmap`)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 5,
-                        padding: '7px 14px', background: 'rgba(79,110,247,.1)',
-                        border: '1px solid rgba(79,110,247,.25)', borderRadius: 8,
+                        padding: '7px 14px', background: 'var(--component-fill-brand-soft-hover)',
+                        border: '1px solid var(--component-border-brand-medium)', borderRadius: 8,
                         cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif',
-                        fontSize: 12, fontWeight: 600, color: '#4F6EF7',
+                        fontSize: 12, fontWeight: 600, color: 'var(--brand-8)',
                         transition: 'background .14s, border-color .14s',
                       }}
                       onMouseEnter={e => {
-                        (e.currentTarget as HTMLButtonElement).style.background = '#4F6EF7';
-                        (e.currentTarget as HTMLButtonElement).style.color = '#fff';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = '#4F6EF7';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--brand-8)';
+                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--neutral-0)';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--brand-8)';
                       }}
                       onMouseLeave={e => {
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(79,110,247,.1)';
-                        (e.currentTarget as HTMLButtonElement).style.color = '#4F6EF7';
-                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(79,110,247,.25)';
+                        (e.currentTarget as HTMLButtonElement).style.background = 'var(--component-fill-brand-soft-hover)';
+                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--brand-8)';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--component-border-brand-medium)';
                       }}
                     >
                       <svg width="12" height="12" viewBox="0 0 14 14" fill="none">

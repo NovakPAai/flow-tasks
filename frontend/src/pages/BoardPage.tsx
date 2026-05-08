@@ -96,19 +96,19 @@ function ColumnsBtn({ onClick, border, addText }: { onClick: () => void; border:
       style={{
         display: 'flex', alignItems: 'center', gap: 6, height: 34,
         padding: '0 12px',
-        background: hovered ? 'rgba(79,110,247,0.08)' : 'transparent',
-        border: `1px solid ${hovered ? 'rgba(79,110,247,0.4)' : border}`,
+        background: hovered ? 'var(--component-fill-brand-soft-default)' : 'transparent',
+        border: `1px solid ${hovered ? 'var(--component-fill-brand-soft-pressed)' : border}`,
         borderRadius: 8, cursor: 'pointer', flexShrink: 0,
         transition: 'background 0.15s, border-color 0.15s',
       }}
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <rect x="1" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2"/>
-        <rect x="5.5" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2"/>
-        <rect x="10" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2" strokeDasharray="2 1.5"/>
-        <path d="M11.75 5v4M9.75 7h4" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2" strokeLinecap="round"/>
+        <rect x="1" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.2"/>
+        <rect x="5.5" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.2"/>
+        <rect x="10" y="1" width="3.5" height="12" rx="1.5" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.2" strokeDasharray="2 1.5"/>
+        <path d="M11.75 5v4M9.75 7h4" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.2" strokeLinecap="round"/>
       </svg>
-      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: hovered ? '#4F6EF7' : addText, transition: 'color 0.15s' }}>Колонки</span>
+      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: hovered ? 'var(--brand-8)' : addText, transition: 'color 0.15s' }}>Колонки</span>
     </button>
   );
 }
@@ -127,21 +127,21 @@ function BoardSettingsBtn({ onClick, border, addText, isPrivate }: {
       style={{
         display: 'flex', alignItems: 'center', gap: 6, height: 34,
         padding: '0 12px',
-        background: hovered ? 'rgba(79,110,247,0.08)' : 'transparent',
-        border: `1px solid ${hovered ? 'rgba(79,110,247,0.4)' : border}`,
+        background: hovered ? 'var(--component-fill-brand-soft-default)' : 'transparent',
+        border: `1px solid ${hovered ? 'var(--component-fill-brand-soft-pressed)' : border}`,
         borderRadius: 8, cursor: 'pointer', flexShrink: 0,
         transition: 'background 0.15s, border-color 0.15s',
       }}
     >
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.4" strokeLinecap="round"/>
-        <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.4" strokeLinecap="round"/>
+        <path d="M13.3 6.6l-.7-.4a5.1 5.1 0 0 0 0-1.4l.7-.4a.6.6 0 0 0 .2-.8l-.8-1.4a.6.6 0 0 0-.8-.2l-.7.4a5 5 0 0 0-1.2-.7V1a.6.6 0 0 0-.6-.6H7.6A.6.6 0 0 0 7 1v.7a5 5 0 0 0-1.2.7l-.7-.4a.6.6 0 0 0-.8.2L3.5 3.6a.6.6 0 0 0 .2.8l.7.4a5.1 5.1 0 0 0 0 1.4l-.7.4a.6.6 0 0 0-.2.8l.8 1.4c.2.3.5.4.8.2l.7-.4c.4.3.8.5 1.2.7V10a.6.6 0 0 0 .6.6h1.6a.6.6 0 0 0 .6-.6v-.7c.4-.2.8-.4 1.2-.7l.7.4c.3.2.6.1.8-.2l.8-1.4a.6.6 0 0 0-.2-.8Z" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.4" strokeLinecap="round"/>
       </svg>
-      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: hovered ? '#4F6EF7' : addText, transition: 'color 0.15s' }}>Настройки</span>
+      <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500, color: hovered ? 'var(--brand-8)' : addText, transition: 'color 0.15s' }}>Настройки</span>
       {isPrivate && (
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.7 }}>
-          <path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2"/>
-          <path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke={hovered ? '#4F6EF7' : addText} strokeWidth="1.2" strokeLinecap="round"/>
+          <path d="M9.5 5.5H2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.2"/>
+          <path d="M4 5.5V3.5a2 2 0 1 1 4 0v2" stroke={hovered ? 'var(--brand-8)' : addText} strokeWidth="1.2" strokeLinecap="round"/>
         </svg>
       )}
     </button>
@@ -164,19 +164,19 @@ export default function BoardPage() {
   const isDark = mode === 'dark';
 
   // ── Theme tokens ──────────────────────────────────────────────────────────
-  const pageBg    = isDark ? '#03050F' : '#F5F3FF';
-  const headerBg  = isDark ? '#03050F' : '#F5F3FF';
-  const border    = isDark ? '#1C2236' : '#E8E5F0';
-  const nameColor = isDark ? '#E2E8F8' : '#1A1A2E';
-  const cntBg     = isDark ? '#1C2236' : '#EDE9FE';
-  const cntText   = isDark ? '#8B949E' : '#7C6FA8';
-  const colText   = isDark ? '#E2E8F8' : '#1A1A2E';
-  const addText   = isDark ? '#484F58' : '#9B96B8';
-  const dropOver  = isDark ? '#1C2236' : '#EDE9FE';
-  const inpBg     = isDark ? '#0F1320' : '#FDFCFF';
-  const inpBorder = isDark ? '#4F6EF7' : '#4F6EF7';
-  const colBg     = isDark ? '#07091A' : '#F7F5FF';
-  const viewActive= '#4F6EF7';
+  const pageBg    = isDark ? 'var(--static-background-base)' : 'var(--static-background-base)';
+  const headerBg  = isDark ? 'var(--static-background-base)' : 'var(--static-background-base)';
+  const border    = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const nameColor = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const cntBg     = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--component-fill-brand-soft-default)';
+  const cntText   = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const colText   = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const addText   = isDark ? 'var(--neutral-8)' : 'var(--static-text-neutral-tertiary)';
+  const dropOver  = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--component-fill-brand-soft-default)';
+  const inpBg     = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)';
+  const inpBorder = isDark ? 'var(--brand-8)' : 'var(--brand-8)';
+  const colBg     = isDark ? 'var(--static-background-base)' : 'var(--static-background-base)';
+  const viewActive= 'var(--brand-8)';
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [board, setBoard] = useState<Board | null>(null);
@@ -542,7 +542,7 @@ export default function BoardPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: pageBg }}>
-        <div style={{ width: 32, height: 32, border: `3px solid ${border}`, borderTopColor: '#4F6EF7', borderRadius: '50%', animation: 'ft-spin 0.8s linear infinite' }} />
+        <div style={{ width: 32, height: 32, border: `3px solid ${border}`, borderTopColor: 'var(--brand-8)', borderRadius: '50%', animation: 'ft-spin 0.8s linear infinite' }} />
         <style>{`@keyframes ft-spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
@@ -551,8 +551,8 @@ export default function BoardPage() {
   if (notFound || (!loading && !board)) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, background: pageBg }}>
-        <div style={{ fontSize: 15, color: isDark ? '#8B949E' : '#9B96B8', fontFamily: '"Inter",system-ui,sans-serif' }}>Доска не найдена</div>
-        <button onClick={() => navigate(-1)} style={{ fontSize: 13, color: '#4F6EF7', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}>← Назад</button>
+        <div style={{ fontSize: 15, color: isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)', fontFamily: '"Inter",system-ui,sans-serif' }}>Доска не найдена</div>
+        <button onClick={() => navigate(-1)} style={{ fontSize: 13, color: 'var(--brand-8)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}>← Назад</button>
       </div>
     );
   }
@@ -619,7 +619,7 @@ export default function BoardPage() {
         <div style={{ flex: isMobile ? undefined : 1 }} />
 
         {/* View switcher */}
-        <div style={{ display: 'flex', gap: 2, background: isDark ? '#0F1320' : '#EDE9FE', borderRadius: 10, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 2, background: isDark ? 'var(--static-background-lightest)' : 'var(--component-fill-brand-soft-default)', borderRadius: 10, padding: 3 }}>
           {viewBtns.map(btn => (
             <button
               key={btn.mode}
@@ -628,9 +628,9 @@ export default function BoardPage() {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: 32, height: 28, border: 'none', cursor: 'pointer', borderRadius: 7,
-                background: viewMode === btn.mode ? (isDark ? '#1C2236' : '#FFFFFF') : 'transparent',
-                color: viewMode === btn.mode ? viewActive : (isDark ? '#484F58' : '#9B96B8'),
-                boxShadow: viewMode === btn.mode ? (isDark ? 'none' : '0 1px 4px rgba(0,0,0,0.08)') : 'none',
+                background: viewMode === btn.mode ? (isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--neutral-0)') : 'transparent',
+                color: viewMode === btn.mode ? viewActive : (isDark ? 'var(--neutral-8)' : 'var(--static-text-neutral-tertiary)'),
+                boxShadow: viewMode === btn.mode ? (isDark ? 'none' : 'var(--shadow-sm)') : 'none',
                 transition: 'all 0.12s',
               }}
             >
@@ -656,12 +656,12 @@ export default function BoardPage() {
         <button
           data-onboarding="create-task"
           onClick={() => { if (statuses.length > 0) { setAddingTo(statuses[0].id); setAddTitle(''); } }}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#4F6EF7', border: 'none', borderRadius: 8, padding: isMobile ? '7px 10px' : '7px 14px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--brand-8)', border: 'none', borderRadius: 8, padding: isMobile ? '7px 10px' : '7px 14px', cursor: 'pointer', flexShrink: 0 }}
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M6 1v10M1 6h10" stroke="white" strokeWidth="1.6" strokeLinecap="round"/>
           </svg>
-          {!isMobile && <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: '#fff' }}>Создать</span>}
+          {!isMobile && <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13, fontWeight: 600, color: 'var(--neutral-0)' }}>Создать</span>}
         </button>
       </div>
 
@@ -676,7 +676,7 @@ export default function BoardPage() {
       {filterLoading && (
         <>
           <style>{`@keyframes ft-shimmer{0%{background-position:-200% center}100%{background-position:200% center}}`}</style>
-          <div style={{ height: 2, backgroundImage: 'linear-gradient(90deg,#4F6EF7,#7C3AED,#4F6EF7)', backgroundSize: '200% 100%', borderRadius: 1, animation: 'ft-shimmer 1.2s linear infinite' }} />
+          <div style={{ height: 2, backgroundImage: 'linear-gradient(90deg,var(--brand-8),var(--brand-gold-9),var(--brand-8))', backgroundSize: '200% 100%', borderRadius: 1, animation: 'ft-shimmer 1.2s linear infinite' }} />
         </>
       )}
 
@@ -894,7 +894,7 @@ export default function BoardPage() {
           onClick={e => { if (e.target === e.currentTarget) { setWfEditorOpen(false); loadBoard(); } }}
           style={{
             position: 'fixed', inset: 0, zIndex: 400,
-            background: 'rgba(0,0,0,0.55)', display: 'flex',
+            background: 'var(--component-fill-neutral-soft-active)', display: 'flex',
             alignItems: 'center', justifyContent: 'center', padding: 24,
           }}
         >
@@ -902,20 +902,20 @@ export default function BoardPage() {
             width: 'min(92vw, 1200px)',
             height: 'min(88vh, 860px)',
             display: 'flex', flexDirection: 'column',
-            background: isDark ? '#0F1320' : '#FDFCFF',
-            borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+            background: isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)',
+            borderRadius: 14, boxShadow: 'var(--shadow-lg)',
           }}>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '18px 24px', borderBottom: `1px solid ${border}`,
               flexShrink: 0,
             }}>
-              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: isDark ? '#E2E8F8' : '#1A1A2E' }}>
+              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)' }}>
                 Колонки доски
               </span>
               <button
                 onClick={() => { setWfEditorOpen(false); loadBoard(); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#8B95B0' : '#9B96B8', display: 'flex', alignItems: 'center', padding: 4 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)', display: 'flex', alignItems: 'center', padding: 4 }}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>

@@ -112,3 +112,44 @@ Before writing any code that uses a library API:
 
 Key versions to double-check: Prisma client API, Express 4 vs 5 routing, Zod v3 schema methods.
 <!-- END:framework-versions -->
+
+<!-- BEGIN:sigma-design-system -->
+# Sigma Design System Skills
+
+This project includes Sigma design system skills as a Git submodule at `.skills`.
+
+For any UI, frontend, visual design, layout, theming, or component work:
+1. MUST read and use the relevant Sigma skill files before implementation.
+2. MUST follow Sigma design tokens exactly; do not invent replacement colors, spacing, radii, typography, shadows, or state values when a token exists.
+3. MUST follow Sigma theme rules exactly, including light/dark/inverted theme mapping, surface hierarchy, state mapping, and contrast requirements.
+4. MUST use the Sigma Button component rules exactly for all buttons, including size, emphasis, semantic, state, group, and accessibility recipes.
+5. MUST verify new or changed UI against these skill files before finishing.
+
+Required Sigma skills:
+
+```json
+{
+  "foundations-tokens": {
+    "slug": "foundations-tokens",
+    "name": "Design Tokens",
+    "category": "foundations",
+    "skillPath": ".skills/skills/foundations-tokens/SKILL.md",
+    "description": "MOEX design token system with decision guide (decision-guide.yaml), token values and recipes (tokens.yaml). Supports light/dark/inverted themes."
+  },
+  "foundations-themes": {
+    "slug": "foundations-themes",
+    "name": "Theme System",
+    "category": "foundations",
+    "skillPath": ".skills/skills/foundations-themes/SKILL.md",
+    "description": "MOEX theme system: light/dark themes with inverted variants, state mapping, surface hierarchy, contrast requirements"
+  },
+  "component-button": {
+    "slug": "component-button",
+    "name": "Button",
+    "category": "components",
+    "skillPath": ".skills/skills/component-button/SKILL.md",
+    "description": "Complete Button component: 4 sizes (SM/MD/LG/XL), 4 emphasis levels (solid/soft/outline/ghost), 6 semantics (brand/neutral/positive/negative/warning/info), all states, button groups, a11y. Full MOEX token recipes for light/dark themes."
+  }
+}
+```
+<!-- END:sigma-design-system -->

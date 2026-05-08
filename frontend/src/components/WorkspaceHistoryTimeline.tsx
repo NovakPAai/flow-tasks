@@ -7,25 +7,25 @@ import * as workspacesApi from '../api/workspaces';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  text: '#C8D0E8', muted: '#8B95B0', dim: '#4A5578',
-  line: '#1C2236', emptyText: '#4A5578',
+  text: 'var(--static-text-neutral-secondary)', muted: 'var(--static-text-neutral-tertiary)', dim: 'var(--neutral-8)',
+  line: 'var(--static-border-neutral-tertiary)', emptyText: 'var(--neutral-8)',
 };
 const LIGHT: C = {
-  text: '#1A1A2E', muted: '#6B7194', dim: '#9B96B8',
-  line: '#E8E5F0', emptyText: '#9B96B8',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dim: 'var(--static-text-neutral-tertiary)',
+  line: 'var(--static-border-neutral-tertiary)', emptyText: 'var(--static-text-neutral-tertiary)',
 };
 
 // ── Avatar helpers ─────────────────────────────────────────────────────────────
-const AVATAR_PALETTE = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+const AVATAR_PALETTE = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
 function avatarColor(name: string): string { return AVATAR_PALETTE[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTE.length]; }
 function avatarInitials(name: string): string { return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'; }
 
 // ── Action config ──────────────────────────────────────────────────────────────
 const ACTION_COLOR: Record<string, string> = {
-  member_added: '#34D399', member_removed: '#F87171', member_role_changed: '#FBBF24',
-  workflow_created: '#4F6EF7', workflow_deleted: '#F87171',
-  workspace_created: '#4F6EF7', workspace_updated: '#8B9DC8',
-  board_created: '#34D399', board_deleted: '#F87171',
+  member_added: 'var(--success-7)', member_removed: 'var(--error-8)', member_role_changed: 'var(--warning-5)',
+  workflow_created: 'var(--brand-8)', workflow_deleted: 'var(--error-8)',
+  workspace_created: 'var(--brand-8)', workspace_updated: 'var(--static-text-neutral-tertiary)',
+  board_created: 'var(--success-7)', board_deleted: 'var(--error-8)',
 };
 
 // SVG icons per action type
@@ -141,8 +141,8 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
       <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}>
         <div style={{
           width: 20, height: 20, borderRadius: '50%',
-          border: `2px solid ${isDark ? '#1C2236' : '#E8E5F0'}`,
-          borderTopColor: '#4F6EF7',
+          border: `2px solid ${isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)'}`,
+          borderTopColor: 'var(--brand-8)',
           animation: 'spin 0.7s linear infinite',
         }} />
       </div>
@@ -154,14 +154,14 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
       <div style={{ textAlign: 'center', padding: '32px 0' }}>
         <div style={{
           width: 40, height: 40, borderRadius: '50%',
-          background: isDark ? '#0F1320' : '#F5F3FF',
-          border: `1px solid ${isDark ? '#1C2236' : '#E8E5F0'}`,
+          background: isDark ? 'var(--static-background-lightest)' : 'var(--static-background-base)',
+          border: `1px solid ${isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 10px',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              stroke={isDark ? '#4A5578' : '#9B96B8'} strokeWidth="1.5" strokeLinecap="round"/>
+              stroke={isDark ? 'var(--neutral-8)' : 'var(--static-text-neutral-tertiary)'} strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
         <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.emptyText }}>
@@ -174,7 +174,7 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
   return (
     <div style={{ paddingTop: 8 }}>
       {events.map((ev, i) => {
-        const dotColor = ACTION_COLOR[ev.action] ?? '#4A5578';
+        const dotColor = ACTION_COLOR[ev.action] ?? 'var(--neutral-8)';
         const svgPath = ACTION_SVG[ev.action];
         const isLast = i === events.length - 1;
         return (
@@ -189,7 +189,7 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
             {/* Action dot */}
             <div style={{
               width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-              background: isDark ? '#0F1320' : '#FDFCFF',
+              background: isDark ? 'var(--static-background-lightest)' : 'var(--static-background-lightest)',
               border: `1.5px solid ${dotColor}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginTop: 1,
@@ -211,7 +211,7 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 marginTop: 2,
               }}>
-                <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: '#fff' }}>
+                <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: 'var(--neutral-0)' }}>
                   {avatarInitials(ev.user.name)}
                 </span>
               </div>
@@ -235,8 +235,8 @@ export default function WorkspaceHistoryTimeline({ workspaceId }: Props) {
             disabled={loadingMore}
             style={{
               fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
-              color: '#4F6EF7', background: 'transparent',
-              border: '1px solid #4F6EF7', borderRadius: 7,
+              color: 'var(--brand-8)', background: 'transparent',
+              border: '1px solid var(--brand-8)', borderRadius: 7,
               padding: '5px 18px', cursor: 'pointer',
               opacity: loadingMore ? 0.5 : 1,
             }}

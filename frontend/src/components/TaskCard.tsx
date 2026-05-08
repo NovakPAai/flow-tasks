@@ -5,22 +5,22 @@ import type { Task } from '../types';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#0F1320', border: '#1C2236', borderHover: '#4F6EF7',
-  key: '#484F58', title: '#E2E8F8', titleDone: '#484F58', meta: '#484F58',
+  bg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)', borderHover: 'var(--brand-8)',
+  key: 'var(--neutral-8)', title: 'var(--static-text-neutral-primary)', titleDone: 'var(--neutral-8)', meta: 'var(--neutral-8)',
 };
 const LIGHT: C = {
-  bg: '#FFFFFF', border: '#E8E5F0', borderHover: '#4F6EF7',
-  key: '#9B96B8', title: '#1A1A2E', titleDone: '#C4C0D8', meta: '#9B96B8',
+  bg: 'var(--neutral-0)', border: 'var(--static-border-neutral-tertiary)', borderHover: 'var(--brand-8)',
+  key: 'var(--static-text-neutral-tertiary)', title: 'var(--static-text-neutral-primary)', titleDone: 'var(--neutral-6)', meta: 'var(--static-text-neutral-tertiary)',
 };
 
 const PRIO: Record<string, { bg: string; text: string; label: string }> = {
-  HIGH:   { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444', label: 'HIGH' },
-  MEDIUM: { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B', label: 'MED' },
-  LOW:    { bg: 'rgba(107,114,128,0.12)', text: '#6B7280', label: 'LOW' },
+  HIGH:   { bg: 'var(--component-fill-negative-soft-hover)',   text: 'var(--error-10)', label: 'HIGH' },
+  MEDIUM: { bg: 'var(--component-fill-warning-soft-hover)',  text: 'var(--warning-6)', label: 'MED' },
+  LOW:    { bg: 'var(--component-fill-neutral-soft-default)', text: 'var(--neutral-8)', label: 'LOW' },
 };
 
 function avatarColor(name: string): string {
-  const palette = ['#4F6EF7','#8B5CF6','#22C55E','#F59E0B','#EC4899','#EF4444','#0EA5E9'];
+  const palette = ['var(--brand-8)','var(--brand-gold-8)','var(--success-8)','var(--warning-6)','var(--brand-7)','var(--error-10)','var(--info-8)'];
   return palette[(name?.charCodeAt(0) ?? 0) % palette.length];
 }
 
@@ -51,13 +51,13 @@ export default function TaskCard({ task, onClick, isSelected = false, onSelect }
       onClick={onClick}
       style={{
         background: c.bg,
-        border: `1px solid ${isSelected ? '#4F6EF7' : c.border}`,
+        border: `1px solid ${isSelected ? 'var(--brand-8)' : c.border}`,
         borderRadius: 10, padding: '12px 14px',
         cursor: 'pointer', userSelect: 'none', transition: 'border-color 0.15s',
-        outline: isSelected ? '2px solid rgba(79,110,247,0.25)' : 'none',
+        outline: isSelected ? '2px solid var(--component-border-brand-medium)' : 'none',
       }}
-      onMouseEnter={e => { (e.currentTarget.style.borderColor = isSelected ? '#4F6EF7' : c.borderHover); }}
-      onMouseLeave={e => { (e.currentTarget.style.borderColor = isSelected ? '#4F6EF7' : c.border); }}
+      onMouseEnter={e => { (e.currentTarget.style.borderColor = isSelected ? 'var(--brand-8)' : c.borderHover); }}
+      onMouseLeave={e => { (e.currentTarget.style.borderColor = isSelected ? 'var(--brand-8)' : c.border); }}
     >
       {/* Key + priority badge */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -67,15 +67,15 @@ export default function TaskCard({ task, onClick, isSelected = false, onSelect }
               onClick={e => { e.stopPropagation(); onSelect(task.id); }}
               style={{
                 width: 14, height: 14, borderRadius: 3, flexShrink: 0,
-                border: `1.5px solid ${isSelected ? '#4F6EF7' : c.key}`,
-                background: isSelected ? '#4F6EF7' : 'transparent',
+                border: `1.5px solid ${isSelected ? 'var(--brand-8)' : c.key}`,
+                background: isSelected ? 'var(--brand-8)' : 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', transition: 'all 0.12s',
               }}
             >
               {isSelected && (
                 <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                  <path d="M1 3l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M1 3l2 2 4-4" stroke="var(--neutral-0)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               )}
             </div>
@@ -103,7 +103,7 @@ export default function TaskCard({ task, onClick, isSelected = false, onSelect }
         textDecoration: isDone ? 'line-through' : 'none',
       }}>
         {isDone && (
-          <span style={{ fontSize: 11, marginRight: 4, color: '#22C55E' }}>✓</span>
+          <span style={{ fontSize: 11, marginRight: 4, color: 'var(--success-8)' }}>✓</span>
         )}
         {task.title}
       </p>
@@ -133,7 +133,7 @@ export default function TaskCard({ task, onClick, isSelected = false, onSelect }
           {due && (
             <span
               title={due.toLocaleDateString('ru-RU')}
-              style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: isOverdue ? '#EF4444' : c.meta }}
+              style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: isOverdue ? 'var(--error-10)' : c.meta }}
             >
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
                 <rect x="0.5" y="1.5" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
@@ -163,7 +163,7 @@ export default function TaskCard({ task, onClick, isSelected = false, onSelect }
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: '#fff' }}>
+            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 8, fontWeight: 700, color: 'var(--neutral-0)' }}>
               {avatarInitials(task.assignee.name)}
             </span>
           </div>

@@ -19,10 +19,10 @@ function initials(name: string): string {
 function GridIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-      <rect x="1" y="1" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="9" y="1" width="6" height="6" rx="1.5" fill="#FFFFFF" opacity="0.55"/>
-      <rect x="1" y="9" width="6" height="6" rx="1.5" fill="#FFFFFF" opacity="0.55"/>
-      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
+      <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--neutral-0)"/>
+      <rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--neutral-0)" opacity="0.55"/>
+      <rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--neutral-0)" opacity="0.55"/>
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--neutral-0)"/>
     </svg>
   );
 }
@@ -39,12 +39,12 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminU
   navBg: string; border: string; textPrimary: string; textMuted: string;
   onClose: () => void;
 }) {
-  const menuBg = navBg === '#0A0D1A' ? '#0F1320' : '#FFFFFF';
+  const menuBg = navBg === 'var(--static-background-base)' ? 'var(--static-background-lightest)' : 'var(--neutral-0)';
   return (
     <div
       style={{
         backgroundColor: menuBg, border: `1px solid ${border}`, borderRadius: 10,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 200,
+        boxShadow: 'var(--shadow-md)', minWidth: 200,
         padding: '6px 0', position: 'absolute', right: 0, top: 'calc(100% + 8px)', zIndex: 200,
       }}
       onClick={e => e.stopPropagation()}
@@ -70,7 +70,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminU
       </button>
       {isSuperadmin && (
         <button onClick={() => { onAdminUsers(); onClose(); }} style={{
-          background: 'none', border: 'none', borderRadius: 6, color: '#4F6EF7',
+          background: 'none', border: 'none', borderRadius: 6, color: 'var(--brand-8)',
           cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
           fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%', fontWeight: 500,
         }}>
@@ -88,7 +88,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminU
       )}
       <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
       <button onClick={() => { onLogout(); onClose(); }} style={{
-        background: 'none', border: 'none', borderRadius: 6, color: '#F87171',
+        background: 'none', border: 'none', borderRadius: 6, color: 'var(--error-8)',
         cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
         fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
       }}>
@@ -106,27 +106,27 @@ function WorkspaceSelector({ workspaces, current, onSelect, navBg, border, textP
   navBg: string; border: string; textPrimary: string;
   onClose: () => void;
 }) {
-  const menuBg = navBg === '#0A0D1A' ? '#0F1320' : '#FFFFFF';
+  const menuBg = navBg === 'var(--static-background-base)' ? 'var(--static-background-lightest)' : 'var(--neutral-0)';
   return (
     <div
       style={{
         backgroundColor: menuBg, border: `1px solid ${border}`, borderRadius: 10,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 200,
+        boxShadow: 'var(--shadow-md)', minWidth: 200,
         padding: '6px 0', position: 'absolute', left: 0, top: 'calc(100% + 8px)', zIndex: 200,
       }}
       onClick={e => e.stopPropagation()}
     >
       {workspaces.map(ws => (
         <button key={ws.id} onClick={() => { onSelect(ws.slug); onClose(); }} style={{
-          alignItems: 'center', background: ws.id === current?.id ? (navBg === '#0A0D1A' ? '#1C2236' : '#EDE9FE') : 'none',
+          alignItems: 'center', background: ws.id === current?.id ? (navBg === 'var(--static-background-base)' ? 'var(--static-border-neutral-tertiary)' : 'var(--component-fill-brand-soft-default)') : 'none',
           border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex',
           gap: 8, padding: '8px 12px', textAlign: 'left', width: '100%',
         }}>
           <div style={{
-            alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 4,
+            alignItems: 'center', backgroundColor: 'var(--brand-8)', borderRadius: 4,
             display: 'flex', flexShrink: 0, height: 18, justifyContent: 'center', width: 18,
           }}>
-            <span style={{ color: '#FFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 9, fontWeight: 700 }}>
+            <span style={{ color: 'var(--neutral-0)', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 9, fontWeight: 700 }}>
               {ws.name[0]?.toUpperCase()}
             </span>
           </div>
@@ -156,18 +156,18 @@ function mfaGraceBanner(workspace: { requireMfa?: boolean; mfaGraceUntil?: strin
       role="alert"
       aria-live="polite"
       style={{
-        background: 'rgba(245,158,11,0.12)', borderBottom: '1px solid rgba(245,158,11,0.25)',
+        background: 'var(--component-fill-warning-soft-hover)', borderBottom: '1px solid var(--component-border-warning-medium)',
         paddingTop: 8, paddingBottom: 8,
         paddingLeft: 'max(24px, env(safe-area-inset-left))',
         paddingRight: 'max(24px, env(safe-area-inset-right))',
-        fontSize: 12, color: '#F59E0B',
+        fontSize: 12, color: 'var(--warning-6)',
         display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap',
         fontFamily: '"Inter",system-ui,sans-serif',
       }}
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <path d="M7 1.5L1 12.5h12L7 1.5z" stroke="#F59E0B" strokeWidth="1.2" strokeLinejoin="round"/>
-        <path d="M7 5.5v3M7 10h.01" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M7 1.5L1 12.5h12L7 1.5z" stroke="var(--warning-6)" strokeWidth="1.2" strokeLinejoin="round"/>
+        <path d="M7 5.5v3M7 10h.01" stroke="var(--warning-6)" strokeWidth="1.2" strokeLinecap="round"/>
       </svg>
       Требуется настроить двухфакторную аутентификацию — осталось {daysLeft} {pluralDays(daysLeft)}
     </div>
@@ -192,17 +192,17 @@ export default function AppLayout({ children }: Props) {
 
   // ── Design tokens ──────────────────────────────────────────────────────────
   const isDark = mode !== 'light';
-  const navBg      = isDark ? '#0A0D1A' : '#FDFCFF';
-  const navBorder  = isDark ? '#1C2236' : '#E8E5F0';
-  const sepColor   = isDark ? '#1C2236' : '#E8E5F0';
-  const logoText   = isDark ? '#E2E8F8' : '#1A1A2E';
-  const wsSelectorBg     = isDark ? '#0F1320' : '#F5F3FF';
-  const wsSelectorBorder = isDark ? '#1C2236' : '#E8E5F0';
-  const wsSelectorText   = isDark ? '#E2E8F8' : '#1A1A2E';
-  const tabActiveBg   = isDark ? '#1C2236' : '#EDE9FE';
-  const tabActiveText = '#4F6EF7';
-  const tabIdleText   = isDark ? '#8B95B0' : '#6B7194';
-  const rootBg        = isDark ? '#03050F' : '#F5F3FF';
+  const navBg      = isDark ? 'var(--static-background-base)' : 'var(--static-background-lightest)';
+  const navBorder  = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const sepColor   = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const logoText   = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const wsSelectorBg     = isDark ? 'var(--static-background-lightest)' : 'var(--static-background-base)';
+  const wsSelectorBorder = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const wsSelectorText   = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const tabActiveBg   = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--component-fill-brand-soft-default)';
+  const tabActiveText = 'var(--brand-8)';
+  const tabIdleText   = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const rootBg        = isDark ? 'var(--static-background-base)' : 'var(--static-background-base)';
 
   // ── Logic ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -264,10 +264,10 @@ export default function AppLayout({ children }: Props) {
         <div
           onClick={() => navigate('/workspaces')}
           style={{ alignItems: 'center', borderRadius: 8, cursor: 'pointer', display: 'flex', gap: 8, padding: '4px 6px', transition: 'background 0.15s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = isDark ? 'var(--component-fill-neutral-soft-hover)' : 'var(--component-fill-neutral-ghost-hover)'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = ''; }}
         >
-          <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 8, display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}>
+          <div style={{ alignItems: 'center', backgroundColor: 'var(--brand-8)', borderRadius: 8, display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}>
             <GridIcon/>
           </div>
           {bp === 'desktop' && (
@@ -292,8 +292,8 @@ export default function AppLayout({ children }: Props) {
                   cursor: 'pointer', display: 'flex', gap: 6, paddingBlock: 5, paddingInline: 12,
                 }}
               >
-                <div style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: 4, display: 'flex', flexShrink: 0, height: 18, justifyContent: 'center', width: 18 }}>
-                  <span style={{ color: '#FFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 9, fontWeight: 700 }}>
+                <div style={{ alignItems: 'center', backgroundColor: 'var(--brand-8)', borderRadius: 4, display: 'flex', flexShrink: 0, height: 18, justifyContent: 'center', width: 18 }}>
+                  <span style={{ color: 'var(--neutral-0)', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 9, fontWeight: 700 }}>
                     {current.name[0]?.toUpperCase()}
                   </span>
                 </div>
@@ -361,8 +361,8 @@ export default function AppLayout({ children }: Props) {
           onClick={() => setSearchOpen(true)}
           title="Поиск (Cmd+K)"
           style={{
-            alignItems: 'center', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
-            border: `1px solid ${isDark ? '#1C2236' : '#E8E5F0'}`, borderRadius: 8,
+            alignItems: 'center', background: isDark ? 'var(--component-fill-neutral-ghost-hover)' : 'var(--component-fill-neutral-ghost-hover)',
+            border: `1px solid ${isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)'}`, borderRadius: 8,
             color: tabIdleText, cursor: 'pointer', display: 'flex',
             gap: 6, padding: '5px 10px', flexShrink: 0,
           }}
@@ -375,8 +375,8 @@ export default function AppLayout({ children }: Props) {
             <>
               <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, lineHeight: '16px' }}>Поиск</span>
               <kbd style={{
-                background: isDark ? '#1C2236' : '#EDE9FE',
-                border: `1px solid ${isDark ? '#2D3748' : '#D1C8EC'}`,
+                background: isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--component-fill-brand-soft-default)',
+                border: `1px solid ${isDark ? 'var(--component-border-neutral-medium)' : 'var(--component-border-neutral-medium)'}`,
                 borderRadius: 4, color: tabIdleText,
                 fontSize: 10, padding: '1px 4px',
               }}>
@@ -425,9 +425,9 @@ export default function AppLayout({ children }: Props) {
           <div
             data-testid="user-avatar"
             onClick={e => { e.stopPropagation(); setUserMenuOpen(v => !v); setWsMenuOpen(false); }}
-            style={{ alignItems: 'center', backgroundColor: '#4F6EF7', borderRadius: '50%', cursor: 'pointer', display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}
+            style={{ alignItems: 'center', backgroundColor: 'var(--brand-8)', borderRadius: '50%', cursor: 'pointer', display: 'flex', flexShrink: 0, height: 32, justifyContent: 'center', width: 32 }}
           >
-            <span style={{ color: '#FFFFFF', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 700, lineHeight: '16px' }}>
+            <span style={{ color: 'var(--neutral-0)', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 12, fontWeight: 700, lineHeight: '16px' }}>
               {userInitials}
             </span>
           </div>

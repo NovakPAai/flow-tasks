@@ -8,18 +8,18 @@ import type { ApiKeyRow, CreatedApiKey } from '../api/integrations';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  bg: '#03050F', cardBg: '#0F1320', border: '#1C2236',
-  text: '#E2E8F8', muted: '#8B949E', label: '#8B95B0',
-  inputBg: '#161B22', inputBorder: '#30363D', inputText: '#E2E8F8',
-  accent: '#4F6EF7', danger: '#F87171', warning: '#FBBF24',
-  warnBg: '#1C1500', warnBorder: '#78350F',
+  bg: 'var(--static-background-base)', cardBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-light)', inputBorder: 'var(--component-border-neutral-medium)', inputText: 'var(--static-text-neutral-primary)',
+  accent: 'var(--brand-8)', danger: 'var(--error-8)', warning: 'var(--warning-5)',
+  warnBg: 'var(--component-fill-warning-soft-default)', warnBorder: 'var(--component-border-warning-medium)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', cardBg: '#FDFCFF', border: '#E8E5F0',
-  text: '#1A1A2E', muted: '#6B7194', label: '#6B7194',
-  inputBg: '#F9FAFB', inputBorder: '#E8E5F0', inputText: '#1A1A2E',
-  accent: '#4F6EF7', danger: '#EF4444', warning: '#D97706',
-  warnBg: '#FFFBEB', warnBorder: '#FDE68A',
+  bg: 'var(--static-background-base)', cardBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', label: 'var(--static-text-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)', inputText: 'var(--static-text-neutral-primary)',
+  accent: 'var(--brand-8)', danger: 'var(--error-10)', warning: 'var(--warning-8)',
+  warnBg: 'var(--component-fill-warning-soft-default)', warnBorder: 'var(--component-border-warning-medium)',
 };
 
 const INTER = '"Inter", system-ui, sans-serif';
@@ -131,7 +131,7 @@ function ApiKeysSection({ c }: { c: C }) {
           style={{
             ...btnBase,
             backgroundColor: label.trim() && !creating ? c.accent : `${c.accent}66`,
-            color: '#fff',
+            color: 'var(--neutral-0)',
             cursor: label.trim() && !creating ? 'pointer' : 'not-allowed',
             whiteSpace: 'nowrap',
           }}
@@ -175,7 +175,7 @@ function ApiKeysSection({ c }: { c: C }) {
               onClick={copyKey}
               style={{
                 ...btnBase,
-                backgroundColor: c.accent, color: '#fff',
+                backgroundColor: c.accent, color: 'var(--neutral-0)',
                 padding: '9px 16px', whiteSpace: 'nowrap',
               }}
             >
@@ -226,7 +226,7 @@ function ApiKeysSection({ c }: { c: C }) {
                     <span style={{ color: c.danger, fontFamily: INTER, fontSize: 12 }}>Удалить?</span>
                     <button
                       onClick={() => handleDelete(key.id)}
-                      style={{ ...btnBase, backgroundColor: c.danger, color: '#fff', padding: '7px 14px' }}
+                      style={{ ...btnBase, backgroundColor: c.danger, color: 'var(--neutral-0)', padding: '7px 14px' }}
                     >
                       Да
                     </button>
@@ -311,7 +311,7 @@ export default function ProfilePage() {
             alignItems: 'center', backgroundColor: c.accent, borderRadius: '50%',
             display: 'flex', flexShrink: 0, height: 64, justifyContent: 'center', width: 64,
           }}>
-            <span style={{ color: '#FFFFFF', fontFamily: INTER, fontSize: 22, fontWeight: 700 }}>
+            <span style={{ color: 'var(--neutral-0)', fontFamily: INTER, fontSize: 22, fontWeight: 700 }}>
               {avatarInitials(name || user.name)}
             </span>
           </div>
@@ -379,7 +379,7 @@ export default function ProfilePage() {
           >
             <span style={{
               position: 'absolute', top: 3, left: emailNotifications ? 21 : 3,
-              width: 16, height: 16, borderRadius: '50%', background: '#fff',
+              width: 16, height: 16, borderRadius: '50%', background: 'var(--neutral-0)',
               transition: 'left 0.2s',
             }} />
           </button>
@@ -391,7 +391,7 @@ export default function ProfilePage() {
           disabled={!hasChanges || saving}
           style={{
             backgroundColor: hasChanges && !saving ? c.accent : `${c.accent}66`,
-            border: 'none', borderRadius: 8, color: '#FFFFFF',
+            border: 'none', borderRadius: 8, color: 'var(--neutral-0)',
             cursor: hasChanges && !saving ? 'pointer' : 'not-allowed',
             fontFamily: INTER, fontSize: 13, fontWeight: 600,
             padding: '10px 24px', transition: 'background-color 0.15s',

@@ -7,26 +7,26 @@ import * as labelsApi from '../api/labels';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  triggerText: '#4A5578', triggerHover: '#8B95B0',
-  dropdownBg: '#0F1320', dropdownBorder: '#1E2640',
-  sectionLabel: '#4A5578', emptyText: '#4A5578',
-  labelText: '#E2E8F8',
-  checkBg: 'transparent', checkBorder: '#2D3748', checkActive: '#4F6EF7',
-  inputBg: '#0F1320', inputBorder: '#1E2640', inputBorderFocus: '#4F6EF7', inputText: '#E2E8F8', inputPlaceholder: '#4A5578',
-  createText: '#4A5578', createHover: '#8B95B0',
-  btnBg: '#4F6EF7', btnText: '#fff',
-  cancelText: '#4A5578',
+  triggerText: 'var(--neutral-8)', triggerHover: 'var(--static-text-neutral-tertiary)',
+  dropdownBg: 'var(--static-background-lightest)', dropdownBorder: 'var(--static-border-neutral-tertiary)',
+  sectionLabel: 'var(--neutral-8)', emptyText: 'var(--neutral-8)',
+  labelText: 'var(--static-text-neutral-primary)',
+  checkBg: 'transparent', checkBorder: 'var(--component-border-neutral-medium)', checkActive: 'var(--brand-8)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--static-border-neutral-tertiary)', inputBorderFocus: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)', inputPlaceholder: 'var(--neutral-8)',
+  createText: 'var(--neutral-8)', createHover: 'var(--static-text-neutral-tertiary)',
+  btnBg: 'var(--brand-8)', btnText: 'var(--neutral-0)',
+  cancelText: 'var(--neutral-8)',
 };
 const LIGHT: C = {
-  triggerText: '#9B96B8', triggerHover: '#6B7194',
-  dropdownBg: '#FDFCFF', dropdownBorder: '#E8E5F0',
-  sectionLabel: '#9B96B8', emptyText: '#9B96B8',
-  labelText: '#1A1A2E',
-  checkBg: '#FDFCFF', checkBorder: '#D1C8EC', checkActive: '#4F6EF7',
-  inputBg: '#F5F3FF', inputBorder: '#E8E5F0', inputBorderFocus: '#4F6EF7', inputText: '#1A1A2E', inputPlaceholder: '#9B96B8',
-  createText: '#9B96B8', createHover: '#6B7194',
-  btnBg: '#4F6EF7', btnText: '#fff',
-  cancelText: '#9B96B8',
+  triggerText: 'var(--static-text-neutral-tertiary)', triggerHover: 'var(--static-text-neutral-tertiary)',
+  dropdownBg: 'var(--static-background-lightest)', dropdownBorder: 'var(--static-border-neutral-tertiary)',
+  sectionLabel: 'var(--static-text-neutral-tertiary)', emptyText: 'var(--static-text-neutral-tertiary)',
+  labelText: 'var(--static-text-neutral-primary)',
+  checkBg: 'var(--static-background-lightest)', checkBorder: 'var(--component-border-neutral-medium)', checkActive: 'var(--brand-8)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--static-border-neutral-tertiary)', inputBorderFocus: 'var(--brand-8)', inputText: 'var(--static-text-neutral-primary)', inputPlaceholder: 'var(--static-text-neutral-tertiary)',
+  createText: 'var(--static-text-neutral-tertiary)', createHover: 'var(--static-text-neutral-tertiary)',
+  btnBg: 'var(--brand-8)', btnText: 'var(--neutral-0)',
+  cancelText: 'var(--static-text-neutral-tertiary)',
 };
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ export default function LabelPicker({
   const [open, setOpen]         = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName]   = useState('');
-  const [newColor, setNewColor] = useState('#4F6EF7');
+  const [newColor, setNewColor] = useState('#FF0508');
   const [saving, setSaving]     = useState(false);
 
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -89,7 +89,7 @@ export default function LabelPicker({
       onWorkspaceLabelCreated(label);
       const updated = await labelsApi.addLabelToTask(taskId, label.id);
       onLabelsChanged(updated);
-      setNewName(''); setNewColor('#4F6EF7'); setCreating(false);
+      setNewName(''); setNewColor('#FF0508'); setCreating(false);
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string } } };
       message.error(err?.response?.data?.error ?? 'Не удалось создать метку');
@@ -133,8 +133,8 @@ export default function LabelPicker({
           background: c.dropdownBg, border: `1px solid ${c.dropdownBorder}`,
           borderRadius: 10, padding: '12px',
           boxShadow: isDark
-            ? '0 8px 24px rgba(0,0,0,0.5)'
-            : '0 8px 24px rgba(79,110,247,0.08)',
+            ? 'var(--shadow-lg)'
+            : 'var(--shadow-sm)',
         }}>
           {/* Section header */}
           <div style={{
@@ -180,7 +180,7 @@ export default function LabelPicker({
                 }}>
                   {checked && (
                     <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                      <path d="M1 4l2 2 4-4" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M1 4l2 2 4-4" stroke="var(--neutral-0)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </div>

@@ -60,18 +60,18 @@ const TL_W = 1400;
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#03050F', leftBg: '#0F1320', border: '#1C2236',
-  text: '#E2E8F8', muted: '#8B95B0', dimmed: '#484F58',
-  hdrBg: '#0F1320', rowEven: 'rgba(255,255,255,.012)',
-  curWeek: 'rgba(79,110,247,.05)', today: '#EF4444',
-  toolbarBg: '#03050F', chip: '#1C2236', chipText: '#8B95B0', accent: '#4F6EF7',
+  bg: 'var(--static-background-base)', leftBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dimmed: 'var(--neutral-8)',
+  hdrBg: 'var(--static-background-lightest)', rowEven: 'var(--component-fill-neutral-ghost-hover)',
+  curWeek: 'var(--component-fill-brand-soft-default)', today: 'var(--error-10)',
+  toolbarBg: 'var(--static-background-base)', chip: 'var(--static-border-neutral-tertiary)', chipText: 'var(--static-text-neutral-tertiary)', accent: 'var(--brand-8)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', leftBg: '#FDFCFF', border: '#E8E5F0',
-  text: '#1A1A2E', muted: '#6B7194', dimmed: '#9B96B8',
-  hdrBg: '#FDFCFF', rowEven: 'rgba(79,110,247,.025)',
-  curWeek: 'rgba(79,110,247,.07)', today: '#EF4444',
-  toolbarBg: '#F5F3FF', chip: '#EDE9FE', chipText: '#7C6FA8', accent: '#4F6EF7',
+  bg: 'var(--static-background-base)', leftBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', dimmed: 'var(--static-text-neutral-tertiary)',
+  hdrBg: 'var(--static-background-lightest)', rowEven: 'var(--component-fill-brand-soft-default)',
+  curWeek: 'var(--component-fill-brand-soft-hover)', today: 'var(--error-10)',
+  toolbarBg: 'var(--static-background-base)', chip: 'var(--component-fill-brand-soft-default)', chipText: 'var(--static-text-neutral-tertiary)', accent: 'var(--brand-8)',
 };
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -88,16 +88,16 @@ const CROW_H = 36;
 interface TipState { task: Task; x: number; y: number }
 
 const PRIO_COLOR: Record<string, string> = {
-  HIGH: '#EF4444', MEDIUM: '#F59E0B', LOW: '#10B981',
+  HIGH: 'var(--error-10)', MEDIUM: 'var(--warning-6)', LOW: 'var(--success-8)',
 };
 const PRIO_LABEL: Record<string, string> = {
   HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий',
 };
 const STATUS_CHIP: Record<string, { bg: string; text: string }> = {
-  OPEN:        { bg: 'rgba(79,110,247,.18)',  text: '#818CF8' },
-  IN_PROGRESS: { bg: 'rgba(245,158,11,.18)',  text: '#FBB000' },
-  DONE:        { bg: 'rgba(16,185,129,.18)',  text: '#34D399' },
-  CANCELLED:   { bg: 'rgba(239,68,68,.16)',   text: '#F87171' },
+  OPEN:        { bg: 'var(--component-fill-brand-soft-hover)',  text: 'var(--info-8)' },
+  IN_PROGRESS: { bg: 'var(--component-fill-warning-soft-hover)',  text: 'var(--warning-6)' },
+  DONE:        { bg: 'var(--component-fill-positive-soft-hover)',  text: 'var(--success-7)' },
+  CANCELLED:   { bg: 'var(--component-fill-negative-soft-hover)',   text: 'var(--error-8)' },
 };
 
 function BarTooltip({ tip, isDark, statuses }: {
@@ -106,11 +106,11 @@ function BarTooltip({ tip, isDark, statuses }: {
   statuses: WorkflowStatus[];
 }) {
   const { task, x, y } = tip;
-  const bg     = isDark ? '#161C30' : '#FFFFFF';
-  const border = isDark ? '#1C2236' : '#E8E5F0';
-  const text   = isDark ? '#E2E8F8' : '#1A1A2E';
-  const muted  = isDark ? '#8B95B0' : '#6B7194';
-  const dimmed = isDark ? '#484F58' : '#9B96B8';
+  const bg     = isDark ? 'var(--static-background-light)' : 'var(--neutral-0)';
+  const border = isDark ? 'var(--static-border-neutral-tertiary)' : 'var(--static-border-neutral-tertiary)';
+  const text   = isDark ? 'var(--static-text-neutral-primary)' : 'var(--static-text-neutral-primary)';
+  const muted  = isDark ? 'var(--static-text-neutral-tertiary)' : 'var(--static-text-neutral-tertiary)';
+  const dimmed = isDark ? 'var(--neutral-8)' : 'var(--static-text-neutral-tertiary)';
 
   const start      = parseDate(task.startDate);
   const end        = parseDate(task.dueDate);
@@ -135,7 +135,7 @@ function BarTooltip({ tip, isDark, statuses }: {
           const ms     = Math.max(0, +segEnd - +new Date(seg.startedAt));
           const pct    = Math.round(ms / totalMs * 100);
           const st     = statusMap.get(seg.statusId);
-          return { name: st?.name ?? '?', color: st?.color ?? '#8B95B0', days: Math.round(ms / DAY_MS), pct, ongoing: !seg.endedAt };
+          return { name: st?.name ?? '?', color: st?.color ?? 'var(--static-text-neutral-tertiary)', days: Math.round(ms / DAY_MS), pct, ongoing: !seg.endedAt };
         });
         // Хвост: запланированное оставшееся время
         const last = history[history.length - 1];
@@ -144,7 +144,7 @@ function BarTooltip({ tip, isDark, statuses }: {
           const tailMs  = +end - +today;
           const tailPct = Math.round(tailMs / totalMs * 100);
           const st      = statusMap.get(last.statusId);
-          tailSeg = { color: st?.color ?? '#8B95B0', pct: tailPct, days: Math.round(tailMs / DAY_MS) };
+          tailSeg = { color: st?.color ?? 'var(--static-text-neutral-tertiary)', pct: tailPct, days: Math.round(tailMs / DAY_MS) };
         }
         return { segs, tailSeg };
       })()
@@ -161,20 +161,20 @@ function BarTooltip({ tip, isDark, statuses }: {
       position: 'fixed', left, top, width: W, zIndex: 9999,
       background: bg, border: `1px solid ${border}`,
       borderRadius: 10, padding: '12px 14px',
-      boxShadow: '0 8px 32px rgba(0,0,0,.35)',
+      boxShadow: 'var(--shadow-lg)',
       fontFamily: '"Inter",system-ui,sans-serif',
       pointerEvents: 'none',
     }}>
 
       {/* Просрочка */}
       {overdue && (
-        <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(239,68,68,.1)', border:'1px solid rgba(239,68,68,.3)', borderRadius:6, padding:'5px 9px', marginBottom:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6, background:'var(--component-fill-negative-soft-default)', border:'1px solid var(--component-border-negative-medium)', borderRadius:6, padding:'5px 9px', marginBottom:10 }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <circle cx="6" cy="6" r="5" stroke="#F87171" strokeWidth="1.3"/>
-            <line x1="6" y1="3.5" x2="6" y2="6.5" stroke="#F87171" strokeWidth="1.3" strokeLinecap="round"/>
-            <circle cx="6" cy="8.5" r=".75" fill="#F87171"/>
+            <circle cx="6" cy="6" r="5" stroke="var(--error-8)" strokeWidth="1.3"/>
+            <line x1="6" y1="3.5" x2="6" y2="6.5" stroke="var(--error-8)" strokeWidth="1.3" strokeLinecap="round"/>
+            <circle cx="6" cy="8.5" r=".75" fill="var(--error-8)"/>
           </svg>
-          <span style={{ fontSize:12, fontWeight:600, color:'#F87171' }}>Просрочено на {overdueD} дн.</span>
+          <span style={{ fontSize:12, fontWeight:600, color:'var(--error-8)' }}>Просрочено на {overdueD} дн.</span>
         </div>
       )}
 
@@ -212,8 +212,8 @@ function BarTooltip({ tip, isDark, statuses }: {
       {/* Исполнитель */}
       {task.assignee && (
         <div style={{ display:'flex', alignItems:'center', gap:6, color:muted, fontSize:11.5, marginBottom: historySegs || childCount > 0 ? 0 : 0 }}>
-          <div style={{ width:18, height:18, borderRadius:'50%', background:'#4F6EF7', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <span style={{ fontSize:8, fontWeight:700, color:'#fff' }}>{task.assignee.name[0]?.toUpperCase()}</span>
+          <div style={{ width:18, height:18, borderRadius:'50%', background:'var(--brand-8)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <span style={{ fontSize:8, fontWeight:700, color:'var(--neutral-0)' }}>{task.assignee.name[0]?.toUpperCase()}</span>
           </div>
           {task.assignee.name}
         </div>
@@ -391,7 +391,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
   // ── Status bar color ───────────────────────────────────────────────────────
   function barColor(task: Task): { bg: string; border: string } {
-    const color = task.status?.color ?? '#4F6EF7';
+    const color = task.status?.color ?? 'var(--brand-8)';
     const cat   = task.status?.category ?? 'OPEN';
     const alpha = cat === 'DONE' ? '.62' : cat === 'IN_PROGRESS' ? '.68' : '.55';
     return {
@@ -517,7 +517,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                 padding: '4px 11px', border: 'none', borderRadius: 6, cursor: 'pointer',
                 fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, fontWeight: 500,
                 background: zoom === z ? c.accent : 'transparent',
-                color: zoom === z ? '#fff' : c.chipText,
+                color: zoom === z ? 'var(--neutral-0)' : c.chipText,
                 transition: 'all .12s',
               }}
             >
@@ -614,7 +614,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
               const isExp    = expanded.has(task.id);
               const due      = parseDate(task.dueDate);
               const overdue  = isOverdue(task);
-              const dueColor = overdue ? '#EF4444' : due && diffDays(due, getToday()) < 7 && due >= getToday() ? '#F59E0B' : task.status?.category === 'DONE' ? '#10B981' : c.dimmed;
+              const dueColor = overdue ? 'var(--error-10)' : due && diffDays(due, getToday()) < 7 && due >= getToday() ? 'var(--warning-6)' : task.status?.category === 'DONE' ? 'var(--success-8)' : c.dimmed;
 
               return (
                 <div
@@ -626,7 +626,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                     paddingRight: 8, overflow: 'hidden', cursor: 'pointer',
                     transition: 'background .1s',
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = `rgba(79,110,247,.05)`; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = `var(--component-fill-brand-soft-default)`; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = idx % 2 === 0 ? 'transparent' : c.rowEven; }}
                 >
                   {isChild ? (
@@ -712,7 +712,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                   <div key={i} style={{
                     position: 'absolute', left: cell.x, width: cell.w, height: 26,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    borderRight: `1px solid rgba(255,255,255,.04)`,
+                    borderRight: `1px solid var(--component-border-neutral-medium)`,
                     fontSize: 10, color: c.dimmed, overflow: 'hidden', whiteSpace: 'nowrap',
                     background: 'isCurrent' in cell && (cell as { isCurrent?: boolean }).isCurrent ? c.curWeek : 'transparent',
                   }}>
@@ -876,7 +876,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                               const segL     = Math.max(0, xOf(clampS) - cx);
                               const segW     = Math.max(2, xOf(clampE) - xOf(clampS));
                               const st       = statusMap.get(seg.statusId);
-                              const color    = st?.color ?? '#8B95B0';
+                              const color    = st?.color ?? 'var(--static-text-neutral-tertiary)';
                               const alpha    = st?.category === 'DONE'
                                 ? 'A0' : st?.category === 'IN_PROGRESS' ? 'B0' : '70';
                               return (
@@ -900,8 +900,8 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                                 <div style={{
                                   position: 'absolute', top: 0, bottom: 0,
                                   left: tailL, width: tailW,
-                                  background: `${st?.color ?? '#8B95B0'}28`,
-                                  borderLeft: `1px dashed ${st?.color ?? '#8B95B0'}55`,
+                                  background: `${st?.color ?? 'var(--static-text-neutral-tertiary)'}28`,
+                                  borderLeft: `1px dashed ${st?.color ?? 'var(--static-text-neutral-tertiary)'}55`,
                                 }} />
                               );
                             })()}
@@ -909,21 +909,21 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                             <div style={{
                               position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center',
                               height: '100%', width: '100%', padding: '0 8px 0 10px',
-                              color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,.4)',
+                              color: 'var(--neutral-0)', textShadow: '0 1px 3px var(--neutral-13)',
                               fontSize: isChild ? 11 : 12, fontWeight: 500, pointerEvents: 'none',
                             }}>
-                              {cw > 38 && <span style={{ color: 'rgba(255,255,255,.75)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0 }}>{task.issueKey}</span>}
+                              {cw > 38 && <span style={{ color: 'var(--neutral-2)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0 }}>{task.issueKey}</span>}
                               {cw > 60 && <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{task.title}</span>}
-                              {cw > 90 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.85)', marginLeft: 6, flexShrink: 0, fontWeight: 600 }}>{fmtShort(end!)}</span>}
+                              {cw > 90 && <span style={{ fontSize: 10, color: 'var(--neutral-1)', marginLeft: 6, flexShrink: 0, fontWeight: 600 }}>{fmtShort(end!)}</span>}
                             </div>
                           </>
                         ) : (
                           <>
                             {/* Оригинальный сплошной бар */}
-                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: isChild ? 3 : 4, background: 'rgba(0,0,0,.25)' }} />
-                            {cw > 38 && <span style={{ color: 'rgba(255,255,255,.7)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0, position: 'relative', zIndex: 1 }}>{task.issueKey}</span>}
-                            {cw > 60 && <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,.35)', fontSize: isChild ? 11 : 12, fontWeight: 500, position: 'relative', zIndex: 1 }}>{task.title}</span>}
-                            {cw > 90 && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.82)', marginLeft: 6, flexShrink: 0, fontWeight: 600, position: 'relative', zIndex: 1 }}>{fmtShort(end!)}</span>}
+                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: isChild ? 3 : 4, background: 'var(--component-fill-neutral-soft-active)' }} />
+                            {cw > 38 && <span style={{ color: 'var(--neutral-2)', fontSize: 10, fontWeight: 600, marginRight: 5, flexShrink: 0, position: 'relative', zIndex: 1 }}>{task.issueKey}</span>}
+                            {cw > 60 && <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--neutral-0)', textShadow: '0 1px 3px var(--neutral-13)', fontSize: isChild ? 11 : 12, fontWeight: 500, position: 'relative', zIndex: 1 }}>{task.title}</span>}
+                            {cw > 90 && <span style={{ fontSize: 10, color: 'var(--neutral-1)', marginLeft: 6, flexShrink: 0, fontWeight: 600, position: 'relative', zIndex: 1 }}>{fmtShort(end!)}</span>}
                           </>
                         )}
                       </div>
@@ -938,8 +938,8 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                           top: '50%', transform: 'translateY(-50%)',
                           left: ovLeft, width: ovW, height: barH,
                           borderRadius: `0 ${barR}px ${barR}px 0`,
-                          background: 'rgba(239,68,68,.28)',
-                          border: '1.5px dashed rgba(239,68,68,.72)',
+                          background: 'var(--component-fill-negative-soft-pressed)',
+                          border: '1.5px dashed var(--component-border-negative-medium)',
                           borderLeft: 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                           paddingRight: 6, zIndex: 3, cursor: 'default',
@@ -947,7 +947,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                         }}
                       >
                         {ovW > 36 && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(239,68,68,.95)', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--error-10)', whiteSpace: 'nowrap' }}>
                             +{overdueDays}д
                           </span>
                         )}

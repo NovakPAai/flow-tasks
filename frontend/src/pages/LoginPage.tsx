@@ -26,42 +26,40 @@ function buildEmailPrefix(first: string, last: string): string {
 // ─── Design tokens (from Paper: artboards 2-0 dark, 3-0 light) ───────────────
 type LoginTheme = Record<string, string>;
 const DARK_C: LoginTheme = {
-  rootBg:       '#03050F',
-  panelBg:      '#0F1320',
-  logoText:     '#E2E8F8',
-  title:        '#E2E8F8',
-  subtitle:     '#8B949E',
-  label:        '#C9D1D9',
-  inputBg:      '#161B22',
-  inputBorder:  '#30363D',
-  inputIcon:    '#484F58',
-  inputPh:      '#3D4D6B',
-  inputText:    '#E2E8F8',
-  accent:       '#4F6EF7',
-  footer:       '#484F58',
-  heroTitle:    '#FFFFFF',
-  heroSub:      '#7C6FA8',
+  rootBg:       'var(--static-background-base)',
+  panelBg:      'var(--static-background-lightest)',
+  logoText:     'var(--static-text-neutral-primary)',
+  title:        'var(--static-text-neutral-primary)',
+  subtitle:     'var(--static-text-neutral-tertiary)',
+  label:        'var(--static-text-neutral-secondary)',
+  inputBg:      'var(--static-background-light)',
+  inputBorder:  'var(--component-border-neutral-medium)',
+  inputIcon:    'var(--neutral-8)',
+  inputPh:      'var(--neutral-8)',
+  inputText:    'var(--static-text-neutral-primary)',
+  accent:       'var(--brand-8)',
+  footer:       'var(--neutral-8)',
+  heroTitle:    'var(--neutral-0)',
+  heroSub:      'var(--static-text-neutral-tertiary)',
 } as const;
 
 const LIGHT_C: LoginTheme = {
-  rootBg:       '#F5F3FF',
-  panelBg:      '#FFFFFF',
-  logoText:     '#1A1A2E',
-  title:        '#1A1A2E',
-  subtitle:     '#6B7194',
-  label:        '#374151',
-  inputBg:      '#F9FAFB',
-  inputBorder:  '#E8E5F0',
-  inputIcon:    '#9CA3AF',
-  inputPh:      '#9CA3AF',
-  inputText:    '#1A1A2E',
-  accent:       '#4F6EF7',
-  footer:       '#C4C9D4',
-  heroTitle:    '#2D1B69',
-  heroSub:      '#7C6FA8',
+  rootBg:       'var(--static-background-base)',
+  panelBg:      'var(--neutral-0)',
+  logoText:     'var(--static-text-neutral-primary)',
+  title:        'var(--static-text-neutral-primary)',
+  subtitle:     'var(--static-text-neutral-tertiary)',
+  label:        'var(--static-text-neutral-secondary)',
+  inputBg:      'var(--static-background-lightest)',
+  inputBorder:  'var(--static-border-neutral-tertiary)',
+  inputIcon:    'var(--neutral-8)',
+  inputPh:      'var(--neutral-8)',
+  inputText:    'var(--static-text-neutral-primary)',
+  accent:       'var(--brand-8)',
+  footer:       'var(--static-text-neutral-secondary)',
+  heroTitle:    'var(--static-text-neutral-primary)',
+  heroSub:      'var(--static-text-neutral-tertiary)',
 } as const;
-
-const LOGO_GRAD = 'linear-gradient(in oklab 135deg, oklab(59.3% -0.002 -0.207) 0%, oklab(50.3% -.0006 -0.200) 100%)';
 
 // ─── Orbital SVG panels (exact from Paper) ───────────────────────────────────
 function DarkPanel() {
@@ -72,84 +70,84 @@ function DarkPanel() {
         preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="ld0" cx="55%" cy="43%" r="75%">
-            <stop offset="0%" stopColor="#14082E"/><stop offset="40%" stopColor="#0A0518"/><stop offset="100%" stopColor="#03020C"/>
+            <stop offset="0%" stopColor="var(--neutral-13)"/><stop offset="40%" stopColor="var(--neutral-12)"/><stop offset="100%" stopColor="var(--neutral-13)"/>
           </radialGradient>
           <radialGradient id="ld1" cx="55%" cy="43%" r="55%">
-            <stop offset="0%" stopColor="#5B21B6" stopOpacity="0.45"/>
-            <stop offset="30%" stopColor="#4C1D95" stopOpacity="0.25"/>
-            <stop offset="60%" stopColor="#2D1B69" stopOpacity="0.10"/>
-            <stop offset="100%" stopColor="#03020C" stopOpacity="0"/>
+            <stop offset="0%" stopColor="var(--brand-gold-8)" stopOpacity="0.45"/>
+            <stop offset="30%" stopColor="var(--brand-gold-9)" stopOpacity="0.25"/>
+            <stop offset="60%" stopColor="var(--static-text-neutral-primary)" stopOpacity="0.10"/>
+            <stop offset="100%" stopColor="var(--neutral-13)" stopOpacity="0"/>
           </radialGradient>
           <radialGradient id="ld2" cx="85%" cy="70%" r="45%">
-            <stop offset="0%" stopColor="#1E3A8A" stopOpacity="0.20"/>
-            <stop offset="60%" stopColor="#1E3A8A" stopOpacity="0.05"/>
-            <stop offset="100%" stopColor="#03020C" stopOpacity="0"/>
+            <stop offset="0%" stopColor="var(--info-10)" stopOpacity="0.20"/>
+            <stop offset="60%" stopColor="var(--info-10)" stopOpacity="0.05"/>
+            <stop offset="100%" stopColor="var(--neutral-13)" stopOpacity="0"/>
           </radialGradient>
           <radialGradient id="ld3" cx="38%" cy="32%" r="65%">
-            <stop offset="0%" stopColor="#A78BFA"/><stop offset="25%" stopColor="#7C3AED"/>
-            <stop offset="55%" stopColor="#4C1D95"/><stop offset="80%" stopColor="#1E0759"/><stop offset="100%" stopColor="#0D0330"/>
+            <stop offset="0%" stopColor="var(--brand-gold-7)"/><stop offset="25%" stopColor="var(--brand-gold-9)"/>
+            <stop offset="55%" stopColor="var(--brand-gold-9)"/><stop offset="80%" stopColor="var(--brand-gold-10)"/><stop offset="100%" stopColor="var(--brand-gold-11)"/>
           </radialGradient>
           <radialGradient id="ld4" cx="50%" cy="50%" r="50%">
-            <stop offset="70%" stopColor="#7C3AED" stopOpacity="0"/>
-            <stop offset="85%" stopColor="#8B5CF6" stopOpacity="0.3"/>
-            <stop offset="100%" stopColor="#7C3AED" stopOpacity="0"/>
+            <stop offset="70%" stopColor="var(--brand-gold-9)" stopOpacity="0"/>
+            <stop offset="85%" stopColor="var(--brand-gold-8)" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="var(--brand-gold-9)" stopOpacity="0"/>
           </radialGradient>
         </defs>
         <rect width="840" height="900" fill="url(#ld0)"/>
         <rect width="840" height="900" fill="url(#ld1)"/>
         <rect width="840" height="900" fill="url(#ld2)"/>
         {/* Stars */}
-        <circle cx="55" cy="45" r="1.5" fill="#FFFFFF" opacity="0.85"/>
-        <circle cx="180" cy="28" r="1.2" fill="#FFFFFF" opacity="0.8"/>
-        <circle cx="340" cy="52" r="1.4" fill="#FFFFFF" opacity="0.7"/>
-        <circle cx="620" cy="35" r="1.5" fill="#FFFFFF" opacity="0.75"/>
-        <circle cx="720" cy="70" r="1.2" fill="#FFFFFF" opacity="0.9"/>
-        <circle cx="790" cy="25" r="1" fill="#FFFFFF" opacity="0.8"/>
-        <circle cx="820" cy="110" r="1.3" fill="#FFFFFF" opacity="0.7"/>
-        <circle cx="30" cy="160" r="1.1" fill="#FFFFFF" opacity="0.65"/>
-        <circle cx="118" cy="215" r="1.4" fill="#C4B5FD" opacity="0.8"/>
-        <circle cx="775" cy="195" r="1.2" fill="#FFFFFF" opacity="0.7"/>
-        <circle cx="835" cy="280" r="1" fill="#FFFFFF" opacity="0.75"/>
-        <circle cx="62" cy="740" r="1.3" fill="#FFFFFF" opacity="0.6"/>
-        <circle cx="195" cy="780" r="1.1" fill="#A5B4FC" opacity="0.7"/>
-        <circle cx="760" cy="750" r="1.2" fill="#FFFFFF" opacity="0.65"/>
-        <circle cx="820" cy="810" r="1" fill="#FFFFFF" opacity="0.7"/>
-        <circle cx="40" cy="330" r="1" fill="#FFFFFF" opacity="0.5"/>
-        <circle cx="805" cy="380" r="0.9" fill="#FFFFFF" opacity="0.55"/>
-        <circle cx="830" cy="450" r="1" fill="#C4B5FD" opacity="0.45"/>
+        <circle cx="55" cy="45" r="1.5" fill="var(--neutral-0)" opacity="0.85"/>
+        <circle cx="180" cy="28" r="1.2" fill="var(--neutral-0)" opacity="0.8"/>
+        <circle cx="340" cy="52" r="1.4" fill="var(--neutral-0)" opacity="0.7"/>
+        <circle cx="620" cy="35" r="1.5" fill="var(--neutral-0)" opacity="0.75"/>
+        <circle cx="720" cy="70" r="1.2" fill="var(--neutral-0)" opacity="0.9"/>
+        <circle cx="790" cy="25" r="1" fill="var(--neutral-0)" opacity="0.8"/>
+        <circle cx="820" cy="110" r="1.3" fill="var(--neutral-0)" opacity="0.7"/>
+        <circle cx="30" cy="160" r="1.1" fill="var(--neutral-0)" opacity="0.65"/>
+        <circle cx="118" cy="215" r="1.4" fill="var(--brand-gold-6)" opacity="0.8"/>
+        <circle cx="775" cy="195" r="1.2" fill="var(--neutral-0)" opacity="0.7"/>
+        <circle cx="835" cy="280" r="1" fill="var(--neutral-0)" opacity="0.75"/>
+        <circle cx="62" cy="740" r="1.3" fill="var(--neutral-0)" opacity="0.6"/>
+        <circle cx="195" cy="780" r="1.1" fill="var(--info-6)" opacity="0.7"/>
+        <circle cx="760" cy="750" r="1.2" fill="var(--neutral-0)" opacity="0.65"/>
+        <circle cx="820" cy="810" r="1" fill="var(--neutral-0)" opacity="0.7"/>
+        <circle cx="40" cy="330" r="1" fill="var(--neutral-0)" opacity="0.5"/>
+        <circle cx="805" cy="380" r="0.9" fill="var(--neutral-0)" opacity="0.55"/>
+        <circle cx="830" cy="450" r="1" fill="var(--brand-gold-6)" opacity="0.45"/>
         {/* Crosshair */}
-        <line x1="55" y1="41" x2="55" y2="49" stroke="#FFFFFF" strokeWidth="0.7" opacity="0.5"/>
-        <line x1="51" y1="45" x2="59" y2="45" stroke="#FFFFFF" strokeWidth="0.7" opacity="0.5"/>
-        <line x1="720" y1="66" x2="720" y2="74" stroke="#FFFFFF" strokeWidth="0.6" opacity="0.45"/>
-        <line x1="716" y1="70" x2="724" y2="70" stroke="#FFFFFF" strokeWidth="0.6" opacity="0.45"/>
+        <line x1="55" y1="41" x2="55" y2="49" stroke="var(--neutral-0)" strokeWidth="0.7" opacity="0.5"/>
+        <line x1="51" y1="45" x2="59" y2="45" stroke="var(--neutral-0)" strokeWidth="0.7" opacity="0.5"/>
+        <line x1="720" y1="66" x2="720" y2="74" stroke="var(--neutral-0)" strokeWidth="0.6" opacity="0.45"/>
+        <line x1="716" y1="70" x2="724" y2="70" stroke="var(--neutral-0)" strokeWidth="0.6" opacity="0.45"/>
         {/* Orbital planet */}
         <circle cx="470" cy="385" r="115" fill="url(#ld4)"/>
         <circle cx="470" cy="385" r="88" fill="url(#ld3)"/>
-        <ellipse cx="470" cy="372" rx="88" ry="12" fill="#FFFFFF08"/>
-        <ellipse cx="470" cy="398" rx="88" ry="8" fill="#FFFFFF05"/>
-        <circle cx="470" cy="385" r="88" fill="none" stroke="#A78BFA4D" strokeWidth="2"/>
-        <circle cx="470" cy="385" r="140" fill="none" stroke="#7C3AED59"/>
-        <circle cx="470" cy="385" r="210" fill="none" stroke="#6D28D940"/>
-        <circle cx="470" cy="385" r="295" fill="none" stroke="#5B21B62E"/>
-        <circle cx="470" cy="385" r="390" fill="none" stroke="#4C1D951F"/>
+        <ellipse cx="470" cy="372" rx="88" ry="12" fill="var(--neutral-0)" opacity="0.08"/>
+        <ellipse cx="470" cy="398" rx="88" ry="8" fill="var(--neutral-0)" opacity="0.05"/>
+        <circle cx="470" cy="385" r="88" fill="none" stroke="var(--brand-gold-7)" strokeWidth="2" opacity="0.3"/>
+        <circle cx="470" cy="385" r="140" fill="none" stroke="var(--brand-gold-9)" opacity="0.35"/>
+        <circle cx="470" cy="385" r="210" fill="none" stroke="var(--brand-gold-8)" opacity="0.25"/>
+        <circle cx="470" cy="385" r="295" fill="none" stroke="var(--brand-gold-8)" opacity="0.18"/>
+        <circle cx="470" cy="385" r="390" fill="none" stroke="var(--brand-gold-9)" opacity="0.12"/>
         {/* Orbital dots */}
-        <circle cx="569" cy="286" r="4" fill="#A78BFA" opacity="0.9"/>
-        <circle cx="569" cy="286" r="7" fill="#7C3AED" opacity="0.2"/>
-        <circle cx="422" cy="516" r="3.5" fill="#C4B5FD" opacity="0.85"/>
-        <circle cx="371" cy="286" r="4" fill="#DDD6FE" opacity="0.8"/>
-        <circle cx="542" cy="188" r="4.5" fill="#8B5CF6" opacity="0.9"/>
-        <circle cx="667" cy="457" r="3.5" fill="#A78BFA" opacity="0.8"/>
-        <circle cx="288" cy="490" r="4" fill="#C4B5FD" opacity="0.85"/>
-        <circle cx="737" cy="261" r="4" fill="#7C3AED" opacity="0.85"/>
-        <circle cx="175" cy="385" r="4.5" fill="#A78BFA" opacity="0.8"/>
-        <line x1="155" y1="118" x2="205" y2="138" stroke="#FFFFFF" opacity="0.3"/>
-        <circle cx="155" cy="118" r="1.5" fill="#FFFFFF" opacity="0.55"/>
+        <circle cx="569" cy="286" r="4" fill="var(--brand-gold-7)" opacity="0.9"/>
+        <circle cx="569" cy="286" r="7" fill="var(--brand-gold-9)" opacity="0.2"/>
+        <circle cx="422" cy="516" r="3.5" fill="var(--brand-gold-6)" opacity="0.85"/>
+        <circle cx="371" cy="286" r="4" fill="var(--brand-gold-4)" opacity="0.8"/>
+        <circle cx="542" cy="188" r="4.5" fill="var(--brand-gold-8)" opacity="0.9"/>
+        <circle cx="667" cy="457" r="3.5" fill="var(--brand-gold-7)" opacity="0.8"/>
+        <circle cx="288" cy="490" r="4" fill="var(--brand-gold-6)" opacity="0.85"/>
+        <circle cx="737" cy="261" r="4" fill="var(--brand-gold-9)" opacity="0.85"/>
+        <circle cx="175" cy="385" r="4.5" fill="var(--brand-gold-7)" opacity="0.8"/>
+        <line x1="155" y1="118" x2="205" y2="138" stroke="var(--neutral-0)" opacity="0.3"/>
+        <circle cx="155" cy="118" r="1.5" fill="var(--neutral-0)" opacity="0.55"/>
       </svg>
       <div style={{ bottom: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 8, left: 0, paddingBlock: '52px', paddingInline: '56px', position: 'absolute', right: 0 }}>
-        <div style={{ color: '#FFFFFF', fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 64, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, whiteSpace: 'pre-wrap' }}>
+        <div style={{ color: 'var(--neutral-0)', fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 64, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, whiteSpace: 'pre-wrap' }}>
           {'Flow\nTask'}
         </div>
-        <div style={{ color: '#7C6FA8', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, lineHeight: '150%', maxWidth: 340 }}>
+        <div style={{ color: 'var(--static-text-neutral-tertiary)', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, lineHeight: '150%', maxWidth: 340 }}>
           Лёгкий трекер задач для вашей команды
         </div>
       </div>
@@ -165,78 +163,78 @@ function LightPanel() {
         preserveAspectRatio="xMidYMid slice">
         <defs>
           <radialGradient id="ll0" cx="55%" cy="43%" r="75%">
-            <stop offset="0%" stopColor="#EDE9FE"/><stop offset="40%" stopColor="#F5F3FF"/><stop offset="100%" stopColor="#FDFCFF"/>
+            <stop offset="0%" stopColor="var(--component-fill-brand-soft-default)"/><stop offset="40%" stopColor="var(--static-background-base)"/><stop offset="100%" stopColor="var(--static-background-lightest)"/>
           </radialGradient>
           <radialGradient id="ll1" cx="55%" cy="43%" r="55%">
-            <stop offset="0%" stopColor="#C4B5FD" stopOpacity="0.35"/>
-            <stop offset="30%" stopColor="#A78BFA" stopOpacity="0.18"/>
-            <stop offset="60%" stopColor="#DDD6FE" stopOpacity="0.08"/>
-            <stop offset="100%" stopColor="#FDFCFF" stopOpacity="0"/>
+            <stop offset="0%" stopColor="var(--brand-gold-6)" stopOpacity="0.35"/>
+            <stop offset="30%" stopColor="var(--brand-gold-7)" stopOpacity="0.18"/>
+            <stop offset="60%" stopColor="var(--brand-gold-4)" stopOpacity="0.08"/>
+            <stop offset="100%" stopColor="var(--static-background-lightest)" stopOpacity="0"/>
           </radialGradient>
           <radialGradient id="ll2" cx="85%" cy="70%" r="45%">
-            <stop offset="0%" stopColor="#FDE68A" stopOpacity="0.15"/>
-            <stop offset="60%" stopColor="#FDE68A" stopOpacity="0.04"/>
-            <stop offset="100%" stopColor="#FDFCFF" stopOpacity="0"/>
+            <stop offset="0%" stopColor="var(--component-border-warning-medium)" stopOpacity="0.15"/>
+            <stop offset="60%" stopColor="var(--component-border-warning-medium)" stopOpacity="0.04"/>
+            <stop offset="100%" stopColor="var(--static-background-lightest)" stopOpacity="0"/>
           </radialGradient>
           <radialGradient id="ll3" cx="38%" cy="32%" r="65%">
-            <stop offset="0%" stopColor="#C4B5FD"/><stop offset="25%" stopColor="#8B5CF6"/>
-            <stop offset="55%" stopColor="#6D28D9"/><stop offset="80%" stopColor="#4C1D95"/><stop offset="100%" stopColor="#3B0764"/>
+            <stop offset="0%" stopColor="var(--brand-gold-6)"/><stop offset="25%" stopColor="var(--brand-gold-8)"/>
+            <stop offset="55%" stopColor="var(--brand-gold-8)"/><stop offset="80%" stopColor="var(--brand-gold-9)"/><stop offset="100%" stopColor="var(--brand-gold-12)"/>
           </radialGradient>
           <radialGradient id="ll4" cx="50%" cy="50%" r="50%">
-            <stop offset="70%" stopColor="#8B5CF6" stopOpacity="0"/>
-            <stop offset="85%" stopColor="#A78BFA" stopOpacity="0.25"/>
-            <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0"/>
+            <stop offset="70%" stopColor="var(--brand-gold-8)" stopOpacity="0"/>
+            <stop offset="85%" stopColor="var(--brand-gold-7)" stopOpacity="0.25"/>
+            <stop offset="100%" stopColor="var(--brand-gold-8)" stopOpacity="0"/>
           </radialGradient>
         </defs>
         <rect width="840" height="900" fill="url(#ll0)"/>
         <rect width="840" height="900" fill="url(#ll1)"/>
         <rect width="840" height="900" fill="url(#ll2)"/>
         {/* Stars (lavender tint) */}
-        <circle cx="55" cy="45" r="1.5" fill="#A78BFA" opacity="0.5"/>
-        <circle cx="180" cy="28" r="1.2" fill="#C4B5FD" opacity="0.45"/>
-        <circle cx="340" cy="52" r="1.4" fill="#A78BFA" opacity="0.4"/>
-        <circle cx="620" cy="35" r="1.5" fill="#DDD6FE" opacity="0.55"/>
-        <circle cx="720" cy="70" r="1.2" fill="#A78BFA" opacity="0.5"/>
-        <circle cx="790" cy="25" r="1" fill="#C4B5FD" opacity="0.45"/>
-        <circle cx="820" cy="110" r="1.3" fill="#A78BFA" opacity="0.4"/>
-        <circle cx="30" cy="160" r="1.1" fill="#DDD6FE" opacity="0.4"/>
-        <circle cx="118" cy="215" r="1.4" fill="#A78BFA" opacity="0.45"/>
-        <circle cx="775" cy="195" r="1.2" fill="#C4B5FD" opacity="0.4"/>
-        <circle cx="40" cy="330" r="1" fill="#A78BFA" opacity="0.35"/>
-        <circle cx="805" cy="380" r="0.9" fill="#C4B5FD" opacity="0.35"/>
-        <circle cx="310" cy="820" r="1.4" fill="#F472B6" opacity="0.4"/>
-        <circle cx="665" cy="47" r="3.5" fill="#6EE7B7" opacity="0.35"/>
+        <circle cx="55" cy="45" r="1.5" fill="var(--brand-gold-7)" opacity="0.5"/>
+        <circle cx="180" cy="28" r="1.2" fill="var(--brand-gold-6)" opacity="0.45"/>
+        <circle cx="340" cy="52" r="1.4" fill="var(--brand-gold-7)" opacity="0.4"/>
+        <circle cx="620" cy="35" r="1.5" fill="var(--brand-gold-4)" opacity="0.55"/>
+        <circle cx="720" cy="70" r="1.2" fill="var(--brand-gold-7)" opacity="0.5"/>
+        <circle cx="790" cy="25" r="1" fill="var(--brand-gold-6)" opacity="0.45"/>
+        <circle cx="820" cy="110" r="1.3" fill="var(--brand-gold-7)" opacity="0.4"/>
+        <circle cx="30" cy="160" r="1.1" fill="var(--brand-gold-4)" opacity="0.4"/>
+        <circle cx="118" cy="215" r="1.4" fill="var(--brand-gold-7)" opacity="0.45"/>
+        <circle cx="775" cy="195" r="1.2" fill="var(--brand-gold-6)" opacity="0.4"/>
+        <circle cx="40" cy="330" r="1" fill="var(--brand-gold-7)" opacity="0.35"/>
+        <circle cx="805" cy="380" r="0.9" fill="var(--brand-gold-6)" opacity="0.35"/>
+        <circle cx="310" cy="820" r="1.4" fill="var(--brand-6)" opacity="0.4"/>
+        <circle cx="665" cy="47" r="3.5" fill="var(--success-6)" opacity="0.35"/>
         {/* Crosshair */}
-        <line x1="55" y1="41" x2="55" y2="49" stroke="#A78BFA" strokeWidth="0.7" opacity="0.3"/>
-        <line x1="51" y1="45" x2="59" y2="45" stroke="#A78BFA" strokeWidth="0.7" opacity="0.3"/>
+        <line x1="55" y1="41" x2="55" y2="49" stroke="var(--brand-gold-7)" strokeWidth="0.7" opacity="0.3"/>
+        <line x1="51" y1="45" x2="59" y2="45" stroke="var(--brand-gold-7)" strokeWidth="0.7" opacity="0.3"/>
         {/* Orbital planet */}
         <circle cx="470" cy="385" r="115" fill="url(#ll4)"/>
         <circle cx="470" cy="385" r="88" fill="url(#ll3)"/>
-        <ellipse cx="470" cy="372" rx="88" ry="12" fill="#FFFFFF18"/>
-        <ellipse cx="470" cy="398" rx="88" ry="8" fill="#FFFFFF10"/>
-        <circle cx="470" cy="385" r="88" fill="none" stroke="#A78BFA60" strokeWidth="1.5"/>
-        <circle cx="470" cy="385" r="140" fill="none" stroke="#8B5CF640"/>
-        <circle cx="470" cy="385" r="210" fill="none" stroke="#7C3AED2E"/>
-        <circle cx="470" cy="385" r="295" fill="none" stroke="#6D28D920"/>
-        <circle cx="470" cy="385" r="390" fill="none" stroke="#5B21B614"/>
+        <ellipse cx="470" cy="372" rx="88" ry="12" fill="var(--neutral-0)" opacity="0.09"/>
+        <ellipse cx="470" cy="398" rx="88" ry="8" fill="var(--neutral-0)" opacity="0.06"/>
+        <circle cx="470" cy="385" r="88" fill="none" stroke="var(--brand-gold-7)" strokeWidth="1.5" opacity="0.38"/>
+        <circle cx="470" cy="385" r="140" fill="none" stroke="var(--brand-gold-8)" opacity="0.25"/>
+        <circle cx="470" cy="385" r="210" fill="none" stroke="var(--brand-gold-9)" opacity="0.18"/>
+        <circle cx="470" cy="385" r="295" fill="none" stroke="var(--brand-gold-8)" opacity="0.12"/>
+        <circle cx="470" cy="385" r="390" fill="none" stroke="var(--brand-gold-8)" opacity="0.08"/>
         {/* Orbital dots */}
-        <circle cx="569" cy="286" r="4" fill="#8B5CF6" opacity="0.7"/>
-        <circle cx="569" cy="286" r="7" fill="#7C3AED" opacity="0.12"/>
-        <circle cx="422" cy="516" r="3.5" fill="#A78BFA" opacity="0.65"/>
-        <circle cx="371" cy="286" r="4" fill="#C4B5FD" opacity="0.6"/>
-        <circle cx="542" cy="188" r="4.5" fill="#7C3AED" opacity="0.55"/>
-        <circle cx="667" cy="457" r="3.5" fill="#8B5CF6" opacity="0.6"/>
-        <circle cx="288" cy="490" r="4" fill="#A78BFA" opacity="0.55"/>
-        <circle cx="737" cy="261" r="4" fill="#6D28D9" opacity="0.5"/>
-        <circle cx="175" cy="385" r="4.5" fill="#8B5CF6" opacity="0.55"/>
-        <line x1="155" y1="118" x2="205" y2="138" stroke="#A78BFA" opacity="0.2"/>
-        <circle cx="155" cy="118" r="1.5" fill="#A78BFA" opacity="0.4"/>
+        <circle cx="569" cy="286" r="4" fill="var(--brand-gold-8)" opacity="0.7"/>
+        <circle cx="569" cy="286" r="7" fill="var(--brand-gold-9)" opacity="0.12"/>
+        <circle cx="422" cy="516" r="3.5" fill="var(--brand-gold-7)" opacity="0.65"/>
+        <circle cx="371" cy="286" r="4" fill="var(--brand-gold-6)" opacity="0.6"/>
+        <circle cx="542" cy="188" r="4.5" fill="var(--brand-gold-9)" opacity="0.55"/>
+        <circle cx="667" cy="457" r="3.5" fill="var(--brand-gold-8)" opacity="0.6"/>
+        <circle cx="288" cy="490" r="4" fill="var(--brand-gold-7)" opacity="0.55"/>
+        <circle cx="737" cy="261" r="4" fill="var(--brand-gold-8)" opacity="0.5"/>
+        <circle cx="175" cy="385" r="4.5" fill="var(--brand-gold-8)" opacity="0.55"/>
+        <line x1="155" y1="118" x2="205" y2="138" stroke="var(--brand-gold-7)" opacity="0.2"/>
+        <circle cx="155" cy="118" r="1.5" fill="var(--brand-gold-7)" opacity="0.4"/>
       </svg>
       <div style={{ bottom: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 8, left: 0, paddingBlock: '52px', paddingInline: '56px', position: 'absolute', right: 0 }}>
-        <div style={{ color: '#2D1B69', fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 64, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, whiteSpace: 'pre-wrap' }}>
+        <div style={{ color: 'var(--static-text-neutral-primary)', fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 64, fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1, whiteSpace: 'pre-wrap' }}>
           {'Flow\nTask'}
         </div>
-        <div style={{ color: '#7C6FA8', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, lineHeight: '150%', maxWidth: 340 }}>
+        <div style={{ color: 'var(--static-text-neutral-tertiary)', fontFamily: '"Inter", system-ui, sans-serif', fontSize: 14, lineHeight: '150%', maxWidth: 340 }}>
           Лёгкий трекер задач для вашей команды
         </div>
       </div>
@@ -248,10 +246,10 @@ function LightPanel() {
 function LogoIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-      <rect x="2" y="2" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="10" y="2" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="2" y="10" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
-      <rect x="10" y="10" width="6" height="6" rx="1.5" fill="#FFFFFF"/>
+      <rect x="2" y="2" width="6" height="6" rx="1.5" fill="var(--neutral-0)"/>
+      <rect x="10" y="2" width="6" height="6" rx="1.5" fill="var(--neutral-0)"/>
+      <rect x="2" y="10" width="6" height="6" rx="1.5" fill="var(--neutral-0)"/>
+      <rect x="10" y="10" width="6" height="6" rx="1.5" fill="var(--neutral-0)"/>
     </svg>
   );
 }
@@ -421,8 +419,8 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ alignItems: 'center', display: 'flex', gap: 12, marginBottom: 48 }}>
           <div style={{
-            alignItems: 'center', backgroundImage: LOGO_GRAD,
-            borderRadius: 10, display: 'flex', flexShrink: 0,
+            alignItems: 'center', background: 'var(--component-fill-brand-solid-default)',
+            borderRadius: 12, display: 'flex', flexShrink: 0,
             height: 40, justifyContent: 'center', width: 40,
           }}>
             <LogoIcon/>
@@ -534,14 +532,15 @@ export default function LoginPage() {
           </div>
 
           {/* Submit button */}
-          <button type="submit" disabled={loading || (showRegister && (!firstName.trim() || !lastName.trim() || !emailPrefix || (!registrationDomain && !email.trim())))} style={{
-            backgroundImage: LOGO_GRAD, borderRadius: 8, border: 'none',
-            boxSizing: 'border-box', cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1, paddingBlock: '13px', paddingInline: '13px',
-            width: '100%', marginBottom: 20, transition: 'opacity 0.15s',
+          <button type="submit" disabled={loading || (showRegister && (!firstName.trim() || !lastName.trim() || !emailPrefix || (!registrationDomain && !email.trim())))} className="sigma-btn sigma-btn-brand-solid" style={{
+            minHeight: 44,
+            paddingBlock: 13,
+            paddingInline: 13,
+            width: '100%',
+            marginBottom: 20,
           }}>
             <div style={{
-              color: '#FFFFFF', fontFamily: '"Space Grotesk", system-ui, sans-serif',
+              color: 'currentColor', fontFamily: '"Space Grotesk", system-ui, sans-serif',
               fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: '18px', textAlign: 'center',
             }}>
               {loading ? '...' : showRegister ? 'Отправить заявку' : 'Войти'}
@@ -616,8 +615,8 @@ export default function LoginPage() {
       >
         {forgotDone ? (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ fontSize: 14, color: '#52c41a', marginBottom: 8 }}>✓ Ссылка отправлена</div>
-            <div style={{ fontSize: 13, color: '#666' }}>
+            <div style={{ fontSize: 14, color: 'var(--success-8)', marginBottom: 8 }}>✓ Ссылка отправлена</div>
+            <div style={{ fontSize: 13, color: 'var(--static-text-neutral-tertiary)' }}>
               Если аккаунт с таким email существует, вы получите ссылку для сброса пароля в консоли сервера (dev) или на почту (prod).
             </div>
           </div>

@@ -7,30 +7,30 @@ import type { SearchTask, SearchBoard, SearchWorkspace } from '../api/search';
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
 const DARK: C = {
-  overlay: 'rgba(0,0,0,0.7)',
-  bg: '#0F1320', border: '#1C2236',
-  inputBg: '#0A0D1A', inputBorder: '#2D3748', inputText: '#E2E8F8',
-  text: '#E2E8F8', muted: '#8B95B0', subText: '#6B7194',
-  activeBg: '#1C2236', hoverBg: '#141928',
-  sectionLabel: '#4A5578',
-  keyBg: '#1C2236', keyText: '#6B7194',
-  taskBadge: '#1C2236',
+  overlay: 'var(--component-fill-neutral-soft-active)',
+  bg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  inputBg: 'var(--static-background-base)', inputBorder: 'var(--component-border-neutral-medium)', inputText: 'var(--static-text-neutral-primary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', subText: 'var(--static-text-neutral-tertiary)',
+  activeBg: 'var(--static-border-neutral-tertiary)', hoverBg: 'var(--static-background-light)',
+  sectionLabel: 'var(--neutral-8)',
+  keyBg: 'var(--static-border-neutral-tertiary)', keyText: 'var(--static-text-neutral-tertiary)',
+  taskBadge: 'var(--static-border-neutral-tertiary)',
 };
 const LIGHT: C = {
-  overlay: 'rgba(0,0,0,0.4)',
-  bg: '#FDFCFF', border: '#E8E5F0',
-  inputBg: '#F9FAFB', inputBorder: '#D1C8EC', inputText: '#1A1A2E',
-  text: '#1A1A2E', muted: '#6B7194', subText: '#9B96B8',
-  activeBg: '#EDE9FE', hoverBg: '#F5F3FF',
-  sectionLabel: '#B0AACC',
-  keyBg: '#EDE9FE', keyText: '#6B7194',
-  taskBadge: '#EDE9FE',
+  overlay: 'var(--component-fill-neutral-soft-active)',
+  bg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)',
+  inputBg: 'var(--static-background-lightest)', inputBorder: 'var(--component-border-neutral-medium)', inputText: 'var(--static-text-neutral-primary)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', subText: 'var(--static-text-neutral-tertiary)',
+  activeBg: 'var(--component-fill-brand-soft-default)', hoverBg: 'var(--static-background-base)',
+  sectionLabel: 'var(--neutral-6)',
+  keyBg: 'var(--component-fill-brand-soft-default)', keyText: 'var(--static-text-neutral-tertiary)',
+  taskBadge: 'var(--component-fill-brand-soft-default)',
 };
 
 const PRIORITY_COLOR: Record<string, string> = {
-  HIGH: '#EF4444',
-  MEDIUM: '#F59E0B',
-  LOW: '#22C55E',
+  HIGH: 'var(--error-10)',
+  MEDIUM: 'var(--warning-6)',
+  LOW: 'var(--success-8)',
 };
 
 // ── Flat result list item type ─────────────────────────────────────────────────
@@ -55,7 +55,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   return (
     <>
       {text.slice(0, idx)}
-      <span style={{ color: '#4F6EF7', fontWeight: 600 }}>{text.slice(idx, idx + query.length)}</span>
+      <span style={{ color: 'var(--brand-8)', fontWeight: 600 }}>{text.slice(idx, idx + query.length)}</span>
       {text.slice(idx + query.length)}
     </>
   );
@@ -205,7 +205,7 @@ export default function CommandPalette({ open, onClose }: Props) {
           onClick={() => navigateTo(item)}
           onMouseEnter={() => setActiveIdx(idx)}
         >
-          <TaskIcon color={t.status.color || '#4F6EF7'} />
+          <TaskIcon color={t.status.color || 'var(--brand-8)'} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 13, color: c.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -213,7 +213,7 @@ export default function CommandPalette({ open, onClose }: Props) {
               </span>
             </div>
             <div style={{ fontSize: 11, color: c.muted, marginTop: 1 }}>
-              <span style={{ color: '#4F6EF7', fontWeight: 500 }}>
+              <span style={{ color: 'var(--brand-8)', fontWeight: 500 }}>
                 <Highlight text={t.issueKey} query={query} />
               </span>
               <span style={{ margin: '0 4px', opacity: 0.5 }}>·</span>
@@ -258,7 +258,7 @@ export default function CommandPalette({ open, onClose }: Props) {
               {b.workspace.name}
             </div>
           </div>
-          <span style={{ fontSize: 10, color: '#4F6EF7', fontWeight: 500, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, color: 'var(--brand-8)', fontWeight: 500, flexShrink: 0 }}>
             {b.prefix}
           </span>
         </div>
@@ -307,7 +307,7 @@ export default function CommandPalette({ open, onClose }: Props) {
           width: '100%', maxWidth: 580,
           background: c.bg, border: `1px solid ${c.border}`,
           borderRadius: 12,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+          boxShadow: 'var(--shadow-lg)',
           overflow: 'hidden',
           fontFamily: '"Inter",system-ui,sans-serif',
         }}
@@ -344,7 +344,7 @@ export default function CommandPalette({ open, onClose }: Props) {
         {/* Results */}
         <div style={{ maxHeight: 420, overflowY: 'auto' }}>
           {searchError && (
-            <div style={{ padding: '20px 16px', textAlign: 'center', fontSize: 13, color: '#EF4444' }}>
+            <div style={{ padding: '20px 16px', textAlign: 'center', fontSize: 13, color: 'var(--error-10)' }}>
               Ошибка поиска, попробуйте позже
             </div>
           )}

@@ -12,28 +12,26 @@ import TaskAccordionPanel from '../components/TaskAccordionPanel';
 type C = Record<string, string>;
 
 const DARK: C = {
-  bg: '#03050F', rowBg: '#0F1320', border: '#1C2236', borderHover: '#4F6EF7',
-  text: '#E2E8F8', muted: '#8B949E', key: '#484F58',
-  chipBg: '#1C2236', chipText: '#8B949E',
-  chipActive: 'rgba(79,110,247,0.12)', chipActiveText: '#4F6EF7',
-  chipOverdue: 'rgba(239,68,68,0.12)', chipOverdueText: '#EF4444',
-  searchBg: '#0F1320', searchBorder: '#1C2236',
-  wsBg: '#0A0D1A', sectionBorder: '#1C2236',
+  bg: 'var(--static-background-base)', rowBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)', borderHover: 'var(--brand-8)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', key: 'var(--neutral-8)',
+  chipBg: 'var(--static-background-lightest)', chipText: 'var(--static-text-neutral-secondary)',
+  chipActive: 'var(--component-fill-info-soft-default)', chipActiveText: 'var(--info-8)',
+  searchBg: 'var(--static-background-lightest)', searchBorder: 'var(--static-border-neutral-tertiary)',
+  wsBg: 'var(--static-background-base)', sectionBorder: 'var(--static-border-neutral-tertiary)',
 };
 const LIGHT: C = {
-  bg: '#F5F3FF', rowBg: '#FDFCFF', border: '#E8E5F0', borderHover: '#4F6EF7',
-  text: '#1A1A2E', muted: '#9B96B8', key: '#B8B3D0',
-  chipBg: '#EDE9FE', chipText: '#7C6FA8',
-  chipActive: 'rgba(79,110,247,0.10)', chipActiveText: '#4F6EF7',
-  chipOverdue: '#FEE2E2', chipOverdueText: '#EF4444',
-  searchBg: '#FDFCFF', searchBorder: '#E8E5F0',
-  wsBg: '#F0EEF8', sectionBorder: '#E8E5F0',
+  bg: 'var(--static-background-base)', rowBg: 'var(--static-background-lightest)', border: 'var(--static-border-neutral-tertiary)', borderHover: 'var(--brand-8)',
+  text: 'var(--static-text-neutral-primary)', muted: 'var(--static-text-neutral-tertiary)', key: 'var(--neutral-6)',
+  chipBg: 'var(--static-background-lightest)', chipText: 'var(--static-text-neutral-secondary)',
+  chipActive: 'var(--component-fill-info-soft-default)', chipActiveText: 'var(--info-8)',
+  searchBg: 'var(--static-background-lightest)', searchBorder: 'var(--static-border-neutral-tertiary)',
+  wsBg: 'var(--static-background-light)', sectionBorder: 'var(--static-border-neutral-tertiary)',
 };
 
 const PRIO: Record<string, { bg: string; text: string }> = {
-  HIGH:   { bg: 'rgba(239,68,68,0.12)',   text: '#EF4444' },
-  MEDIUM: { bg: 'rgba(245,158,11,0.12)',  text: '#F59E0B' },
-  LOW:    { bg: 'rgba(107,114,128,0.12)', text: '#6B7280' },
+  HIGH:   { bg: 'var(--component-fill-negative-soft-hover)',   text: 'var(--error-10)' },
+  MEDIUM: { bg: 'var(--component-fill-warning-soft-hover)',  text: 'var(--warning-6)' },
+  LOW:    { bg: 'var(--component-fill-neutral-soft-default)', text: 'var(--neutral-8)' },
 };
 
 // ── Due preset helpers ─────────────────────────────────────────────────────────
@@ -43,7 +41,7 @@ type DuePreset = '' | 'today' | 'this_week' | 'overdue' | 'no_date';
 const TASK_ID_RE = /^[a-z0-9_-]{10,40}$/i;
 
 // ── Workspace icon colors ──────────────────────────────────────────────────────
-const WS_COLORS = ['#22C55E', '#4F6EF7', '#8B5CF6', '#F59E0B', '#EC4899', '#0EA5E9'];
+const WS_COLORS = ['var(--success-8)', 'var(--brand-8)', 'var(--brand-gold-8)', 'var(--warning-6)', 'var(--brand-7)', 'var(--info-8)'];
 function wsColor(name: string): string {
   return WS_COLORS[(name?.charCodeAt(0) ?? 0) % WS_COLORS.length];
 }
@@ -225,7 +223,6 @@ export default function MyTasksPage() {
       }}>
         {chips.map((chip) => {
           const active = duePreset === chip.value;
-          const isOverdue = chip.value === 'overdue';
           return (
             <button
               key={chip.value}
@@ -233,15 +230,11 @@ export default function MyTasksPage() {
               style={{
                 fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
                 fontWeight: active ? 500 : 400,
-                color: isOverdue && active
-                  ? c.chipOverdueText
-                  : active ? c.chipActiveText : c.chipText,
-                background: isOverdue && active
-                  ? c.chipOverdue
-                  : active ? c.chipActive : c.chipBg,
+                color: active ? c.chipActiveText : c.chipText,
+                background: active ? c.chipActive : c.chipBg,
                 border: active
-                  ? `1px solid ${isOverdue ? c.chipOverdueText : c.chipActiveText}33`
-                  : '1px solid transparent',
+                  ? '1px solid var(--component-border-info-medium)'
+                  : '1px solid var(--component-border-neutral-low)',
                 borderRadius: 7, padding: '5px 12px',
                 cursor: 'pointer', transition: 'all 0.12s',
               }}
@@ -285,7 +278,7 @@ export default function MyTasksPage() {
         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
           <div style={{
             width: 24, height: 24, borderRadius: '50%',
-            border: `2px solid ${c.border}`, borderTopColor: '#4F6EF7',
+            border: `2px solid ${c.border}`, borderTopColor: 'var(--brand-8)',
             animation: 'spin 0.7s linear infinite',
           }} />
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -315,7 +308,7 @@ export default function MyTasksPage() {
                   background: wsColor(ws.wsName),
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>
+                  <span style={{ color: 'var(--neutral-0)', fontSize: 10, fontWeight: 700 }}>
                     {ws.wsName[0]?.toUpperCase()}
                   </span>
                 </div>
@@ -358,7 +351,7 @@ export default function MyTasksPage() {
                         const due = task.dueDate ? new Date(task.dueDate) : null;
                         const isOverdue = due !== null && due < now && !isDone;
                         const prio = task.priority ? PRIO[task.priority] : null;
-                        const statusColor = task.status?.color ?? '#484F58';
+                        const statusColor = task.status?.color ?? 'var(--neutral-8)';
                         const isOpen = openAccordionId === task.id;
 
                         return (
@@ -381,25 +374,26 @@ export default function MyTasksPage() {
                                 padding: bp === 'mobile' ? '10px 12px' : '11px 16px',
                                 minWidth: 0,
                                 background: isOpen
-                                  ? (mode === 'light' ? '#EDE9FE' : '#111526')
+                                  ? 'var(--static-background-base)'
                                   : isOverdue
-                                    ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
+                                    ? (mode === 'light' ? 'var(--component-fill-negative-soft-default)' : 'var(--component-fill-negative-soft-default)')
                                     : c.rowBg,
                                 borderBottom: (!isOpen && idx < board.tasks.length - 1)
                                   ? `1px solid ${c.border}` : 'none',
-                                borderLeft: `3px solid ${isOpen ? '#4F6EF7' : statusColor}`,
-                                cursor: 'pointer', transition: 'background 0.12s',
+                                borderLeft: `3px solid ${isOpen ? 'var(--component-border-info-medium)' : statusColor}`,
+                                boxShadow: isOpen ? 'inset 0 0 0 1px var(--component-border-info-medium)' : 'none',
+                                cursor: 'pointer', transition: 'background 0.12s, box-shadow 0.12s',
                               }}
                               onMouseEnter={(e) => {
                                 if (!isOpen) {
                                   (e.currentTarget as HTMLElement).style.background =
-                                    mode === 'light' ? '#F0EEF8' : '#131729';
+                                    mode === 'light' ? 'var(--static-background-light)' : 'var(--static-background-light)';
                                 }
                               }}
                               onMouseLeave={(e) => {
                                 if (!isOpen) {
                                   (e.currentTarget as HTMLElement).style.background = isOverdue
-                                    ? (mode === 'light' ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.05)')
+                                    ? (mode === 'light' ? 'var(--component-fill-negative-soft-default)' : 'var(--component-fill-negative-soft-default)')
                                     : c.rowBg;
                                 }
                               }}
@@ -408,12 +402,12 @@ export default function MyTasksPage() {
                               <div style={{
                                 width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: isDone ? '#22C55E' : 'transparent',
+                                background: isDone ? 'var(--success-8)' : 'transparent',
                                 border: isDone ? 'none' : `2px solid ${statusColor}`,
                               }}>
                                 {isDone && (
                                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                                    <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M2 5l2.5 2.5L8 3" stroke="var(--neutral-0)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
                                 )}
                               </div>
@@ -461,7 +455,7 @@ export default function MyTasksPage() {
                                 {due && (
                                   <span style={{
                                     fontSize: 11,
-                                    color: isOverdue ? '#EF4444' : c.muted,
+                                    color: isOverdue ? 'var(--error-10)' : c.muted,
                                     whiteSpace: 'nowrap',
                                   }}>
                                     {isOverdue && bp !== 'mobile' ? 'Просрочено · ' : ''}
@@ -477,7 +471,7 @@ export default function MyTasksPage() {
                                     flexShrink: 0, marginLeft: 4,
                                     transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
                                     transition: 'transform 0.15s',
-                                    color: isOpen ? '#4F6EF7' : c.muted,
+                                    color: isOpen ? 'var(--info-8)' : c.muted,
                                   }}
                                 >
                                   <path d="M4 2.5L7.5 6L4 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -517,8 +511,8 @@ export default function MyTasksPage() {
             disabled={loadingMore}
             style={{
               fontFamily: '"Inter",system-ui,sans-serif', fontSize: 13,
-              color: '#4F6EF7', background: 'transparent',
-              border: '1px solid #4F6EF7', borderRadius: 8,
+              color: 'var(--brand-8)', background: 'transparent',
+              border: '1px solid var(--brand-8)', borderRadius: 8,
               padding: '8px 24px', cursor: 'pointer',
               opacity: loadingMore ? 0.5 : 1,
             }}

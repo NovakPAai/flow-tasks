@@ -95,7 +95,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: mode === 'light' ? '#F5F3FF' : '#03050F' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: mode === 'light' ? 'var(--static-background-base)' : 'var(--static-background-base)' }}>
         <Spin size="large" />
       </div>
     );
@@ -133,25 +133,15 @@ export default function App() {
     <ConfigProvider
       theme={{
         algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        token: isDark ? {
-          colorPrimary: '#4F6EF7',
-          colorBgContainer: '#0F1320',
-          colorBgElevated: '#161C30',
-          colorBgBase: '#03050F',
-          colorText: '#E2E8F8',
-          colorTextSecondary: '#8B95B0',
-          colorBorder: '#1E2640',
-          fontFamily: 'Inter, sans-serif',
-          borderRadius: 8,
-        } : {
-          colorPrimary: '#4F6EF7',
-          colorBgContainer: '#FDFCFF',
-          colorBgElevated: '#FFFFFF',
-          colorBgBase: '#F5F3FF',
-          colorText: '#1A1A2E',
-          colorTextSecondary: '#6B7194',
-          colorBorder: '#E8E5F0',
-          fontFamily: 'Inter, sans-serif',
+        token: {
+          colorPrimary: 'var(--brand-8)',
+          colorBgContainer: 'var(--static-background-lightest)',
+          colorBgElevated: 'var(--static-background-darker)',
+          colorBgBase: 'var(--static-background-base)',
+          colorText: 'var(--static-text-neutral-primary)',
+          colorTextSecondary: 'var(--static-text-neutral-secondary)',
+          colorBorder: 'var(--static-border-neutral-tertiary)',
+          fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
           borderRadius: 8,
         },
       }}

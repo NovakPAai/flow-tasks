@@ -26,14 +26,14 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <div style={{ color: '#ff4d4f' }}>Неверная ссылка для сброса пароля.</div>
+        <div style={{ color: 'var(--error-10)' }}>Неверная ссылка для сброса пароля.</div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f5f5' }}>
-      <div style={{ background: '#fff', padding: 32, borderRadius: 8, width: 360, boxShadow: '0 2px 16px rgba(0,0,0,.08)' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--static-background-base)' }}>
+      <div style={{ background: 'var(--neutral-0)', padding: 32, borderRadius: 8, width: 360, boxShadow: 'var(--shadow-sm)' }}>
         <h2 style={{ marginBottom: 24 }}>Новый пароль</h2>
         <Form layout="vertical" onFinish={onFinish}>
           <Form.Item
