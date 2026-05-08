@@ -215,6 +215,7 @@ describe('ИАА: Аутентификация — ИБ-требования', (
         .set(auth(user.token))
         .send({ currentPassword: user.password, newPassword: 'NewPassword1' });
       expect(res.status).toBe(200);
+      await new Promise((r) => setTimeout(r, 80));
       const log = await getLastAuditLog('auth.credential.change');
       expect(log).not.toBeNull();
     });
@@ -251,6 +252,7 @@ describe('ИАА: Аутентификация — ИБ-требования', (
       const rawKey = keyRes.body.key as string;
 
       await api.get('/api/my-tasks').set('Authorization', `Bearer ${rawKey}`);
+      await new Promise((r) => setTimeout(r, 80));
       const log = await getLastAuditLog('auth.apikey.use');
       expect(log).not.toBeNull();
     });
