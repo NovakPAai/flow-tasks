@@ -190,7 +190,14 @@ function BarTooltip({ tip, isDark, statuses }: {
       </div>
 
       {/* Даты */}
-      {start && end && (
+      {!start && end ? (
+        <div style={{ display:'flex', alignItems:'center', gap:5, color:muted, fontSize:11.5, marginBottom:5 }}>
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M2 6l2.5 2.5L10 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Дедлайн: {fmtShort(end)}
+        </div>
+      ) : start && end ? (
         <div style={{ display:'flex', alignItems:'center', gap:5, color:muted, fontSize:11.5, marginBottom:5 }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.1"/>
@@ -199,7 +206,7 @@ function BarTooltip({ tip, isDark, statuses }: {
           {fmtShort(start)} → {fmtShort(end)}
           <span style={{ color:dimmed }}>({dur} дн.)</span>
         </div>
-      )}
+      ) : null}
 
       {/* Приоритет */}
       {task.priority && (
@@ -795,8 +802,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                 const isChild = !!task.parentId;
                 const rh      = isChild ? CROW_H : ROW_H;
                 const yOffset = rows.slice(0, idx).reduce((acc, t) => acc + (t.parentId ? CROW_H : ROW_H), 0);
-                const start   = parseDate(task.startDate) ?? parseDate(task.dueDate);
-                const end     = parseDate(task.dueDate)   ?? parseDate(task.startDate);
+                const rawStart = parseDate(task.startDate);
+                const rawEnd   = parseDate(task.dueDate);
+                const isMilestone = !rawStart && !!rawEnd;
+                const start = rawStart ?? rawEnd;
+                const end   = rawEnd   ?? rawStart;
                 const { bg, border } = barColor(task);
                 const barH    = isChild ? 22 : 30;
                 const barR    = isChild ? 5  : 7;
@@ -815,6 +825,46 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                         position: 'absolute', right: 10, top: '50%',
                         transform: 'translateY(-50%)', fontSize: 11, color: c.dimmed, fontStyle: 'italic',
                       }}>нет дат</span>
+                    </div>
+                  );
+                }
+
+                // Milestone: only dueDate set, no startDate → render diamond marker
+                if (isMilestone) {
+                  const mx = xOf(end!);
+                  const mSize = isChild ? 12 : 16;
+                  const overdue = isOverdue(task);
+                  const mileMouseProps = {
+                    onMouseEnter: (e: React.MouseEvent) => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-50%) rotate(45deg) scale(1.2)';
+                      setTip({ task, x: e.clientX, y: e.clientY });
+                    },
+                    onMouseMove: (e: React.MouseEvent) =>
+                      setTip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null),
+                    onMouseLeave: (e: React.MouseEvent) => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-50%) rotate(45deg) scale(1)';
+                      setTip(null);
+                    },
+                  };
+                  return (
+                    <div key={task.id} style={rowStyle}>
+                      {mx >= -mSize && mx <= TL_W + mSize && (
+                        <div
+                          title={`${task.issueKey} · ${task.title} · ${statusLabel(task)} · дедлайн ${fmtShort(end!)}`}
+                          style={{
+                            position: 'absolute',
+                            top: '50%', left: mx - mSize / 2,
+                            transform: 'translateY(-50%) rotate(45deg)',
+                            width: mSize, height: mSize,
+                            background: overdue ? 'rgba(239,68,68,.75)' : bg,
+                            border: `2px solid ${overdue ? '#EF4444' : border}`,
+                            zIndex: 2, cursor: 'default',
+                            transition: 'transform .12s',
+                            animation: overdue && task.priority === 'HIGH' ? 'ov-pulse 2s ease-in-out infinite' : 'none',
+                          }}
+                          {...mileMouseProps}
+                        />
+                      )}
                     </div>
                   );
                 }
