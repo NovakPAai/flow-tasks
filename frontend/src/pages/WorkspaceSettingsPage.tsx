@@ -170,8 +170,16 @@ export default function WorkspaceSettingsPage() {
   const [editingWfId, setEditingWfId] = useState<string | null>(null);
 
   // Data loading state
-  const [loadingData, setLoadingData] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError]     = useState<string | null>(null);
+
+  // Security settings
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaGraceDays, setMfaGraceDays] = useState(7);
+  const [savingMfa, setSavingMfa]   = useState(false);
+
+  // Confirm modal
+  const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const wsId          = workspace?.id;
   const wsName        = workspace?.name;
@@ -181,6 +189,7 @@ export default function WorkspaceSettingsPage() {
   const loadWorkspaceData = useCallback(async (id: string) => {
     setLoadingData(true);
     setLoadError(null);
+    setMembers([]); setLabels([]); setWorkflows([]);
     try {
       const [m, l, wfs] = await Promise.all([
         workspacesApi.listMembers(id),
@@ -202,7 +211,9 @@ export default function WorkspaceSettingsPage() {
     setName(wsName ?? '');
     setDescription(wsDescription ?? '');
     setIsPrivate(wsIsPrivate ?? false);
-  }, [wsName, wsDescription, wsIsPrivate]);
+    setMfaEnabled(workspace?.requireMfa ?? false);
+    setMfaGraceDays(workspace?.mfaGraceDays ?? 7);
+  }, [wsName, wsDescription, wsIsPrivate, workspace?.requireMfa, workspace?.mfaGraceDays]);
 
   // Load workspace data only when workspace identity changes
   useEffect(() => {
@@ -210,7 +221,10 @@ export default function WorkspaceSettingsPage() {
     loadWorkspaceData(wsId);
   }, [wsId, loadWorkspaceData]);
 
-  const myRole  = loadingData ? undefined : members.find((m) => m.userId === currentUser?.id)?.role;
+  // During load, fall back to the role stored in the workspace list so nav doesn't shift
+  const myRole  = loadingData
+    ? (workspace?.role ?? undefined)
+    : members.find((m) => m.userId === currentUser?.id)?.role;
   const isOwner = myRole === 'OWNER';
 
   if (!workspace) return null;
@@ -232,14 +246,18 @@ export default function WorkspaceSettingsPage() {
     } catch { message.error('Не удалось изменить роль'); }
   };
 
-  const handleRemoveMember = async (userId: string) => {
-    if (!confirm('Удалить участника?')) return;
-    try {
-      await workspacesApi.removeMember(workspace.id, userId);
-      setMembers((prev) => prev.filter((m) => m.userId !== userId));
-      load(); // refresh memberCount in workspace store
-    }
-    catch { message.error('Не удалось удалить'); }
+  const handleRemoveMember = (userId: string) => {
+    setConfirmModal({
+      title: 'Удалить участника?',
+      message: 'Участник потеряет доступ к workspace.',
+      onConfirm: async () => {
+        try {
+          await workspacesApi.removeMember(workspace.id, userId);
+          setMembers((prev) => prev.filter((m) => m.userId !== userId));
+          load();
+        } catch { message.error('Не удалось удалить'); }
+      },
+    });
   };
 
   const handleInvite = async () => {
@@ -276,10 +294,15 @@ export default function WorkspaceSettingsPage() {
     finally { setSavingLabel(false); }
   };
 
-  const handleDeleteLabel = async (labelId: string) => {
-    if (!confirm('Удалить метку?')) return;
-    try { await labelsApi.deleteLabel(labelId); setLabels((prev) => prev.filter((l) => l.id !== labelId)); }
-    catch { message.error('Не удалось удалить'); }
+  const handleDeleteLabel = (labelId: string) => {
+    setConfirmModal({
+      title: 'Удалить метку?',
+      message: 'Метка будет удалена из всех задач.',
+      onConfirm: async () => {
+        try { await labelsApi.deleteLabel(labelId); setLabels((prev) => prev.filter((l) => l.id !== labelId)); }
+        catch { message.error('Не удалось удалить'); }
+      },
+    });
   };
 
   const handleCreateWorkflow = async () => {
@@ -301,16 +324,21 @@ export default function WorkspaceSettingsPage() {
     finally { setCreatingWf(false); }
   };
 
-  const handleDeleteWorkflow = async (wfId: string) => {
-    if (!confirm('Удалить workflow? Доски с этим workflow перестанут работать.')) return;
-    try {
-      await wfApi.deleteWorkflow(wfId);
-      setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
-      if (editingWfId === wfId) setEditingWfId(null);
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      message.error(msg ?? 'Не удалось удалить');
-    }
+  const handleDeleteWorkflow = (wfId: string) => {
+    setConfirmModal({
+      title: 'Удалить workflow?',
+      message: 'Доски с этим workflow перестанут работать.',
+      onConfirm: async () => {
+        try {
+          await wfApi.deleteWorkflow(wfId);
+          setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
+          if (editingWfId === wfId) setEditingWfId(null);
+        } catch (err: unknown) {
+          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+          message.error(msg ?? 'Не удалось удалить');
+        }
+      },
+    });
   };
 
   const handleSetDefaultWorkflow = async (wfId: string) => {
@@ -323,13 +351,18 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
-  const handleDeleteWorkspace = async () => {
-    if (!confirm(`Удалить workspace "${workspace.name}"? Это действие необратимо.`)) return;
-    try {
-      await workspacesApi.deleteWorkspace(workspace.id);
-      await load();
-      navigate('/workspaces');
-    } catch { message.error('Не удалось удалить workspace'); }
+  const handleDeleteWorkspace = () => {
+    setConfirmModal({
+      title: `Удалить "${workspace.name}"?`,
+      message: 'Это действие необратимо. Все доски, задачи и участники будут удалены.',
+      onConfirm: async () => {
+        try {
+          await workspacesApi.deleteWorkspace(workspace.id);
+          await load();
+          navigate('/workspaces');
+        } catch { message.error('Не удалось удалить workspace'); }
+      },
+    });
   };
 
   // ─── Input style ───────────────────────────────────────────────────────────
@@ -346,12 +379,44 @@ export default function WorkspaceSettingsPage() {
     { key: 'workflows', label: 'Workflows' },
     { key: 'labels',    label: 'Метки' },
     ...(isOwner ? [{ key: 'history', label: 'История' }] : []),
+    ...(isOwner ? [{ key: 'security', label: 'Безопасность' }] : []),
     { key: 'general',   label: 'Основное' },
   ];
 
   // ─── Tab content ───────────────────────────────────────────────────────────
 
-  const renderMembers = () => (
+  const renderMembers = () => {
+    if (loadingData) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Участники</h2>
+        </div>
+        <div style={{ border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 56, background: c.cardBg, borderBottom: i < 3 ? `1px solid ${c.border}` : 'none', animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+    );
+
+    if (loadError) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Участники</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
+          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <button
+            onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
+            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+          >
+            Повторить
+          </button>
+        </div>
+      </div>
+    );
+
+    return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -440,7 +505,8 @@ export default function WorkspaceSettingsPage() {
         ))}
       </div>
     </div>
-  );
+    );
+  };
 
   const renderWorkflows = () => {
     if (loadingData) return (
@@ -486,7 +552,7 @@ export default function WorkspaceSettingsPage() {
             <span style={{ fontSize: 12, color: c.muted }}>Управляйте статусами и переходами для ваших досок</span>
           </div>
         </div>
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(139,148,158,0.08)', borderRadius: 8, border: `1px solid ${c.border}`, fontSize: 13, color: c.muted }}>
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(79,110,247,0.06)', borderRadius: 8, borderLeft: '3px solid #4F6EF7', border: `1px solid rgba(79,110,247,0.18)`, fontSize: 13, color: c.text, fontWeight: 500 }}>
           Редактирование workflow доступно только владельцу воркспейса
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -622,7 +688,38 @@ export default function WorkspaceSettingsPage() {
     );
   };
 
-  const renderLabels = () => (
+  const renderLabels = () => {
+    if (loadingData) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Метки</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ height: 64, borderRadius: 10, background: c.cardBg, border: `1px solid ${c.border}`, animation: 'pulse 1.4s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+    );
+
+    if (loadError) return (
+      <div>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Метки</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: '24px 0' }}>
+          <span style={{ fontSize: 13, color: '#EF4444' }}>{loadError}</span>
+          <button
+            onClick={() => { if (wsId) loadWorkspaceData(wsId); else load(); }}
+            style={{ fontSize: 12, color: '#4F6EF7', background: 'rgba(79,110,247,0.08)', border: '1px solid rgba(79,110,247,0.2)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+          >
+            Повторить
+          </button>
+        </div>
+      </div>
+    );
+
+    return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -659,7 +756,8 @@ export default function WorkspaceSettingsPage() {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderHistory = () => workspace ? <WorkspaceHistoryTimeline workspaceId={workspace.id} /> : null;
 
@@ -737,19 +835,97 @@ export default function WorkspaceSettingsPage() {
     </div>
   );
 
+  const saveMfaSettings = async () => {
+    setSavingMfa(true);
+    try {
+      await workspacesApi.updateWorkspace(workspace.id, { requireMfa: mfaEnabled, mfaGraceDays });
+      await load();
+      message.success('Настройки безопасности сохранены');
+    } catch {
+      message.error('Не удалось сохранить');
+    } finally {
+      setSavingMfa(false);
+    }
+  };
+
+  const renderSecurity = () => (
+    <div>
+      <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Безопасность</h2>
+      <div style={{ marginBottom: 32, marginTop: 8, fontSize: 12, color: c.muted }}>Настройки аутентификации и доступа</div>
+
+      <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: c.text, fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>Обязательная двухфакторная аутентификация</div>
+              <div style={{ fontSize: 12, color: c.muted, marginTop: 4 }}>
+                SSO-участники должны проходить 2FA через Avanpost / Keycloak (TOTP)
+              </div>
+            </div>
+            <button
+              role="switch"
+              aria-checked={mfaEnabled}
+              aria-label="Обязательная двухфакторная аутентификация"
+              onClick={() => setMfaEnabled((v) => !v)}
+              style={{
+                flexShrink: 0, width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
+                border: 'none', outline: 'none', position: 'relative', transition: 'background 0.2s',
+                background: mfaEnabled ? '#4F6EF7' : c.label,
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: 3, left: mfaEnabled ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                transition: 'left 0.2s',
+              }} />
+            </button>
+          </div>
+
+          {mfaEnabled && (
+            <div style={{ borderTop: `1px solid ${c.border}`, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: c.label, letterSpacing: '0.06em', marginBottom: 6 }}>
+                  ПЕРИОД ОТСРОЧКИ (ДНЕЙ)
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input
+                    type="number" min={1} max={30}
+                    value={mfaGraceDays}
+                    onChange={(e) => { const v = Number(e.target.value); setMfaGraceDays(isNaN(v) ? mfaGraceDays : Math.min(30, Math.max(1, Math.round(v)))); }}
+                    onBlur={(e) => { const v = Number(e.target.value); setMfaGraceDays(isNaN(v) || v < 1 ? 1 : Math.min(30, Math.round(v))); }}
+                    style={{ ...inp, width: 80 }}
+                  />
+                  <span style={{ fontSize: 12, color: c.muted }}>дней до принудительной проверки</span>
+                </div>
+              </div>
+              {!workspace?.requireMfa && (
+                <div style={{ fontSize: 12, color: '#F59E0B', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px' }}>
+                  При включении: все участники получат {mfaGraceDays} дней для настройки TOTP в Avanpost/Keycloak
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <PrimaryBtn onClick={saveMfaSettings} loading={savingMfa} style={{ width: 'fit-content' }}>
+          Сохранить настройки безопасности
+        </PrimaryBtn>
+      </div>
+    </div>
+  );
+
   const CONTENT_MAP: Record<string, () => React.ReactNode> = {
     members: renderMembers,
     workflows: renderWorkflows,
     labels: renderLabels,
     history: renderHistory,
+    security: renderSecurity,
     general: renderGeneral,
   };
 
   // ─── Layout ────────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', minHeight: '100%', fontFamily: '"Inter",system-ui,sans-serif', background: c.bg }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-
       {/* Sidebar */}
       <div style={{ width: 230, flexShrink: 0, background: c.sidebar, borderRight: `1px solid ${c.sidebarBorder}`, padding: '24px 0', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '0 20px 24px' }}>
@@ -783,21 +959,6 @@ export default function WorkspaceSettingsPage() {
         })}
 
         <div style={{ flex: 1 }} />
-
-        {/* Delete workspace */}
-        {isOwner && (
-          <button
-            onClick={handleDeleteWorkspace}
-            style={{
-              display: 'block', width: '100%', textAlign: 'left',
-              padding: '9px 20px', fontSize: 13, color: '#EF4444',
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              fontFamily: '"Inter",system-ui,sans-serif',
-            }}
-          >
-            Удалить workspace
-          </button>
-        )}
       </div>
 
       {/* Content area */}
@@ -847,6 +1008,27 @@ export default function WorkspaceSettingsPage() {
           <PrimaryBtn onClick={handleSaveLabel} loading={savingLabel} disabled={!labelName.trim()} style={{ width: '100%', justifyContent: 'center' }}>
             {editLabelId ? 'Сохранить' : 'Создать метку'}
           </PrimaryBtn>
+        </div>
+      </Modal>
+
+      {/* Confirm modal */}
+      <Modal open={confirmModal !== null} onClose={() => setConfirmModal(null)} title={confirmModal?.title ?? ''}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ margin: 0, fontSize: 13, color: c.muted, lineHeight: '1.6' }}>{confirmModal?.message}</p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setConfirmModal(null)}
+              style={{ fontSize: 13, color: c.muted, background: 'none', border: `1px solid ${c.border}`, borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            >
+              Отмена
+            </button>
+            <button
+              onClick={() => { const fn = confirmModal?.onConfirm; setConfirmModal(null); void fn?.(); }}
+              style={{ fontSize: 13, fontWeight: 500, color: '#fff', background: '#EF4444', border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontFamily: '"Inter",system-ui,sans-serif' }}
+            >
+              Удалить
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

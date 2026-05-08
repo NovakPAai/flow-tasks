@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
 import { rateLimit } from '../../shared/middleware/rate-limit.js';
+import { boardMfaGuard, taskMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
 import {
   createTaskDto,
   updateTaskDto,
@@ -14,7 +15,7 @@ import {
   type BulkUpdateDto,
 } from './tasks.dto.js';
 import * as tasks from './tasks.service.js';
-import { authHandler } from '../../shared/utils/async-handler.js';
+import { asyncHandler, authHandler } from '../../shared/utils/async-handler.js';
 import type { AuthRequest } from '../../shared/types/index.js';
 
 const bulkLimit = rateLimit({
@@ -27,6 +28,7 @@ const bulkLimit = rateLimit({
 // ─── /boards/:bid/tasks ───────────────────────────────────────────────────────
 export const boardTasksRouter = Router({ mergeParams: true });
 boardTasksRouter.use(authenticate);
+boardTasksRouter.use(asyncHandler(boardMfaGuard('bid')));
 
 boardTasksRouter.get('/', validate(taskFiltersDto, 'query'), authHandler(async (req, res) => {
   res.json(await tasks.listTasks(String(req.params.bid), req.user!.userId, req.query as never));
@@ -54,6 +56,7 @@ boardTasksRouter.post('/bulk-delete', bulkLimit, validate(bulkDeleteDto), authHa
 // ─── /tasks/:id ───────────────────────────────────────────────────────────────
 const router = Router();
 router.use(authenticate);
+router.use('/:id', asyncHandler(taskMfaGuard()));
 
 router.get('/:id', authHandler(async (req, res) => {
   res.json(await tasks.getTask(String(req.params.id), req.user!.userId));

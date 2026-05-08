@@ -2,7 +2,7 @@
 id: gap-12-workflow-settings-unlocked
 type: gap-fix
 priority: P1
-status: draft
+status: done
 ---
 
 # Spec: Workflow Settings — страница настроек заблокирована (ghost-lock)

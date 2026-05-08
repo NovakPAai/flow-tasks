@@ -77,6 +77,7 @@ export async function listMyWorkspaces(userId: string) {
       memberCount: m.workspace._count.members,
       boardCount: m.workspace._count.boards,
       taskCount: taskCountMap.get(m.workspaceId) ?? 0,
+      mfaGraceUntil: m.mfaGraceUntil ?? null,
     }));
 }
 
@@ -132,16 +133,35 @@ export async function getWorkspace(workspaceId: string, userId: string) {
 export async function updateWorkspace(workspaceId: string, userId: string, dto: UpdateWorkspaceDto) {
   await assertOwner(workspaceId, userId);
 
-  const current = await prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId }, select: { name: true, isPrivate: true } });
-
-  const updated = await prisma.workspace.update({
+  const current = await prisma.workspace.findUniqueOrThrow({
     where: { id: workspaceId },
-    data: dto,
+    select: { name: true, isPrivate: true, requireMfa: true, mfaGraceDays: true },
+  });
+
+  const graceDays = dto.mfaGraceDays ?? current.mfaGraceDays;
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const ws = await tx.workspace.update({
+      where: { id: workspaceId },
+      data: dto,
+    });
+
+    const enablingMfa = dto.requireMfa === true && current.requireMfa === false;
+    if (enablingMfa) {
+      const graceUntil = new Date(Date.now() + graceDays * 86_400_000);
+      await tx.workspaceMember.updateMany({
+        where: { workspaceId, mfaGraceUntil: null },
+        data: { mfaGraceUntil: graceUntil },
+      });
+    }
+
+    return ws;
   });
 
   const meta: Record<string, unknown> = {};
   if (dto.name !== undefined && dto.name !== current.name) { meta.nameFrom = current.name; meta.nameTo = dto.name; }
   if (dto.isPrivate !== undefined && dto.isPrivate !== current.isPrivate) meta.isPrivate = dto.isPrivate;
+  if (dto.requireMfa !== undefined && dto.requireMfa !== current.requireMfa) meta.requireMfa = dto.requireMfa;
   await logEvent(workspaceId, userId, 'workspace_updated', 'workspace', workspaceId, meta);
 
   return updated;
@@ -164,6 +184,15 @@ export async function listMembers(workspaceId: string, userId: string) {
   });
 }
 
+async function getMfaGraceUntil(workspaceId: string): Promise<Date | null> {
+  const ws = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { requireMfa: true, mfaGraceDays: true },
+  });
+  if (!ws?.requireMfa) return null;
+  return new Date(Date.now() + ws.mfaGraceDays * 86_400_000);
+}
+
 export async function addMember(workspaceId: string, requesterId: string, dto: AddMemberDto) {
   await assertOwner(workspaceId, requesterId);
 
@@ -175,11 +204,18 @@ export async function addMember(workspaceId: string, requesterId: string, dto: A
   });
   if (existing) throw new AppError(409, 'User is already a member');
 
+  const mfaGraceUntil = await getMfaGraceUntil(workspaceId);
+
   const member = await prisma.workspaceMember.create({
-    data: { workspaceId, userId: dto.userId, role: dto.role },
+    data: { workspaceId, userId: dto.userId, role: dto.role, mfaGraceUntil },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
   emitMemberAddedNotification(workspaceId, dto.userId, requesterId).catch(() => {});
+  await logEvent(workspaceId, requesterId, 'member_added', 'member', dto.userId, {
+    name: targetUser.name,
+    email: targetUser.email,
+    role: dto.role,
+  });
   return member;
 }
 
@@ -218,8 +254,10 @@ export async function inviteByEmail(workspaceId: string, requesterId: string, dt
   });
   if (existing) throw new AppError(409, 'User is already a member');
 
+  const mfaGraceUntil = await getMfaGraceUntil(workspaceId);
+
   const member = await prisma.workspaceMember.create({
-    data: { workspaceId, userId: targetUser.id, role: dto.role },
+    data: { workspaceId, userId: targetUser.id, role: dto.role, mfaGraceUntil },
     include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
   });
 

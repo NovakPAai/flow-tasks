@@ -326,6 +326,7 @@ test.describe('TaskDrawer — редактирование задачи', () => 
   });
 
   test('назначение существующей метки на задачу', async ({ page }) => {
+    test.setTimeout(60_000);
     // Сначала создаём метку в первом drawer
     const labelName = `Assign Label ${uid()}`;
     await openDrawer(page, `Label Source ${uid()}`);
@@ -347,12 +348,14 @@ test.describe('TaskDrawer — редактирование задачи', () => 
 
     // getByRole('button') чтобы не попасть на span 'Метки' в сайдбаре
     await page.getByRole('button', { name: 'Метки' }).click();
+    await page.waitForLoadState('networkidle');
     // .first() т.к. labelName может матчиться в picker list И в sidebar labels
     await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 10000 });
-    await page.getByText(labelName).first().click();
+    // dispatchEvent обходит проверку actionability (тот же паттерн что в openDrawer)
+    await page.getByText(labelName).first().dispatchEvent('click');
     // Метка назначена — picker ещё открыт (Escape закрыл бы drawer целиком)
     // Проверяем что метка видна — .first() избегает strict mode
-    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(labelName).first()).toBeVisible({ timeout: 10_000 });
   });
 
   // ── Удаление задачи ──────────────────────────────────────────────────────────

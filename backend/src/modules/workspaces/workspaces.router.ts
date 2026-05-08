@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
+import { workspaceMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
 import {
   createWorkspaceDto,
   updateWorkspaceDto,
@@ -10,7 +11,7 @@ import {
 } from './workspaces.dto.js';
 import * as ws from './workspaces.service.js';
 import * as boards from '../boards/boards.service.js';
-import { authHandler } from '../../shared/utils/async-handler.js';
+import { asyncHandler, authHandler } from '../../shared/utils/async-handler.js';
 
 const router = Router();
 router.use(authenticate);
@@ -63,11 +64,11 @@ router.delete('/:id/members/:userId', authHandler(async (req, res) => {
   res.json({ message: 'Member removed' });
 }));
 
-router.get('/:id/boards/by-prefix/:prefix', authHandler(async (req, res) => {
+router.get('/:id/boards/by-prefix/:prefix', asyncHandler(workspaceMfaGuard()), authHandler(async (req, res) => {
   res.json(await boards.getBoardByPrefix(String(req.params.id), String(req.params.prefix), req.user!.userId));
 }));
 
-router.get('/:id/history', authHandler(async (req, res) => {
+router.get('/:id/history', asyncHandler(workspaceMfaGuard()), authHandler(async (req, res) => {
   const rawLimit  = parseInt(String(req.query.limit  ?? '50'), 10);
   const rawOffset = parseInt(String(req.query.offset ?? '0'),  10);
   const limit  = Math.min(Number.isNaN(rawLimit)  ? 50 : rawLimit,  200);

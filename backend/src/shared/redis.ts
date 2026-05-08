@@ -82,10 +82,24 @@ export type UserSession = {
   email: string;
   createdAt: string;
   lastSeenAt: string;
+  amr?: string[];
 };
 
 function buildSessionKey(userId: string): string {
   return `session:${userId}`;
+}
+
+export async function getUserSession(userId: string): Promise<UserSession | null> {
+  const redis = await getRedisClientInternal();
+  if (!redis) return null;
+  try {
+    const raw = await redis.get(buildSessionKey(userId));
+    if (!raw) return null;
+    return JSON.parse(raw) as UserSession;
+  } catch (err) {
+    logger.error('redis_session_read_error', { userId, error: String(err) });
+    return null;
+  }
 }
 
 export async function setUserSession(userId: string, session: Omit<UserSession, 'userId'>): Promise<void> {

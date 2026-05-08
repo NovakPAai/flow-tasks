@@ -6,6 +6,7 @@ export interface MappedClaims {
   email: string;
   name: string;
   emailVerified: boolean;
+  amr: string[];
 }
 
 const emailSchema = z.string().email();
@@ -15,7 +16,7 @@ const emailSchema = z.string().email();
 export function mapClaims(raw: Record<string, unknown>): MappedClaims {
   const sub = String(raw['sub'] ?? '').trim();
   const rawEmail = String(raw['email'] ?? '').trim();
-  const emailVerified = raw['email_verified'] !== false; // treat absent as true (IdP-verified accounts)
+  const emailVerified = raw['email_verified'] === true;
 
   if (!sub) throw new Error('OIDC claims missing required "sub"');
 
@@ -31,7 +32,13 @@ export function mapClaims(raw: Record<string, unknown>): MappedClaims {
   }
   if (!name) name = email.split('@')[0];
 
-  return { sub, email, name, emailVerified };
+  const amr = Array.isArray(raw['amr'])
+    ? (raw['amr'] as unknown[])
+        .filter((v): v is string => typeof v === 'string' && v.length <= 32)
+        .slice(0, 10)
+    : [];
+
+  return { sub, email, name, emailVerified, amr };
 }
 
 export function buildSsoSubjectId(sub: string): string {

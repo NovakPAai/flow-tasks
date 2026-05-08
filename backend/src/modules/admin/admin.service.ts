@@ -5,9 +5,10 @@ import { hashPassword } from '../../shared/utils/password.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { logger } from '../../shared/utils/logger.js';
 import { config } from '../../config.js';
+import { auditLog } from '../../shared/utils/audit-logger.js';
 import type { CreateUserDto, ReviewRequestDto } from './admin.dto.js';
 
-function auditLog(
+function writeAuditLog(
   actorId: string,
   action: string,
   targetId?: string,
@@ -63,7 +64,7 @@ export async function setUserSuperadmin(actorId: string, userId: string, isSuper
     data: { isSuperadmin },
     select: { id: true, email: true, name: true, isSuperadmin: true },
   });
-  auditLog(actorId, 'user.set_superadmin', userId, { isSuperadmin });
+  writeAuditLog(actorId, 'user.set_superadmin', userId, { isSuperadmin });
   return updated;
 }
 
@@ -83,7 +84,7 @@ export async function createUser(actorId: string, dto: CreateUserDto) {
     select: { id: true, email: true, name: true, avatar: true, loginCount: true, createdAt: true },
   });
 
-  auditLog(actorId, 'user.create', user.id, { email: user.email });
+  writeAuditLog(actorId, 'user.create', user.id, { email: user.email });
   logger.info('admin_user_created', { userId: user.id, email: user.email });
   return { user, generatedPassword };
 }
@@ -131,13 +132,13 @@ export async function reviewRegistrationRequest(
         data: { status: 'APPROVED', reviewedBy: reviewerUserId, reviewedAt: new Date() },
       }),
     ]);
-    auditLog(reviewerUserId, 'request.approve', requestId, { email: request.email });
+    writeAuditLog(reviewerUserId, 'request.approve', requestId, { email: request.email });
   } else {
     await prisma.registrationRequest.update({
       where: { id: requestId },
       data: { status: 'REJECTED', reviewedBy: reviewerUserId, reviewedAt: new Date() },
     });
-    auditLog(reviewerUserId, 'request.reject', requestId, { email: request.email });
+    writeAuditLog(reviewerUserId, 'request.reject', requestId, { email: request.email });
   }
 }
 
@@ -151,4 +152,21 @@ export async function listAuditLogs(limit = 100, offset = 0) {
     prisma.auditLog.count(),
   ]);
   return { logs, total };
+}
+
+export async function setUserActive(actorId: string, targetId: string, isActive: boolean) {
+  const user = await prisma.user.findUnique({ where: { id: targetId } });
+  if (!user) throw new AppError(404, 'Пользователь не найден');
+
+  await prisma.user.update({ where: { id: targetId }, data: { isActive } });
+
+  void auditLog({
+    actorId,
+    action: isActive ? 'admin.user.activate' : 'admin.user.deactivate',
+    targetId,
+    result: 'SUCCESS',
+    meta: { email: user.email, isActive },
+  });
+
+  return { id: targetId, isActive };
 }
