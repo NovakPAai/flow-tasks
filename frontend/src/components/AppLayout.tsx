@@ -44,6 +44,8 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
   const menuBg = navBg === '#0A0D1A' ? '#0F1320' : '#FFFFFF';
   const hasWorkspaces = workspaces.length > 0;
 
+  useEffect(() => { setPickerOpen(false); }, [current?.id]);
+
   function handleSettingsClick() {
     if (current) {
       onSettings(current.slug);

@@ -2,9 +2,9 @@
 id: gap-22-workspace-settings-always-accessible
 type: gap-fix
 priority: P2
-status: draft
+status: done
 source: ux-review-2026-05-08
-pr: —
+pr: "#159"
 ---
 
 # Spec: Кнопка «Настройки пространства» недоступна вне активного воркспейса

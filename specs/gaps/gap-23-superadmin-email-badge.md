@@ -2,9 +2,9 @@
 id: gap-23-superadmin-email-badge
 type: gap-fix
 priority: P1
-status: draft
+status: done
 source: ux-review-2026-05-08
-pr: —
+pr: "#159"
 ---
 
 # Spec: Метка «Суперадмин» не отображается для SUPERADMIN_EMAIL аккаунта при isSuperadmin=false в БД

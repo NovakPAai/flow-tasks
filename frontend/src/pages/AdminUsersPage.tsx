@@ -128,7 +128,7 @@ export default function AdminUsersPage() {
   const bp        = useBreakpoint();
   const isMobile  = bp === 'mobile';
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const { user } = useAuthStore();
+  const { user, loading: authLoading } = useAuthStore();
   const navigate = useNavigate();
   const C = mode === 'dark' ? DARK : LIGHT;
 
@@ -153,10 +153,10 @@ export default function AdminUsersPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.isSuperadmin) {
+    if (!authLoading && !user?.isSuperadmin) {
       navigate('/workspaces');
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (tab === 'users') loadUsers();
