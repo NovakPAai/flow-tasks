@@ -812,7 +812,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
               const dueColor = overdue ? '#EF4444' : due && diffDays(due, today) < 7 && due >= today ? '#F59E0B' : task.status?.category === 'DONE' ? '#10B981' : c.dimmed;
               const toggleExpand = () => {
                 if (!hasKids) return;
-                setExpanded(prev => { const n = new Set(prev); n.has(task.id) ? n.delete(task.id) : n.add(task.id); return n; });
+                setExpanded(prev => {
+                  const n = new Set(prev);
+                  if (n.has(task.id)) n.delete(task.id); else n.add(task.id);
+                  return n;
+                });
               };
 
               return (
