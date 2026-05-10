@@ -24,6 +24,11 @@ function isSameDay(a: Date, b: Date) {
     && a.getMonth() === b.getMonth()
     && a.getDate() === b.getDate();
 }
+const SAFE_COLOR_RE = /^#[0-9a-fA-F]{3,8}$|^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/;
+function safeColor(c: string | null | undefined, fallback = '#4F6EF7'): string {
+  return c && SAFE_COLOR_RE.test(c.trim()) ? c.trim() : fallback;
+}
+
 function parseDate(s?: string | null): Date | null {
   if (!s) return null;
   const d = new Date(s);
@@ -135,7 +140,7 @@ function BarTooltip({ tip, isDark, statuses }: {
           const ms     = Math.max(0, +segEnd - +new Date(seg.startedAt));
           const pct    = Math.round(ms / totalMs * 100);
           const st     = statusMap.get(seg.statusId);
-          return { name: st?.name ?? '?', color: st?.color ?? '#8B95B0', days: Math.round(ms / DAY_MS), pct, ongoing: !seg.endedAt };
+          return { name: st?.name ?? '?', color: safeColor(st?.color, '#8B95B0'), days: Math.round(ms / DAY_MS), pct, ongoing: !seg.endedAt };
         });
         // Хвост: запланированное оставшееся время
         const last = history[history.length - 1];
@@ -144,7 +149,7 @@ function BarTooltip({ tip, isDark, statuses }: {
           const tailMs  = +end - +today;
           const tailPct = Math.round(tailMs / totalMs * 100);
           const st      = statusMap.get(last.statusId);
-          tailSeg = { color: st?.color ?? '#8B95B0', pct: tailPct, days: Math.round(tailMs / DAY_MS) };
+          tailSeg = { color: safeColor(st?.color, '#8B95B0'), pct: tailPct, days: Math.round(tailMs / DAY_MS) };
         }
         return { segs, tailSeg };
       })()
@@ -190,7 +195,20 @@ function BarTooltip({ tip, isDark, statuses }: {
       </div>
 
       {/* Даты */}
-      {start && end && (
+      {!start && end ? (
+        <>
+          <div style={{ display:'flex', alignItems:'center', gap:5, color:muted, fontSize:11.5, marginBottom:5 }}>
+            {/* milestone diamond icon — matches the visual marker on the timeline */}
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <rect x="3" y="3" width="6" height="6" transform="rotate(45 6 6)" stroke="currentColor" strokeWidth="1.3"/>
+            </svg>
+            Дедлайн: {fmtShort(end)}
+          </div>
+          <div style={{ fontSize:10.5, color:dimmed, fontStyle:'italic', marginBottom:5 }}>
+            Добавьте дату начала — задача появится как диапазон
+          </div>
+        </>
+      ) : start && end ? (
         <div style={{ display:'flex', alignItems:'center', gap:5, color:muted, fontSize:11.5, marginBottom:5 }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
             <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.1"/>
@@ -199,7 +217,7 @@ function BarTooltip({ tip, isDark, statuses }: {
           {fmtShort(start)} → {fmtShort(end)}
           <span style={{ color:dimmed }}>({dur} дн.)</span>
         </div>
-      )}
+      ) : null}
 
       {/* Приоритет */}
       {task.priority && (
@@ -391,7 +409,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
 
   // ── Status bar color ───────────────────────────────────────────────────────
   function barColor(task: Task): { bg: string; border: string } {
-    const color = task.status?.color ?? '#4F6EF7';
+    const color = safeColor(task.status?.color);
     const cat   = task.status?.category ?? 'OPEN';
     const alpha = cat === 'DONE' ? '.62' : cat === 'IN_PROGRESS' ? '.68' : '.55';
     return {
@@ -795,8 +813,11 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                 const isChild = !!task.parentId;
                 const rh      = isChild ? CROW_H : ROW_H;
                 const yOffset = rows.slice(0, idx).reduce((acc, t) => acc + (t.parentId ? CROW_H : ROW_H), 0);
-                const start   = parseDate(task.startDate) ?? parseDate(task.dueDate);
-                const end     = parseDate(task.dueDate)   ?? parseDate(task.startDate);
+                const rawStart = parseDate(task.startDate);
+                const rawEnd   = parseDate(task.dueDate);
+                const isMilestone = !rawStart && !!rawEnd;
+                const start = rawStart ?? rawEnd;
+                const end   = rawEnd   ?? rawStart;
                 const { bg, border } = barColor(task);
                 const barH    = isChild ? 22 : 30;
                 const barR    = isChild ? 5  : 7;
@@ -812,9 +833,69 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                   return (
                     <div key={task.id} style={rowStyle}>
                       <span style={{
-                        position: 'absolute', right: 10, top: '50%',
+                        position: 'absolute', left: 10, top: '50%',
                         transform: 'translateY(-50%)', fontSize: 11, color: c.dimmed, fontStyle: 'italic',
                       }}>нет дат</span>
+                    </div>
+                  );
+                }
+
+                // Milestone: only dueDate set, no startDate → render diamond marker
+                if (isMilestone) {
+                  const mx = xOf(end!);
+                  // minimum 14px so child diamonds stay legible
+                  const mSize = isChild ? 14 : 16;
+                  // hitbox is larger than the visual for easy mouse targeting
+                  const hitbox = mSize + 16;
+                  const overdue = isOverdue(task);
+                  // clamp visual center so the diamond is never partially off-screen
+                  const clampedMx = Math.max(mSize / 2, Math.min(TL_W - mSize / 2, mx));
+                  const inView = mx >= -hitbox && mx <= TL_W + hitbox;
+                  const mileMouseProps = {
+                    onMouseEnter: (e: React.MouseEvent) => {
+                      const inner = (e.currentTarget as HTMLDivElement).querySelector<HTMLDivElement>('[data-mile-inner]');
+                      if (inner) inner.style.transform = 'rotate(45deg) scale(1.25)';
+                      setTip({ task, x: e.clientX, y: e.clientY });
+                    },
+                    onMouseMove: (e: React.MouseEvent) =>
+                      setTip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null),
+                    onMouseLeave: (e: React.MouseEvent) => {
+                      const inner = (e.currentTarget as HTMLDivElement).querySelector<HTMLDivElement>('[data-mile-inner]');
+                      if (inner) inner.style.transform = 'rotate(45deg) scale(1)';
+                      setTip(null);
+                    },
+                  };
+                  return (
+                    <div key={task.id} style={rowStyle}>
+                      {inView && (
+                        // Outer div: positioning only (top/left). Inner div: visual rotation + scale animation.
+                        // Separating transforms prevents scale mutations from corrupting translateY(-50%).
+                        <div
+                          title={`${task.issueKey} · ${task.title} · ${statusLabel(task)} · дедлайн ${fmtShort(end!)}`}
+                          style={{
+                            position: 'absolute',
+                            top: '50%', left: clampedMx - hitbox / 2,
+                            transform: 'translateY(-50%)',
+                            width: hitbox, height: hitbox,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            zIndex: 2, cursor: 'default',
+                          }}
+                          {...mileMouseProps}
+                        >
+                          <div
+                            data-mile-inner=""
+                            style={{
+                              width: mSize, height: mSize,
+                              transform: 'rotate(45deg)',
+                              background: overdue ? 'rgba(239,68,68,.8)' : bg,
+                              border: `2px solid ${overdue ? '#EF4444' : border}`,
+                              transition: 'transform .12s',
+                              animation: overdue ? 'ov-pulse 2s ease-in-out infinite' : 'none',
+                              flexShrink: 0,
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -876,7 +957,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                               const segL     = Math.max(0, xOf(clampS) - cx);
                               const segW     = Math.max(2, xOf(clampE) - xOf(clampS));
                               const st       = statusMap.get(seg.statusId);
-                              const color    = st?.color ?? '#8B95B0';
+                              const color    = safeColor(st?.color, '#8B95B0');
                               const alpha    = st?.category === 'DONE'
                                 ? 'A0' : st?.category === 'IN_PROGRESS' ? 'B0' : '70';
                               return (
@@ -900,8 +981,8 @@ export default function RoadmapView({ boardId, statuses }: Props) {
                                 <div style={{
                                   position: 'absolute', top: 0, bottom: 0,
                                   left: tailL, width: tailW,
-                                  background: `${st?.color ?? '#8B95B0'}28`,
-                                  borderLeft: `1px dashed ${st?.color ?? '#8B95B0'}55`,
+                                  background: `${safeColor(st?.color, '#8B95B0')}28`,
+                                  borderLeft: `1px dashed ${safeColor(st?.color, '#8B95B0')}55`,
                                 }} />
                               );
                             })()}
@@ -961,7 +1042,7 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         </div>
       </div>
 
-      <style>{`@keyframes ov-pulse{0%,100%{opacity:1}50%{opacity:.55}}`}</style>
+      <style>{`@keyframes ov-pulse{0%,100%{opacity:1}50%{opacity:.55}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}`}</style>
 
       {tip && <BarTooltip tip={tip} isDark={isDark} statuses={statuses} />}
     </div>
