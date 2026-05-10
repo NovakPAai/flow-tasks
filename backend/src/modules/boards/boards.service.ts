@@ -175,6 +175,11 @@ export async function getRoadmapTasks(boardId: string, userId: string, from?: st
     throw new AppError(400, 'Date range too large (max 2 years)');
   }
 
+  const MAX_RANGE_DAYS = 730;
+  if ((toDate.getTime() - fromDate.getTime()) / 86_400_000 > MAX_RANGE_DAYS) {
+    throw new AppError(400, 'Date range too large (max 2 years)');
+  }
+
   const taskInclude = {
     status:        { select: { id: true, name: true, color: true, category: true } },
     assignee:      { select: { id: true, name: true, avatar: true } },
