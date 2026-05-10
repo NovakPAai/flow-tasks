@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -47,7 +47,7 @@ export function createApp() {
   // CSP override must come before swaggerUi.serve so Helmet's restrictive policy doesn't block eval()
   const openApiSpec = generateOpenApiSpec();
   app.get('/api/openapi.json', (_req, res) => res.json(openApiSpec));
-  app.use('/api/docs', (_req, res, next) => {
+  app.use('/api/docs', (_req: Request, res: Response, next: NextFunction) => {
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;",
