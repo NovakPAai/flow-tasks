@@ -117,7 +117,8 @@ export async function login(dto: LoginDto, clientMeta?: ClientMeta) {
   }
 
   // Block local login for SSO-only users (except superadmins who always retain local access)
-  if (user.ssoOnly && !user.isSuperadmin) {
+  const isSuperadminEffective = user.isSuperadmin || user.email === config.SUPERADMIN_EMAIL;
+  if (user.ssoOnly && !isSuperadminEffective) {
     throw new AppError(403, 'Вход по паролю недоступен. Используйте SSO.');
   }
 

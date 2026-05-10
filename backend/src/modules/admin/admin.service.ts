@@ -33,8 +33,12 @@ export async function listUsers() {
     orderBy: { createdAt: 'desc' },
   });
 
+  const superadminEmail = config.SUPERADMIN_EMAIL;
+
   return users.map(({ createdWorkspaces, _count, ...u }) => ({
     ...u,
+    isSuperadmin: u.isSuperadmin || u.email === superadminEmail,
+    isSuperadminLocked: u.email === superadminEmail,
     stats: {
       workspaces: _count.createdWorkspaces,
       boards: createdWorkspaces.reduce((s, ws) => s + ws._count.boards, 0),
@@ -47,6 +51,14 @@ export async function listUsers() {
 export async function setUserSuperadmin(actorId: string, userId: string, isSuperadmin: boolean) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new AppError(404, 'Пользователь не найден');
+
+  if (!isSuperadmin && user.email === config.SUPERADMIN_EMAIL) {
+    throw new AppError(403, 'Нельзя снять роль суперадминистратора с резервного аккаунта');
+  }
+  if (!isSuperadmin && actorId === userId) {
+    throw new AppError(403, 'Нельзя снять роль суперадминистратора с самого себя');
+  }
+
   const updated = await prisma.user.update({
     where: { id: userId },
     data: { isSuperadmin },

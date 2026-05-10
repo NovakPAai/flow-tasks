@@ -128,7 +128,7 @@ export default function AdminUsersPage() {
   const bp        = useBreakpoint();
   const isMobile  = bp === 'mobile';
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const { user } = useAuthStore();
+  const { user, loading: authLoading } = useAuthStore();
   const navigate = useNavigate();
   const C = mode === 'dark' ? DARK : LIGHT;
 
@@ -153,10 +153,10 @@ export default function AdminUsersPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.isSuperadmin) {
+    if (!authLoading && !user?.isSuperadmin) {
       navigate('/workspaces');
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     if (tab === 'users') loadUsers();
@@ -333,7 +333,7 @@ export default function AdminUsersPage() {
                           Суперадмин
                         </span>
                       )}
-                      {u.id !== user?.id && (
+                      {u.id !== user?.id && !u.isSuperadminLocked && (
                         <button
                           onClick={() => handleToggleSuperadmin(u)}
                           disabled={togglingId === u.id}
@@ -346,6 +346,13 @@ export default function AdminUsersPage() {
                         >
                           {u.isSuperadmin ? 'Снять' : 'Назначить'}
                         </button>
+                      )}
+                      {u.isSuperadminLocked && (
+                        <span title="Резервный аккаунт — роль нельзя снять" style={{
+                          fontSize: 10, color: C.muted, opacity: 0.5, ...font,
+                        }}>
+                          🔒
+                        </span>
                       )}
                     </div>
                   </div>

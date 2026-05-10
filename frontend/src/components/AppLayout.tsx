@@ -28,23 +28,40 @@ function GridIcon() {
 }
 
 // ─── User dropdown menu ───────────────────────────────────────────────────────
-function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminUsers, isSuperadmin, navBg, border, textPrimary, textMuted, onClose }: {
+function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, onAdminUsers, isSuperadmin, navBg, border, textPrimary, textMuted, onClose }: {
   user: { name: string; email?: string };
   onLogout: () => void;
   onProfile: () => void;
-  onSettings: () => void;
-  hasSettings: boolean;
+  onSettings: (slug: string) => void;
+  workspaces: Array<{ id: string; name: string; slug: string }>;
+  current: { id: string; name: string; slug: string } | null;
   onAdminUsers: () => void;
   isSuperadmin: boolean;
   navBg: string; border: string; textPrimary: string; textMuted: string;
   onClose: () => void;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const menuBg = navBg === '#0A0D1A' ? '#0F1320' : '#FFFFFF';
+  const hasWorkspaces = workspaces.length > 0;
+
+  useEffect(() => { setPickerOpen(false); }, [current?.id]);
+
+  function handleSettingsClick() {
+    if (current) {
+      onSettings(current.slug);
+      onClose();
+    } else {
+      setPickerOpen(v => !v);
+    }
+  }
+
   return (
     <div
+      role="menu"
+      aria-label="Меню пользователя"
       style={{
         backgroundColor: menuBg, border: `1px solid ${border}`, borderRadius: 10,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 200,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)', minWidth: 220,
         padding: '6px 0', position: 'absolute', right: 0, top: 'calc(100% + 8px)', zIndex: 200,
       }}
       onClick={e => e.stopPropagation()}
@@ -61,7 +78,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminU
         )}
       </div>
       <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
-      <button onClick={() => { onProfile(); onClose(); }} style={{
+      <button role="menuitem" onClick={() => { onProfile(); onClose(); }} style={{
         background: 'none', border: 'none', borderRadius: 6, color: textMuted,
         cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
         fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
@@ -69,7 +86,7 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminU
         Профиль
       </button>
       {isSuperadmin && (
-        <button onClick={() => { onAdminUsers(); onClose(); }} style={{
+        <button role="menuitem" onClick={() => { onAdminUsers(); onClose(); }} style={{
           background: 'none', border: 'none', borderRadius: 6, color: '#4F6EF7',
           cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
           fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%', fontWeight: 500,
@@ -77,17 +94,77 @@ function UserMenu({ user, onLogout, onProfile, onSettings, hasSettings, onAdminU
           Пользователи
         </button>
       )}
-      {hasSettings && (
-        <button onClick={() => { onSettings(); onClose(); }} style={{
-          background: 'none', border: 'none', borderRadius: 6, color: textMuted,
-          cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
-          fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
-        }}>
-          Настройки workspace
-        </button>
+      {hasWorkspaces && (
+        <>
+          <button
+            role="menuitem"
+            aria-expanded={!current ? pickerOpen : undefined}
+            aria-haspopup={!current ? 'listbox' : undefined}
+            onClick={handleSettingsClick}
+            style={{
+              alignItems: 'center', background: 'none', border: 'none', borderRadius: 6,
+              color: textMuted, cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+              fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13,
+              padding: '8px 16px', textAlign: 'left', width: '100%',
+            }}
+          >
+            <span>Настройки пространства</span>
+            {!current && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0, transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
+          {/* Inline picker — shown when no active workspace */}
+          {pickerOpen && !current && (
+            <div role="listbox" aria-label="Выберите пространство" style={{ borderTop: `1px solid ${border}`, maxHeight: 180, overflowY: 'auto', paddingBottom: 4 }}>
+              {workspaces.map(ws => (
+                <button role="option" aria-selected={false} key={ws.id} onClick={() => { onSettings(ws.slug); onClose(); }} style={{
+                  background: 'none', border: 'none', borderRadius: 6, color: textMuted,
+                  cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
+                  fontSize: 12, padding: '6px 16px 6px 28px', textAlign: 'left', width: '100%',
+                }}>
+                  {ws.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* When in a workspace — offer switching to another space's settings */}
+          {current && (
+            <button
+              role="menuitem"
+              aria-expanded={pickerOpen}
+              onClick={() => setPickerOpen(v => !v)}
+              style={{
+                alignItems: 'center', background: 'none', border: 'none', borderRadius: 6,
+                color: textMuted, cursor: 'pointer', display: 'flex', gap: 4,
+                fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11,
+                opacity: 0.6, padding: '2px 16px 6px', textAlign: 'left', width: '100%',
+              }}
+            >
+              Другое пространство
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0, transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
+          {pickerOpen && current && (
+            <div role="listbox" aria-label="Выберите пространство" style={{ borderTop: `1px solid ${border}`, maxHeight: 180, overflowY: 'auto', paddingBottom: 4 }}>
+              {workspaces.filter(ws => ws.id !== current.id).map(ws => (
+                <button role="option" aria-selected={false} key={ws.id} onClick={() => { onSettings(ws.slug); onClose(); }} style={{
+                  background: 'none', border: 'none', borderRadius: 6, color: textMuted,
+                  cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
+                  fontSize: 12, padding: '6px 16px 6px 28px', textAlign: 'left', width: '100%',
+                }}>
+                  {ws.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
       <div style={{ backgroundColor: border, height: 1, margin: '4px 0' }}/>
-      <button onClick={() => { onLogout(); onClose(); }} style={{
+      <button role="menuitem" onClick={() => { onLogout(); onClose(); }} style={{
         background: 'none', border: 'none', borderRadius: 6, color: '#F87171',
         cursor: 'pointer', display: 'block', fontFamily: '"Inter", system-ui, sans-serif',
         fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
@@ -229,6 +306,10 @@ export default function AppLayout({ children }: Props) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen(v => !v);
+      }
+      if (e.key === 'Escape') {
+        setUserMenuOpen(false);
+        setWsMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handler);
@@ -436,8 +517,9 @@ export default function AppLayout({ children }: Props) {
               user={user}
               onLogout={handleLogout}
               onProfile={() => navigate('/profile')}
-              onSettings={() => current && navigate(`/w/${current.slug}/settings`)}
-              hasSettings={!!current}
+              onSettings={(slug) => navigate(`/w/${slug}/settings`)}
+              workspaces={workspaces}
+              current={current}
               onAdminUsers={() => navigate('/admin/users')}
               isSuperadmin={!!user.isSuperadmin}
               navBg={navBg} border={navBorder} textPrimary={wsSelectorText} textMuted={tabIdleText}
