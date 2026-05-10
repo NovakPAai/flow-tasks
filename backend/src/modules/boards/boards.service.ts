@@ -3,6 +3,18 @@ import { AppError } from '../../shared/middleware/error-handler.js';
 import { logEvent } from '../workspaces/workspaces.service.js';
 import type { CreateBoardDto, UpdateBoardDto } from './boards.dto.js';
 
+// Max allowed roadmap date range to prevent full-table scans
+const MAX_ROADMAP_RANGE_DAYS = 730;
+
+function parseIsoDate(s: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}(T[\d:.Z+-]+)?$/.test(s)) {
+    throw new AppError(400, 'Invalid date parameter');
+  }
+  const d = new Date(s);
+  if (isNaN(d.getTime())) throw new AppError(400, 'Invalid date parameter');
+  return d;
+}
+
 async function assertMember(workspaceId: string, userId: string) {
   const m = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
@@ -60,13 +72,14 @@ export async function createBoard(workspaceId: string, userId: string, dto: Crea
     },
   });
 
-  await logEvent(workspaceId, userId, 'board_created', 'board', board.id, { name: dto.name, prefix });
+  logEvent(workspaceId, userId, 'board_created', 'board', board.id, { name: dto.name, prefix })
+    .catch(err => console.error('audit log failed (board_created):', err));
 
   return board;
 }
 
 export async function getBoardByPrefix(workspaceId: string, prefix: string, userId: string) {
-  if (!/^[A-Z0-9_-]{1,20}$/i.test(prefix)) throw new AppError(400, 'Invalid board prefix');
+  if (!/^[A-Z0-9_-]{1,20}$/.test(prefix.toUpperCase())) throw new AppError(400, 'Invalid board prefix');
   await assertMember(workspaceId, userId);
   const board = await prisma.board.findFirst({
     where: { workspaceId, prefix: prefix.toUpperCase() },
@@ -88,7 +101,7 @@ export async function getBoard(boardId: string, userId: string) {
       tasks: {
         where: { parentId: null },
         orderBy: [{ statusId: 'asc' }, { orderIndex: 'asc' }],
-        take: 100,
+        take: 100, // pagination not yet supported — 100 task cap
         include: {
           assignee: { select: { id: true, name: true, avatar: true } },
           status: { select: { id: true, name: true, color: true, category: true } },
@@ -116,13 +129,22 @@ export async function updateBoard(boardId: string, userId: string, dto: UpdateBo
     if (!wf) throw new AppError(404, 'Workflow not found in this workspace');
   }
 
-  const updated = await prisma.board.update({ where: { id: boardId }, data: dto });
+  const updated = await prisma.board.update({
+    where: { id: boardId },
+    data: {
+      name:        dto.name,
+      description: dto.description,
+      workflowId:  dto.workflowId,
+      isPrivate:   dto.isPrivate,
+    },
+  });
 
   const meta: Record<string, unknown> = {};
   if (dto.name !== undefined && dto.name !== board.name) meta.nameFrom = board.name;
   if (dto.name !== undefined) meta.nameTo = dto.name;
   if (dto.workflowId !== undefined && dto.workflowId !== board.workflowId) meta.workflowChanged = true;
-  await logEvent(board.workspaceId, userId, 'board_updated', 'board', boardId, { boardName: board.name, ...meta });
+  logEvent(board.workspaceId, userId, 'board_updated', 'board', boardId, { boardName: board.name, ...meta })
+    .catch(err => console.error('audit log failed (board_updated):', err));
 
   return updated;
 }
@@ -132,7 +154,8 @@ export async function deleteBoard(boardId: string, userId: string) {
   if (!board) throw new AppError(404, 'Board not found');
   await assertOwner(board.workspaceId, userId);
   await prisma.board.delete({ where: { id: boardId } });
-  await logEvent(board.workspaceId, userId, 'board_deleted', 'board', boardId, { name: board.name });
+  logEvent(board.workspaceId, userId, 'board_deleted', 'board', boardId, { name: board.name })
+    .catch(err => console.error('audit log failed (board_deleted):', err));
 }
 
 // ─── Roadmap ──────────────────────────────────────────────────────────────────
@@ -142,8 +165,15 @@ export async function getRoadmapTasks(boardId: string, userId: string, from?: st
   const member = await assertMember(board.workspaceId, userId);
   if (board.isPrivate && member.role === 'VIEWER') throw new AppError(403, 'This board is private');
 
-  const fromDate = from ? new Date(from) : new Date(new Date().getFullYear(), 0, 1);
-  const toDate   = to   ? new Date(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
+  const fromDate = from ? parseIsoDate(from) : new Date(new Date().getFullYear(), 0, 1);
+  const toDate   = to   ? parseIsoDate(to)   : new Date(new Date().getFullYear() + 1, 0, 1);
+
+  if (toDate < fromDate) {
+    throw new AppError(400, 'to must not be before from');
+  }
+  if ((toDate.getTime() - fromDate.getTime()) / 86_400_000 > MAX_ROADMAP_RANGE_DAYS) {
+    throw new AppError(400, 'Date range too large (max 2 years)');
+  }
 
   const MAX_RANGE_DAYS = 730;
   if ((toDate.getTime() - fromDate.getTime()) / 86_400_000 > MAX_RANGE_DAYS) {
