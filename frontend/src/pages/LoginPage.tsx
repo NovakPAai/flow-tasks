@@ -313,6 +313,46 @@ function InputField({
   );
 }
 
+// ─── Password rules + live checklist ────────────────────────────────────────
+type PwdRule = { key: string; label: string; test: (p: string) => boolean };
+const PWD_RULES: ReadonlyArray<PwdRule> = [
+  { key: 'len',   label: 'от 8 до 128 символов',        test: (p) => p.length >= 8 && p.length <= 128 },
+  { key: 'upper', label: 'хотя бы одна заглавная буква', test: (p) => /[A-Z]/.test(p) },
+  { key: 'digit', label: 'хотя бы одна цифра',           test: (p) => /\d/.test(p) },
+];
+
+function PasswordHints({ value, C, touched }: { value: string; C: LoginTheme; touched: boolean }) {
+  return (
+    <ul
+      aria-label="Требования к паролю"
+      style={{
+        listStyle: 'none', margin: '8px 0 0', padding: 0,
+        display: 'flex', flexDirection: 'column', gap: 4,
+      }}
+    >
+      {PWD_RULES.map((r) => {
+        const ok = r.test(value);
+        const showError = touched && !ok && value.length > 0;
+        const color = ok ? '#22C55E' : showError ? '#EF4444' : C.subtitle;
+        return (
+          <li
+            key={r.key}
+            style={{
+              alignItems: 'center', color, display: 'flex', gap: 6,
+              fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, lineHeight: '14px',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" style={{ flexShrink: 0 }}>
+              {ok ? <path d="M5 12l5 5L20 7"/> : showError ? <path d="M6 6l12 12M18 6L6 18"/> : <circle cx="12" cy="12" r="3"/>}
+            </svg>
+            <span>{r.label}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const { mode } = useThemeStore();
@@ -326,6 +366,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [registrationDomain, setRegistrationDomain] = useState('flowtask.dev');
   const [password, setPassword] = useState('');
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [showRegister, setShowRegister] = useState(false);
@@ -529,8 +570,17 @@ export default function LoginPage() {
                 </div>
               )}
             </div>
-            <InputField type="password" value={password} onChange={setPassword} placeholder="••••••••"
-              autoComplete={showRegister ? 'new-password' : 'current-password'} icon="lock" C={C} showPasswordToggle/>
+            <InputField
+              type="password"
+              value={password}
+              onChange={(v) => { setPassword(v); if (!passwordTouched) setPasswordTouched(true); }}
+              placeholder="••••••••"
+              autoComplete={showRegister ? 'new-password' : 'current-password'}
+              icon="lock"
+              C={C}
+              showPasswordToggle
+            />
+            {showRegister && <PasswordHints value={password} C={C} touched={passwordTouched} />}
           </div>
 
           {/* Submit button */}
@@ -584,7 +634,7 @@ export default function LoginPage() {
             <span style={{ color: C.subtitle, fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13 }}>
               {showRegister ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
             </span>
-            <span onClick={() => { setShowRegister(v => !v); setFirstName(''); setLastName(''); setEmail(''); setPassword(''); }} style={{
+            <span onClick={() => { setShowRegister(v => !v); setFirstName(''); setLastName(''); setEmail(''); setPassword(''); setPasswordTouched(false); }} style={{
               color: C.accent, fontFamily: '"Inter", system-ui, sans-serif',
               fontSize: 13, fontWeight: 500, cursor: 'pointer',
             }}>
