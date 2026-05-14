@@ -1,5 +1,11 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+
+// override: true — .env wins over inherited process env (PM2/daemon cache).
+// Production incident 2026-05-13: PM2 daemon cached a revoked GITHUB_ISSUES_TOKEN
+// in its env, dotenv (default no-override) silently ignored the new value in .env,
+// and only a full `pm2 kill` recovered. Override removes that footgun.
+loadDotenv({ override: true });
 
 const envSchema = z.object({
   DATABASE_URL: z.string(),
