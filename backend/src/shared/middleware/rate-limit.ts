@@ -3,6 +3,12 @@ import { AppError } from './error-handler.js';
 import { redisRateLimit } from '../redis.js';
 
 // ─── In-memory fallback (single-instance only) ────────────────────────────────
+//
+// Eviction policy is FIFO (insertion order), NOT LRU by resetAt. Under
+// extreme key pressure this means buckets for security-sensitive scopes
+// (`auth`, `member-search`) can be evicted before their reset window if
+// unrelated scope traffic floods the store. Acceptable for single-instance
+// dev/test/pilot; production MUST run Redis (the primary path above).
 
 interface Bucket { count: number; resetAt: number }
 const fallbackStore = new Map<string, Bucket>();
@@ -78,8 +84,9 @@ export function rateLimit(opts: RateLimitOptions) {
 }
 
 export const RATE_LIMITS = {
-  auth:     { scope: 'auth',     limit: 10, windowMs: 60_000 },
-  invite:   { scope: 'invite',   limit: 20, windowMs: 60_000 },
-  apiKey:   { scope: 'api-key',  limit: 20, windowMs: 60_000 },
-  feedback: { scope: 'feedback', limit: 5,  windowMs: 60 * 60_000 },
+  auth:         { scope: 'auth',          limit: 10, windowMs: 60_000 },
+  invite:       { scope: 'invite',        limit: 20, windowMs: 60_000 },
+  apiKey:       { scope: 'api-key',       limit: 20, windowMs: 60_000 },
+  feedback:     { scope: 'feedback',      limit: 5,  windowMs: 60 * 60_000 },
+  memberSearch: { scope: 'member-search', limit: 30, windowMs: 60_000 },
 } as const satisfies Record<string, RateLimitOptions>;

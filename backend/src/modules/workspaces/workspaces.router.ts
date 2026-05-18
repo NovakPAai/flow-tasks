@@ -1,20 +1,29 @@
 import { Router } from 'express';
+import type { AuthRequest } from '../../shared/types/index.js';
 import { authenticate } from '../../shared/middleware/auth.js';
 import { validate } from '../../shared/middleware/validate.js';
 import { workspaceMfaGuard } from '../../shared/middleware/workspace-mfa-guard.js';
+import { rateLimit, RATE_LIMITS } from '../../shared/middleware/rate-limit.js';
 import {
   createWorkspaceDto,
   updateWorkspaceDto,
   addMemberDto,
   updateMemberRoleDto,
   inviteByEmailDto,
+  candidateSearchQueryDto,
 } from './workspaces.dto.js';
+import type { CandidateSearchQueryDto } from './workspaces.dto.js';
 import * as ws from './workspaces.service.js';
 import * as boards from '../boards/boards.service.js';
 import { asyncHandler, authHandler } from '../../shared/utils/async-handler.js';
 
 const router = Router();
 router.use(authenticate);
+
+const memberSearchLimit = rateLimit({
+  ...RATE_LIMITS.memberSearch,
+  keyFn: (req) => (req as AuthRequest).user?.userId ?? req.ip ?? 'anonymous',
+});
 
 router.get('/', authHandler(async (req, res) => {
   res.json(await ws.listMyWorkspaces(req.user!.userId));
@@ -59,9 +68,27 @@ router.delete('/:id', authHandler(async (req, res) => {
 
 router.get('/:id/members/search', authHandler(async (req, res) => {
   const q = (req.query.q as string) ?? '';
-  const users = await ws.searchMembers(String(req.params.id), q);
+  const users = await ws.searchMembers(String(req.params.id), req.user!.userId, q);
   res.json(users);
 }));
+
+router.get(
+  '/:id/members/candidates',
+  memberSearchLimit,
+  validate(candidateSearchQueryDto, 'query'),
+  authHandler(async (req, res) => {
+    // After validate(..., 'query'), req.query is the parsed Dto shape.
+    // Re-parse here for end-to-end type safety (Zod is idempotent on parsed objects).
+    const parsed: CandidateSearchQueryDto = candidateSearchQueryDto.parse(req.query);
+    const candidates = await ws.searchMemberCandidates(
+      String(req.params.id),
+      req.user!.userId,
+      parsed.q,
+      parsed.limit,
+    );
+    res.json(candidates);
+  }),
+);
 
 router.get('/:id/members', authHandler(async (req, res) => {
   res.json(await ws.listMembers(String(req.params.id), req.user!.userId));

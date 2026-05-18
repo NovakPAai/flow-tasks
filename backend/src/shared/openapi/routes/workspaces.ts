@@ -5,6 +5,7 @@ import {
   updateWorkspaceDto,
   updateMemberRoleDto,
   inviteByEmailDto,
+  candidateSearchQueryDto,
 } from '../../../modules/workspaces/workspaces.dto.js';
 
 const idParam = z.object({ id: z.string().uuid() });
@@ -43,6 +44,19 @@ registry.registerPath({
   method: 'get', path: '/workspaces/{id}/members', tags: ['Workspaces'], summary: 'Участники воркспейса',
   request: { params: idParam },
   responses: { 200: { description: 'Массив участников с ролями' } },
+});
+
+registry.registerPath({
+  method: 'get', path: '/workspaces/{id}/members/candidates', tags: ['Workspaces'],
+  summary: 'Поиск кандидатов в участники (Owner-only, по всей User базе, rate-limited)',
+  request: { params: idParam, query: candidateSearchQueryDto },
+  responses: {
+    200: { description: 'Массив кандидатов {id,name,email,avatar,alreadyMember}' },
+    400: { description: 'Невалидные параметры (q<2 после trim или limit>20)' },
+    403: { description: 'Только Owner текущего воркспейса' },
+    404: { description: 'Workspace не найден или soft-deleted' },
+    429: { description: 'Превышен лимит 30 запросов/минуту' },
+  },
 });
 
 registry.registerPath({
