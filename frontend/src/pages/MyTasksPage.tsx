@@ -7,6 +7,8 @@ import { useBreakpoint } from '../utils/useBreakpoint';
 import * as tasksApi from '../api/tasks';
 import type { MyTask } from '../api/tasks';
 import TaskAccordionPanel from '../components/TaskAccordionPanel';
+import QuickDueDate from '../components/QuickDueDate';
+import type { WorkspaceRole } from '../types';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -56,6 +58,18 @@ export default function MyTasksPage() {
   const c = mode === 'light' ? LIGHT : DARK;
   const bp = useBreakpoint();
   const current = useWorkspaceStore((s) => s.current);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
+  const loadWorkspaces = useWorkspaceStore((s) => s.load);
+
+  useEffect(() => {
+    if (workspaces.length === 0) void loadWorkspaces();
+  }, [workspaces.length, loadWorkspaces]);
+
+  const roleByWsId = useMemo(() => {
+    const m = new Map<string, WorkspaceRole>();
+    for (const w of workspaces) if (w.role) m.set(w.id, w.role);
+    return m;
+  }, [workspaces]);
 
   const [allTasks, setAllTasks] = useState<MyTask[]>([]);
   const [total, setTotal] = useState(0);
@@ -458,16 +472,15 @@ export default function MyTasksPage() {
                                     {task.priority === 'MEDIUM' ? 'MED' : task.priority}
                                   </span>
                                 )}
-                                {due && (
-                                  <span style={{
-                                    fontSize: 11,
-                                    color: isOverdue ? '#EF4444' : c.muted,
-                                    whiteSpace: 'nowrap',
-                                  }}>
-                                    {isOverdue && bp !== 'mobile' ? 'Просрочено · ' : ''}
-                                    {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-                                  </span>
-                                )}
+                                <DueDateCell
+                                  task={task}
+                                  isOverdue={isOverdue}
+                                  isMobile={bp === 'mobile'}
+                                  role={roleByWsId.get(task.board.workspace.id)}
+                                  onChange={next => setAllTasks(prev => prev.map(t =>
+                                    t.id === task.id ? { ...t, dueDate: next ?? undefined } : t,
+                                  ))}
+                                />
 
                                 {/* Chevron — far right, standard accordion position */}
                                 <svg
@@ -528,6 +541,38 @@ export default function MyTasksPage() {
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ── Sub-component: DueDateCell ───────────────────────────────────────────────
+
+interface DueDateCellProps {
+  task: MyTask;
+  isOverdue: boolean;
+  isMobile: boolean;
+  role: WorkspaceRole | undefined;
+  onChange: (next: string | null) => void;
+}
+
+function DueDateCell({ task, isOverdue, isMobile, role, onChange }: DueDateCellProps) {
+  const canEdit = role === 'OWNER' || role === 'MEMBER';
+  return (
+    <div
+      onClick={e => { if (task.dueDate || canEdit) e.stopPropagation(); }}
+      style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}
+    >
+      {isOverdue && !isMobile && task.dueDate && (
+        <span style={{ fontSize: 11, color: '#F87171' }}>Просрочено ·</span>
+      )}
+      <QuickDueDate
+        taskId={task.id}
+        value={task.dueDate ?? null}
+        canEdit={canEdit}
+        variant={isMobile ? 'badge-only' : 'badge-or-add'}
+        size="sm"
+        onChange={onChange}
+      />
     </div>
   );
 }

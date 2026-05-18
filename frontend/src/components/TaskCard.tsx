@@ -1,5 +1,6 @@
 import { useThemeStore } from '../store/theme.store';
 import type { Task } from '../types';
+import QuickDueDate from './QuickDueDate';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -33,15 +34,15 @@ interface Props {
   onClick?: () => void;
   isSelected?: boolean;
   onSelect?: (id: string) => void;
+  canEdit?: boolean;
+  onTaskUpdated?: (task: Task) => void;
 }
 
-export default function TaskCard({ task, onClick, isSelected = false, onSelect }: Props) {
+export default function TaskCard({ task, onClick, isSelected = false, onSelect, canEdit = false, onTaskUpdated }: Props) {
   const mode = useThemeStore(s => s.mode);
   const c = mode === 'light' ? LIGHT : DARK;
 
   const childCount = task._count?.children ?? 0;
-  const due = task.dueDate ? new Date(task.dueDate) : null;
-  const isOverdue = due && due < new Date();
   const isDone = task.status?.category === 'DONE';
   const prio = task.priority ? PRIO[task.priority] : null;
   const taskLabels = task.labels ?? [];
@@ -128,20 +129,16 @@ export default function TaskCard({ task, onClick, isSelected = false, onSelect }
       )}
 
       {/* Footer: date + subtasks | assignee */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {due && (
-            <span
-              title={due.toLocaleDateString('ru-RU')}
-              style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: isOverdue ? '#EF4444' : c.meta }}
-            >
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
-                <rect x="0.5" y="1.5" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
-                <path d="M3 0.5v2M8 0.5v2M0.5 4.5h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-              </svg>
-              {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-            </span>
-          )}
+          <QuickDueDate
+            taskId={task.id}
+            value={task.dueDate ?? null}
+            canEdit={canEdit}
+            variant="badge-or-add"
+            size="sm"
+            onChange={next => onTaskUpdated?.({ ...task, dueDate: next ?? undefined })}
+          />
           {childCount > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: '"Inter",system-ui,sans-serif', fontSize: 11, color: c.meta }}>
               <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>

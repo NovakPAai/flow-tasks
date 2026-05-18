@@ -26,12 +26,17 @@ export async function getTask(taskId: string): Promise<Task> {
   return data;
 }
 
-export async function updateTask(taskId: string, payload: Partial<CreateTaskPayload> & {
+export interface UpdateTaskPayload {
   title?: string;
+  description?: string | null;
+  statusId?: string;
   priority?: 'HIGH' | 'MEDIUM' | 'LOW' | null;
-  assigneeId?: string | null;
   dueDate?: string | null;
-}): Promise<Task> {
+  assigneeId?: string | null;
+  parentId?: string | null;
+}
+
+export async function updateTask(taskId: string, payload: UpdateTaskPayload): Promise<Task> {
   const { data } = await api.patch<Task>(`/tasks/${taskId}`, payload);
   return data;
 }

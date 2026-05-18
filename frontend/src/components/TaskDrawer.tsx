@@ -500,8 +500,7 @@ export default function TaskDrawer({
                         type="date"
                         value={dueStr}
                         onChange={(e) => {
-                          const patch = { dueDate: e.target.value ? `${e.target.value}T00:00:00.000Z` : null } as Parameters<typeof tasksApi.updateTask>[1];
-                          save(patch);
+                          save({ dueDate: e.target.value ? `${e.target.value}T00:00:00.000Z` : null });
                         }}
                         disabled={saving}
                         style={{
