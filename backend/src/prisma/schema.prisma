@@ -27,6 +27,13 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
+  // Feature-permissions (G2-1) — fallback to isSuperadmin remains for Phase 1+2
+  globalRolePresetId String?
+  globalRolePreset   RolePreset?      @relation("UserGlobalRole", fields: [globalRolePresetId], references: [id], onDelete: Restrict)
+  permissionsRev     Int              @default(0) @map("permissions_rev")
+  userPermissions    UserPermission[]
+  boardMemberships   BoardMember[]
+
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
   apiKeys              ApiKey[]
@@ -137,6 +144,7 @@ model Workspace {
   boards      Board[]
   labels      Label[]
   events      WorkspaceEvent[]
+  features    WorkspaceFeature[]
 
   @@index([deletedAt])
   @@map("workspaces")
@@ -146,12 +154,15 @@ model WorkspaceMember {
   id             String        @id @default(uuid())
   workspaceId    String
   userId         String
-  role           WorkspaceRole @default(MEMBER)
+  role           WorkspaceRole @default(MEMBER) // deprecated — kept for Phase 1+2 backward compat
+  rolePresetId   String?       @map("role_preset_id")
+  isGuest        Boolean       @default(false) @map("is_guest")
   mfaGraceUntil  DateTime?
   createdAt      DateTime      @default(now())
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rolePreset RolePreset? @relation(fields: [rolePresetId], references: [id], onDelete: Restrict)
 
   @@unique([workspaceId, userId])
   @@map("workspace_members")
@@ -243,9 +254,10 @@ model Board {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workflow  Workflow  @relation(fields: [workflowId], references: [id])
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflow  Workflow      @relation(fields: [workflowId], references: [id])
   tasks     Task[]
+  members   BoardMember[]
 
   @@unique([workspaceId, prefix])
   @@map("boards")
@@ -479,4 +491,159 @@ model Notification {
 
   @@index([userId, isRead, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+// ─── Feature-Permissions + ACL (G2-1, G2-2) ──────────────────────────────────
+
+enum PermissionCode {
+  // READ
+  TASK_READ
+  BOARD_READ
+  WORKFLOW_READ
+  LABEL_READ
+  COMMENT_READ
+  CHECKLIST_READ
+  HISTORY_READ
+  WORKSPACE_READ
+
+  // WRITE — tasks
+  TASK_CREATE
+  TASK_UPDATE
+  TASK_DELETE
+  TASK_REASSIGN
+  TASK_BULK_EDIT
+  TASK_EXPORT
+
+  // WRITE — boards / workflows
+  BOARD_CREATE
+  BOARD_UPDATE
+  BOARD_DELETE
+  BOARD_MANAGE_COLUMNS
+  BOARD_MANAGE_ACL
+  WORKFLOW_CREATE
+  WORKFLOW_UPDATE
+  WORKFLOW_DELETE
+
+  // WRITE — labels / comments / checklists
+  LABEL_CREATE
+  LABEL_UPDATE
+  LABEL_DELETE
+  COMMENT_CREATE
+  COMMENT_UPDATE_OWN
+  COMMENT_DELETE_OWN
+  COMMENT_DELETE_ANY
+  CHECKLIST_WRITE
+
+  // WORKSPACE admin
+  WS_INVITE_MEMBER
+  WS_REMOVE_MEMBER
+  WS_CHANGE_MEMBER_ROLE
+  WS_EDIT_SETTINGS
+  WS_EDIT_SECURITY
+  WS_TOGGLE_FEATURES
+  WS_DELETE
+  WS_RESTORE_FROM_TRASH
+
+  // SYSTEM admin
+  ADMIN_USERS
+  ADMIN_ROLES
+  ADMIN_PERMISSIONS
+  ADMIN_AUDIT
+  ADMIN_FEATURE_FLAGS
+  ADMIN_SYSTEM_CONFIG
+}
+
+enum PermissionType {
+  GRANT
+  REVOKE
+}
+
+enum FeatureScope {
+  SYSTEM
+  WORKSPACE
+}
+
+model SystemFeature {
+  code      String   @id
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("system_features")
+}
+
+model WorkspaceFeature {
+  id          String   @id @default(uuid())
+  workspaceId String
+  code        String
+  enabled     Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, code])
+  @@map("workspace_features")
+}
+
+model RolePreset {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  displayName String       @map("display_name")
+  scope       FeatureScope
+  isSystem    Boolean      @default(false) @map("is_system")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  permissions    RolePermission[]
+  workspaceUsers WorkspaceMember[]
+  boardMembers   BoardMember[]
+  globalUsers    User[]            @relation("UserGlobalRole")
+
+  @@map("role_presets")
+}
+
+model RolePermission {
+  id         String         @id @default(uuid())
+  presetId   String
+  permission PermissionCode
+
+  preset RolePreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+
+  @@unique([presetId, permission])
+  @@map("role_permissions")
+}
+
+model UserPermission {
+  id          String         @id @default(uuid())
+  userId      String
+  workspaceId String?
+  permission  PermissionCode
+  type        PermissionType
+  grantedBy   String?
+  createdAt   DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId, permission])
+  @@index([userId, workspaceId])
+  @@map("user_permissions")
+}
+
+model BoardMember {
+  id           String   @id @default(uuid())
+  boardId      String
+  userId       String
+  rolePresetId String?  @map("role_preset_id") // null = explicit DENIED
+  addedBy      String   @map("added_by")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  board      Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rolePreset RolePreset? @relation(fields: [rolePresetId], references: [id], onDelete: Restrict)
+
+  @@unique([boardId, userId])
+  @@index([userId])
+  @@map("board_members")
 }
