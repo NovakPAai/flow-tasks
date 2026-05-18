@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
@@ -8,6 +8,7 @@ import * as labelsApi from '../api/labels';
 import * as wfApi from '../api/workflows';
 import WorkflowEditor from '../components/WorkflowEditor';
 import WorkspaceHistoryTimeline from '../components/WorkspaceHistoryTimeline';
+import MemberPicker from '../components/MemberPicker';
 import { useWorkspaceStore } from '../store/workspace.store';
 import { useAuthStore } from '../store/auth.store';
 
@@ -18,6 +19,7 @@ const DARK: C = {
   border: '#1C2236', cardBg: '#0F1320',
   text: '#E2E8F8', muted: '#8B949E', label: '#484F58',
   inputBg: '#0F1320', inputBorder: '#1C2236',
+  accent: '#4F6EF7', danger: '#EF4444',
   navActive: 'rgba(79,110,247,0.12)', navActiveText: '#4F6EF7',
   navHover: 'rgba(255,255,255,0.04)',
   rowHover: '#131729',
@@ -27,6 +29,7 @@ const LIGHT: C = {
   border: '#E8E5F0', cardBg: '#FDFCFF',
   text: '#1A1A2E', muted: '#9B96B8', label: '#B8B3D0',
   inputBg: '#F5F3FF', inputBorder: '#E8E5F0',
+  accent: '#4F6EF7', danger: '#EF4444',
   navActive: 'rgba(79,110,247,0.10)', navActiveText: '#4F6EF7',
   navHover: 'rgba(0,0,0,0.03)',
   rowHover: '#F0EEF8',
@@ -64,11 +67,18 @@ function Avatar({ name, size = 28 }: { name: string; size?: number }) {
   );
 }
 
-function PrimaryBtn({
-  children, onClick, disabled, loading, style,
-}: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; loading?: boolean; style?: React.CSSProperties }) {
+interface PrimaryBtnProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  style?: React.CSSProperties;
+  ref?: React.Ref<HTMLButtonElement>;
+}
+function PrimaryBtn({ children, onClick, disabled, loading, style, ref }: PrimaryBtnProps) {
   return (
     <button
+      ref={ref}
       onClick={onClick}
       disabled={disabled || loading}
       style={{
@@ -152,8 +162,25 @@ export default function WorkspaceSettingsPage() {
 
   // Invite
   const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmail, setInviteEmail]       = useState('');
-  const [inviting, setInviting]             = useState(false);
+  const inviteTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  // Stable theme object — picker memoises styles based on reference equality.
+  const pickerTheme = useMemo(
+    () => ({
+      bg: c.bg, cardBg: c.cardBg, border: c.border,
+      text: c.text, muted: c.muted, label: c.label,
+      inputBg: c.inputBg, inputBorder: c.inputBorder,
+      accent: c.accent, danger: c.danger,
+      rowHover: c.rowHover,
+    }),
+    [c],
+  );
+
+  const closeInviteForm = useCallback(() => {
+    setShowInviteForm(false);
+    // WCAG 2.4.3: restore focus to the trigger when the popup closes.
+    queueMicrotask(() => inviteTriggerRef.current?.focus());
+  }, []);
 
   // Label modal
   const [labelModal, setLabelModal] = useState(false);
@@ -260,20 +287,6 @@ export default function WorkspaceSettingsPage() {
     });
   };
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
-    try {
-      await workspacesApi.inviteByEmail(workspace.id, inviteEmail.trim());
-      const updated = await workspacesApi.listMembers(workspace.id);
-      setMembers(updated); setInviteEmail(''); setShowInviteForm(false);
-      message.success('Участник добавлен');
-      load(); // refresh memberCount in workspace store
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      message.error(msg ?? 'Не удалось пригласить');
-    } finally { setInviting(false); }
-  };
 
   const openCreateLabel = () => { setEditLabelId(null); setLabelName(''); setLabelColor('#4F6EF7'); setLabelModal(true); };
   const openEditLabel = (l: Label) => { setEditLabelId(l.id); setLabelName(l.name); setLabelColor(l.color); setLabelModal(true); };
@@ -428,25 +441,47 @@ export default function WorkspaceSettingsPage() {
           </span>
         </div>
         {isOwner && (
-          <PrimaryBtn onClick={() => setShowInviteForm((v) => !v)}>
+          <PrimaryBtn ref={inviteTriggerRef} onClick={() => setShowInviteForm((v) => !v)}>
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
             Пригласить участника
           </PrimaryBtn>
         )}
       </div>
 
-      {/* Invite form */}
+      {/* Member picker: search существующих + fallback invite по email */}
       {showInviteForm && isOwner && (
-        <div style={{ marginBottom: 16, padding: 16, background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, display: 'flex', gap: 8 }}>
-          <input
-            autoFocus value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleInvite(); if (e.key === 'Escape') setShowInviteForm(false); }}
-            placeholder="Email пользователя..." style={{ ...inp, flex: 1, width: 'auto' }}
+        <div style={{ marginBottom: 16, padding: 16, background: c.cardBg, border: `1px solid ${c.border}`, borderRadius: 10, position: 'relative' }}>
+          <MemberPicker
+            workspaceId={workspace.id}
+            theme={pickerTheme}
+            onAdded={(member) => {
+              setMembers((prev) => [...prev, member]);
+              closeInviteForm();
+              load();
+              message.success('Участник добавлен');
+            }}
+            onFallbackInvite={async (email) => {
+              await workspacesApi.inviteByEmail(workspace.id, email);
+              const updated = await workspacesApi.listMembers(workspace.id);
+              setMembers(updated);
+              closeInviteForm();
+              load();
+              message.success('Приглашение отправлено');
+            }}
+            onLostOwnership={() => {
+              closeInviteForm();
+              message.error('У вас больше нет прав владельца');
+              load();
+            }}
+            onClose={closeInviteForm}
           />
-          <PrimaryBtn onClick={handleInvite} loading={inviting} disabled={!inviteEmail.trim()}>
-            Пригласить
-          </PrimaryBtn>
-          <button onClick={() => setShowInviteForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.muted, padding: '0 8px', fontSize: 16 }}>✕</button>
+          <button
+            onClick={closeInviteForm}
+            aria-label="Закрыть форму приглашения"
+            style={{ position: 'absolute', top: 8, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: c.muted, padding: '0 8px', fontSize: 16 }}
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
         </div>
       )}
 

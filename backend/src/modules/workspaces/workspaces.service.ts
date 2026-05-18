@@ -4,6 +4,7 @@ import { createDefaultWorkflow } from '../workflows/workflows.service.js';
 import { emitMemberAddedNotification } from '../notifications/notifications.service.js';
 import { auditLog } from '../../shared/utils/audit-logger.js';
 import type { CreateWorkspaceDto, UpdateWorkspaceDto, AddMemberDto, UpdateMemberRoleDto, InviteByEmailDto } from './workspaces.dto.js';
+import { CANDIDATE_LIMIT_MAX, CANDIDATE_MIN_QUERY } from './workspaces.dto.js';
 
 // Match the deletion suffix: __deleted_<13-digit unix-millis>
 // Anchored to exactly 13 digits to avoid corrupting legitimate slugs that may
@@ -494,9 +495,97 @@ export async function removeMember(workspaceId: string, requesterId: string, tar
   });
 }
 
-// ─── Member Search ───────────────────────────────────────────────────────────
+// ─── Member Candidates Search (all users, Owner-only) ────────────────────────
 
-export async function searchMembers(workspaceId: string, query: string) {
+export interface MemberCandidate {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  alreadyMember: boolean;
+}
+
+/**
+ * Search across ALL active users by name/email substring. Owner-only.
+ *
+ * Privacy:
+ *   - Returns only public-safe fields (id/name/email/avatar/alreadyMember).
+ *   - Never exposes isSuperadmin, lastLoginAt, authProvider, isActive, etc.
+ *   - Audit log records queryLength and resultCount but NOT the raw query
+ *     (the query may contain PII like email fragments or workspace names).
+ *   - Rate limit is enforced at the router level (RATE_LIMITS.memberSearch).
+ */
+export async function searchMemberCandidates(
+  workspaceId: string,
+  requesterId: string,
+  rawQuery: string,
+  rawLimit: number,
+): Promise<MemberCandidate[]> {
+  await assertOwner(workspaceId, requesterId);
+
+  const q = rawQuery.trim();
+  if (q.length < CANDIDATE_MIN_QUERY) {
+    throw new AppError(400, `Query must be at least ${CANDIDATE_MIN_QUERY} characters`);
+  }
+  const limit = Math.min(Math.max(1, rawLimit), CANDIDATE_LIMIT_MAX);
+
+  const users = await prisma.user.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { name:  { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true, name: true, email: true, avatar: true },
+    take: limit,
+    orderBy: [{ name: 'asc' }],
+  });
+
+  let memberSet = new Set<string>();
+  if (users.length > 0) {
+    const memberships = await prisma.workspaceMember.findMany({
+      where: { workspaceId, userId: { in: users.map((u) => u.id) } },
+      select: { userId: true },
+    });
+    memberSet = new Set(memberships.map((m) => m.userId));
+  }
+
+  // Audit log: observability path.
+  // DO NOT add raw `q`, partial query, email or any user-supplied text into
+  // meta — it may contain PII (workspace names, partial emails). Only safe
+  // numeric metadata is allowed here. See docs/design/workspace-member-picker.md §5.
+  // Awaiting ensures deterministic test ordering; the auditLog implementation
+  // catches its own errors so this can never break the response.
+  await auditLog({
+    actorId: requesterId,
+    action: 'member.candidates.search',
+    targetId: workspaceId,
+    result: 'SUCCESS',
+    meta: { queryLength: q.length, resultCount: users.length },
+  });
+
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    avatar: u.avatar,
+    alreadyMember: memberSet.has(u.id),
+  }));
+}
+
+// ─── Member Search (legacy, within workspace) ────────────────────────────────
+
+/**
+ * Search WITHIN existing workspace members. Membership-gated — only callers
+ * who are members of the workspace can use this.
+ *
+ * Security review (G7) flagged that this used to be open to any authenticated
+ * user with a valid workspace ID. assertMember now closes that gap.
+ */
+export async function searchMembers(workspaceId: string, requesterId: string, query: string) {
+  await assertMember(workspaceId, requesterId);
+
   const q = query.trim();
   const members = await prisma.workspaceMember.findMany({
     where: {

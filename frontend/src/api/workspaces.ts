@@ -37,6 +37,27 @@ export async function listMembers(id: string): Promise<WorkspaceMember[]> {
   return data;
 }
 
+export interface MemberCandidate {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  alreadyMember: boolean;
+}
+
+export async function searchCandidates(
+  workspaceId: string,
+  q: string,
+  signal?: AbortSignal,
+  limit?: number,
+): Promise<MemberCandidate[]> {
+  const { data } = await api.get<MemberCandidate[]>(
+    `/workspaces/${workspaceId}/members/candidates`,
+    { params: { q, ...(limit ? { limit } : {}) }, signal },
+  );
+  return data;
+}
+
 export async function addMember(
   id: string,
   userId: string,
