@@ -316,6 +316,29 @@ export default function RoadmapView({ boardId, statuses }: Props) {
     [statuses],
   );
 
+  // IDs всех parent-задач (тех, у которых есть дети) — для bulk expand/collapse
+  const isParent = (t: Task) => (t._count?.children ?? t.children?.length ?? 0) > 0;
+  const parentIds = useMemo(
+    () => new Set(tasks.filter(isParent).map(t => t.id)),
+    [tasks],
+  );
+  const hasAnyParents = parentIds.size > 0;
+  const hasAnyExpanded = useMemo(() => {
+    if (!hasAnyParents) return false;
+    for (const id of parentIds) if (expanded.has(id)) return true;
+    return false;
+  }, [parentIds, expanded, hasAnyParents]);
+
+  // Functional setter — immune to stale-closure under rapid clicks
+  const bulkToggleExpand = useCallback(() => {
+    if (!hasAnyParents) return;
+    setExpanded(prev => {
+      let anyExpanded = false;
+      for (const id of parentIds) if (prev.has(id)) { anyExpanded = true; break; }
+      return anyExpanded ? new Set<string>() : new Set(parentIds);
+    });
+  }, [hasAnyParents, parentIds]);
+
   const leftRef          = useRef<HTMLDivElement>(null);
   const rightRef         = useRef<HTMLDivElement>(null);
   const legendPopoverRef = useRef<HTMLDivElement>(null);
@@ -362,11 +385,12 @@ export default function RoadmapView({ boardId, statuses }: Props) {
       if (e.key === 'w' || e.key === 'W') setZoom('week');
       else if (e.key === 'm' || e.key === 'M') setZoom('month');
       else if (e.key === 'q' || e.key === 'Q') setZoom('quarter');
+      else if (e.key === 'e' || e.key === 'E') bulkToggleExpand();
       else if (e.key === 'Escape') setShowLegend(false);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [bulkToggleExpand]);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -380,7 +404,8 @@ export default function RoadmapView({ boardId, statuses }: Props) {
         const data = await boardsApi.getRoadmapTasks(boardId, from, to);
         if (active) {
           setTasks(data);
-          const ids = new Set(data.filter(t => (t._count?.children ?? 0) > 0).map(t => t.id));
+          // Same predicate as isParent — keep memo + initial state consistent
+          const ids = new Set(data.filter(t => (t._count?.children ?? t.children?.length ?? 0) > 0).map(t => t.id));
           setExpanded(ids);
           setLoading(false);
         }
@@ -696,6 +721,42 @@ export default function RoadmapView({ boardId, statuses }: Props) {
               <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
             </svg>
           )}
+        </button>
+
+        {/* Bulk expand/collapse all parent tasks */}
+        <button
+          onClick={bulkToggleExpand}
+          disabled={!hasAnyParents}
+          title={
+            !hasAnyParents
+              ? 'Нет подзадач для разворачивания'
+              : hasAnyExpanded
+                ? 'Свернуть все подзадачи (E)'
+                : 'Развернуть все подзадачи (E)'
+          }
+          aria-pressed={hasAnyParents ? hasAnyExpanded : undefined}
+          aria-label={hasAnyExpanded ? 'Свернуть все подзадачи' : 'Развернуть все подзадачи'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '5px 10px', border: `1px solid ${c.border}`,
+            borderRadius: 7, background: 'transparent',
+            cursor: 'pointer',
+            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.muted,
+            opacity: hasAnyParents ? 1 : 0.4,
+          }}
+        >
+          {hasAnyExpanded ? (
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 9l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+            </svg>
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path d="M3 9l4-4 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 5l4-4 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.4"/>
+            </svg>
+          )}
+          {hasAnyExpanded ? 'Свернуть все' : 'Развернуть все'}
         </button>
 
         <div style={{ flex: 1 }} />
