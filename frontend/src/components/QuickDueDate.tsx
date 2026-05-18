@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
 import { message } from 'antd';
 import * as tasksApi from '../api/tasks';
@@ -143,6 +144,9 @@ export default function QuickDueDate({
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<string>(isoToDateInput(value));
   const [status, setStatus] = useState<string>('');
+  const [pos, setPos] = useState<{ top: number; left: number; placement: 'bottom' | 'top' } | null>(
+    null,
+  );
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const clearBtnRef = useRef<HTMLButtonElement>(null);
@@ -202,6 +206,39 @@ export default function QuickDueDate({
   // Focus the input when popover opens
   useEffect(() => {
     if (open) inputRef.current?.focus();
+  }, [open]);
+
+  // Compute popover position relative to viewport (fixed) — avoids clipping by
+  // ancestors with overflow:hidden (accordions, modals) and survives parent scroll.
+  // Recomputes on scroll/resize so popover follows the trigger.
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null);
+      return;
+    }
+    const compute = () => {
+      const trigger = triggerRef.current;
+      if (!trigger || typeof window === 'undefined') return;
+      const r = trigger.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const w = Math.min(POPOVER_WIDTH, vw - 16);
+      const h = POPOVER_EST_HEIGHT;
+      const spaceBelow = vh - r.bottom;
+      const placement: 'bottom' | 'top' = spaceBelow < h + GAP && r.top > h + GAP ? 'top' : 'bottom';
+      const top = placement === 'bottom' ? r.bottom + GAP : r.top - h - GAP;
+      let left = r.left;
+      if (left + w > vw - 8) left = vw - w - 8;
+      if (left < 8) left = 8;
+      setPos({ top, left, placement });
+    };
+    compute();
+    window.addEventListener('scroll', compute, true);
+    window.addEventListener('resize', compute);
+    return () => {
+      window.removeEventListener('scroll', compute, true);
+      window.removeEventListener('resize', compute);
+    };
   }, [open]);
 
   const closePopover = (returnFocus: boolean) => {
@@ -271,7 +308,9 @@ export default function QuickDueDate({
     }
   };
 
-  const renderPopover = () => (
+  const renderPopover = () => {
+    if (typeof document === 'undefined') return null;
+    const node = (
     <div
       ref={popoverRef}
       role="dialog"
@@ -280,7 +319,7 @@ export default function QuickDueDate({
       onClick={e => e.stopPropagation()}
       onMouseDown={e => e.stopPropagation()}
       onKeyDown={handlePopoverKey}
-      style={{ ...popoverStyle(c), ['--qdd-focus' as never]: c.focusRing } as CSSProperties}
+      style={{ ...popoverStyle(c, pos), ['--qdd-focus' as never]: c.focusRing } as CSSProperties}
     >
       <input
         ref={inputRef}
@@ -319,7 +358,9 @@ export default function QuickDueDate({
         </button>
       </div>
     </div>
-  );
+    );
+    return createPortal(node, document.body);
+  };
 
   const liveRegion = (
     <span style={visuallyHidden} aria-live="polite" aria-atomic="true">{status}</span>
@@ -445,17 +486,30 @@ function addBtnStyle(c: C, size: 'sm' | 'md', isMobile: boolean): CSSProperties 
   };
 }
 
-function popoverStyle(c: C): CSSProperties {
+const POPOVER_WIDTH = 220;
+const POPOVER_EST_HEIGHT = 110;
+const GAP = 4;
+
+function popoverStyle(
+  c: C,
+  pos: { top: number; left: number; placement: 'bottom' | 'top' } | null,
+): CSSProperties {
+  // Position is computed against the viewport (fixed) so ancestors with
+  // overflow:hidden (accordions, drawers) cannot clip the popover.
+  // While pos is null (first paint before layout effect) keep it offscreen
+  // to avoid a visible flicker at top:0/left:0.
   return {
-    position: 'absolute',
+    position: 'fixed',
     zIndex: 1000,
-    marginTop: 4,
+    top: pos?.top ?? -9999,
+    left: pos?.left ?? -9999,
     padding: 8,
     background: c.popoverBg,
     border: `1px solid ${c.popoverBorder}`,
     borderRadius: 8,
     boxShadow: c.popoverShadow,
-    minWidth: 200,
+    width: POPOVER_WIDTH,
+    maxWidth: 'calc(100vw - 16px)',
   };
 }
 
