@@ -5,7 +5,7 @@ export async function globalSearch(userId: string, q: string, limit = 5) {
   if (!term) return { tasks: [], boards: [], workspaces: [] };
 
   const memberships = await prisma.workspaceMember.findMany({
-    where: { userId },
+    where: { userId, workspace: { deletedAt: null } },
     select: { workspaceId: true, role: true },
   });
   if (memberships.length === 0) return { tasks: [], boards: [], workspaces: [] };

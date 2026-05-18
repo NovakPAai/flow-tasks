@@ -3,8 +3,12 @@ import { AppError } from '../../shared/middleware/error-handler.js';
 import type { CreateChecklistDto, CreateChecklistItemDto, UpdateChecklistItemDto } from './checklists.dto.js';
 
 async function verifyTaskWrite(taskId: string, userId: string) {
-  const task = await prisma.task.findUnique({ where: { id: taskId }, include: { board: true } });
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { board: { include: { workspace: { select: { deletedAt: true } } } } },
+  });
   if (!task) throw new AppError(404, 'Task not found');
+  if (task.board.workspace.deletedAt !== null) throw new AppError(404, 'Task not found');
 
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: task.board.workspaceId, userId } },
@@ -17,9 +21,10 @@ async function verifyTaskWrite(taskId: string, userId: string) {
 async function verifyChecklistAccess(checklistId: string, userId: string) {
   const checklist = await prisma.checklist.findUnique({
     where: { id: checklistId },
-    include: { task: { include: { board: true } } },
+    include: { task: { include: { board: { include: { workspace: { select: { deletedAt: true } } } } } } },
   });
   if (!checklist) throw new AppError(404, 'Checklist not found');
+  if (checklist.task.board.workspace.deletedAt !== null) throw new AppError(404, 'Checklist not found');
 
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: checklist.task.board.workspaceId, userId } },

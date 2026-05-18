@@ -28,15 +28,17 @@ function GridIcon() {
 }
 
 // ─── User dropdown menu ───────────────────────────────────────────────────────
-function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, onAdminUsers, isSuperadmin, navBg, border, textPrimary, textMuted, onClose }: {
+function UserMenu({ user, onLogout, onProfile, onTrash, onSettings, workspaces, current, onAdminUsers, isSuperadmin, trashCount, navBg, border, textPrimary, textMuted, onClose }: {
   user: { name: string; email?: string };
   onLogout: () => void;
   onProfile: () => void;
+  onTrash: () => void;
   onSettings: (slug: string) => void;
   workspaces: Array<{ id: string; name: string; slug: string }>;
   current: { id: string; name: string; slug: string } | null;
   onAdminUsers: () => void;
   isSuperadmin: boolean;
+  trashCount: number;
   navBg: string; border: string; textPrimary: string; textMuted: string;
   onClose: () => void;
 }) {
@@ -84,6 +86,27 @@ function UserMenu({ user, onLogout, onProfile, onSettings, workspaces, current, 
         fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
       }}>
         Профиль
+      </button>
+      <button
+        role="menuitem"
+        onClick={() => { onTrash(); onClose(); }}
+        aria-label={trashCount > 0 ? `Корзина (${trashCount})` : 'Корзина'}
+        style={{
+          alignItems: 'center', background: 'none', border: 'none', borderRadius: 6, color: textMuted,
+          cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+          fontFamily: '"Inter", system-ui, sans-serif',
+          fontSize: 13, padding: '8px 16px', textAlign: 'left', width: '100%',
+        }}
+      >
+        <span>Корзина</span>
+        {trashCount > 0 && (
+          <span aria-hidden="true" style={{
+            background: '#3D54E6', color: '#fff', fontSize: 12, fontWeight: 600,
+            borderRadius: 10, padding: '1px 8px', minWidth: 20, textAlign: 'center',
+          }}>
+            {trashCount}
+          </span>
+        )}
       </button>
       {isSuperadmin && (
         <button role="menuitem" onClick={() => { onAdminUsers(); onClose(); }} style={{
@@ -266,6 +289,12 @@ export default function AppLayout({ children }: Props) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [wsMenuOpen, setWsMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const trashCount = useWorkspaceStore(s => s.trashCount);
+  const refreshTrashCount = useWorkspaceStore(s => s.refreshTrashCount);
+
+  // Initial fetch only — store is then updated by explicit calls from TrashPage
+  // (after restore / purge) and by the main delete-workspace flow.
+  useEffect(() => { void refreshTrashCount(); }, [refreshTrashCount]);
 
   // ── Design tokens ──────────────────────────────────────────────────────────
   const isDark = mode !== 'light';
@@ -517,11 +546,13 @@ export default function AppLayout({ children }: Props) {
               user={user}
               onLogout={handleLogout}
               onProfile={() => navigate('/profile')}
+              onTrash={() => navigate('/trash')}
               onSettings={(slug) => navigate(`/w/${slug}/settings`)}
               workspaces={workspaces}
               current={current}
               onAdminUsers={() => navigate('/admin/users')}
               isSuperadmin={!!user.isSuperadmin}
+              trashCount={trashCount}
               navBg={navBg} border={navBorder} textPrimary={wsSelectorText} textMuted={tabIdleText}
               onClose={() => setUserMenuOpen(false)}
             />

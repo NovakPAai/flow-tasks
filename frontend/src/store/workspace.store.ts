@@ -6,16 +6,20 @@ interface WorkspaceState {
   workspaces: Workspace[];
   current: Workspace | null;
   loading: boolean;
+  trashCount: number;
   load: () => Promise<void>;
   create: (payload: { name: string; slug: string; description?: string }) => Promise<Workspace>;
   setCurrent: (ws: Workspace | null) => void;
   incrementBoardCount: (workspaceId: string) => void;
+  refreshTrashCount: () => Promise<void>;
+  setTrashCount: (n: number) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   workspaces: [],
   current: null,
   loading: false,
+  trashCount: 0,
 
   load: async () => {
     set({ loading: true });
@@ -47,4 +51,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       ),
     }));
   },
+
+  refreshTrashCount: async () => {
+    try {
+      const n = await workspacesApi.countTrash();
+      set({ trashCount: n });
+    } catch {
+      // Silent — badge just doesn't appear.
+    }
+  },
+
+  setTrashCount: (n) => set({ trashCount: n }),
 }));

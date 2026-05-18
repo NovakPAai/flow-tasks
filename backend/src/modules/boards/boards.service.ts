@@ -18,8 +18,10 @@ function parseIsoDate(s: string): Date {
 async function assertMember(workspaceId: string, userId: string) {
   const m = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: { select: { deletedAt: true } } },
   });
   if (!m) throw new AppError(403, 'Access denied');
+  if (m.workspace.deletedAt !== null) throw new AppError(404, 'Workspace not found');
   return m;
 }
 

@@ -20,6 +20,26 @@ router.get('/', authHandler(async (req, res) => {
   res.json(await ws.listMyWorkspaces(req.user!.userId));
 }));
 
+// ─── Trash ────────────────────────────────────────────────────────────────────
+
+router.get('/trash/list', authHandler(async (req, res) => {
+  res.json(await ws.listTrash(req.user!.userId));
+}));
+
+router.get('/trash/count', authHandler(async (req, res) => {
+  res.json({ count: await ws.countTrash(req.user!.userId) });
+}));
+
+router.post('/:id/restore', authHandler(async (req, res) => {
+  await ws.restoreWorkspace(String(req.params.id), req.user!.userId);
+  res.json({ message: 'Workspace restored' });
+}));
+
+router.delete('/:id/purge', authHandler(async (req, res) => {
+  await ws.purgeWorkspace(String(req.params.id), req.user!.userId);
+  res.json({ message: 'Workspace permanently deleted' });
+}));
+
 router.post('/', validate(createWorkspaceDto), authHandler(async (req, res) => {
   res.status(201).json(await ws.createWorkspace(req.user!.userId, req.body));
 }));

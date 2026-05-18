@@ -2,7 +2,13 @@ import { prisma } from '../../prisma/client.js';
 import { AppError } from '../../shared/middleware/error-handler.js';
 import { createDefaultWorkflow } from '../workflows/workflows.service.js';
 import { emitMemberAddedNotification } from '../notifications/notifications.service.js';
+import { auditLog } from '../../shared/utils/audit-logger.js';
 import type { CreateWorkspaceDto, UpdateWorkspaceDto, AddMemberDto, UpdateMemberRoleDto, InviteByEmailDto } from './workspaces.dto.js';
+
+// Match the deletion suffix: __deleted_<13-digit unix-millis>
+// Anchored to exactly 13 digits to avoid corrupting legitimate slugs that may
+// contain "__deleted_" followed by digits with a different length.
+const DELETED_SLUG_SUFFIX = /__deleted_\d{13}$/;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -29,8 +35,10 @@ export async function logEvent(
 async function assertMember(workspaceId: string, userId: string) {
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: { select: { deletedAt: true } } },
   });
   if (!member) throw new AppError(403, 'Access denied');
+  if (member.workspace.deletedAt !== null) throw new AppError(404, 'Workspace not found');
   return member;
 }
 
@@ -40,11 +48,24 @@ async function assertOwner(workspaceId: string, userId: string) {
   return member;
 }
 
+/**
+ * Like assertMember, but allows access to soft-deleted workspaces.
+ * Used by trash operations (list/restore/purge) which need to see deleted workspaces.
+ */
+async function assertMemberIncludingDeleted(workspaceId: string, userId: string) {
+  const member = await prisma.workspaceMember.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: true },
+  });
+  if (!member) throw new AppError(403, 'Access denied');
+  return member;
+}
+
 // ─── Workspace CRUD ──────────────────────────────────────────────────────────
 
 export async function listMyWorkspaces(userId: string) {
   const memberships = await prisma.workspaceMember.findMany({
-    where: { userId },
+    where: { userId, workspace: { deletedAt: null } },
     include: {
       workspace: {
         include: {
@@ -82,7 +103,11 @@ export async function listMyWorkspaces(userId: string) {
 }
 
 export async function createWorkspace(userId: string, dto: CreateWorkspaceDto) {
-  const slugExists = await prisma.workspace.findUnique({ where: { slug: dto.slug } });
+  // Active workspaces enforce slug uniqueness;
+  // soft-deleted workspaces have suffixed slugs so don't conflict.
+  const slugExists = await prisma.workspace.findFirst({
+    where: { slug: dto.slug, deletedAt: null },
+  });
   if (slugExists) throw new AppError(409, 'Slug already taken');
 
   const workspace = await prisma.workspace.create({
@@ -167,9 +192,172 @@ export async function updateWorkspace(workspaceId: string, userId: string, dto: 
   return updated;
 }
 
+// ─── Soft-delete (Trash) ──────────────────────────────────────────────────
+// Retention: 10 business days (skip Sat/Sun). After purgeAt expires,
+// the background scheduler hard-deletes the workspace via cascade.
+
+const BUSINESS_DAYS_RETENTION = 10;
+
+export function addBusinessDays(start: Date, days: number): Date {
+  const d = new Date(start);
+  let remaining = days;
+  while (remaining > 0) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    const dow = d.getUTCDay(); // 0=Sun, 6=Sat
+    if (dow !== 0 && dow !== 6) remaining -= 1;
+  }
+  return d;
+}
+
 export async function deleteWorkspace(workspaceId: string, userId: string) {
   await assertOwner(workspaceId, userId);
+
+  const purgeAt = addBusinessDays(new Date(), BUSINESS_DAYS_RETENTION);
+  const current = await prisma.workspace.findUniqueOrThrow({
+    where: { id: workspaceId },
+    select: { slug: true },
+  });
+
+  // Free the slug by suffixing it; restore reverses this.
+  // Original slug is preserved in a sibling field via the meta event log.
+  const suffixedSlug = `${current.slug}__deleted_${Date.now()}`;
+
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { deletedAt: new Date(), deletedBy: userId, purgeAt, slug: suffixedSlug },
+  });
+
+  await logEvent(workspaceId, userId, 'workspace_soft_deleted', 'workspace', workspaceId, {
+    originalSlug: current.slug,
+    purgeAt: purgeAt.toISOString(),
+  });
+}
+
+export async function restoreWorkspace(workspaceId: string, userId: string) {
+  const member = await assertMemberIncludingDeleted(workspaceId, userId);
+  const ws = member.workspace;
+  if (ws.deletedAt === null) throw new AppError(400, 'Workspace is not in trash');
+  // Owner check first (clearer semantics); fall back to deletedBy when caller is not Owner.
+  if (member.role !== 'OWNER' && ws.deletedBy !== userId) {
+    throw new AppError(403, 'Only the workspace owner or the user who deleted it can restore');
+  }
+
+  // Strip the __deleted_<13-digit-ts> suffix to restore the original slug.
+  const originalSlug = ws.slug.replace(DELETED_SLUG_SUFFIX, '');
+
+  // Resolve slug atomically: try original, then retry with -restored-<ts> on P2002.
+  // This closes the find/update race where another workspace claims the slug between
+  // the conflict check and the update (TS H-3).
+  const tryUpdate = async (candidateSlug: string) =>
+    prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { deletedAt: null, deletedBy: null, purgeAt: null, slug: candidateSlug },
+    });
+
+  let restoredSlug = originalSlug;
+  try {
+    await tryUpdate(originalSlug);
+  } catch (err: unknown) {
+    // P2002 = unique constraint violation on slug
+    const code = (err as { code?: string } | null)?.code;
+    if (code !== 'P2002') throw err;
+    restoredSlug = `${originalSlug}-restored-${Date.now().toString(36)}`;
+    await tryUpdate(restoredSlug);
+  }
+
+  await logEvent(workspaceId, userId, 'workspace_restored', 'workspace', workspaceId, {
+    slug: restoredSlug,
+  });
+}
+
+export async function purgeWorkspace(workspaceId: string, userId: string) {
+  const member = await assertMemberIncludingDeleted(workspaceId, userId);
+  const ws = member.workspace;
+  if (ws.deletedAt === null) throw new AppError(400, 'Workspace must be in trash before permanent delete');
+  if (member.role !== 'OWNER') throw new AppError(403, 'Only the workspace owner can permanently delete');
+
+  // Write platform-level audit BEFORE cascade delete — WorkspaceEvent rows are erased
+  // when the workspace is purged, so internal event log won't survive.
+  void auditLog({
+    actorId: userId,
+    action: 'workspace.purge',
+    targetId: workspaceId,
+    result: 'SUCCESS',
+    meta: { name: ws.name, deletedAt: ws.deletedAt?.toISOString() ?? null },
+  });
+
+  // Cascade onDelete will remove boards, tasks, members, workflows, labels, events.
   await prisma.workspace.delete({ where: { id: workspaceId } });
+}
+
+export async function listTrash(userId: string) {
+  // Push the Owner-or-deleter filter into the DB query (avoids fetching irrelevant rows).
+  const memberships = await prisma.workspaceMember.findMany({
+    where: {
+      userId,
+      workspace: { deletedAt: { not: null } },
+      OR: [
+        { role: 'OWNER' },
+        { workspace: { deletedBy: userId } },
+      ],
+    },
+    include: {
+      workspace: {
+        include: {
+          deletedByUser: { select: { id: true, name: true, avatar: true } },
+          _count: { select: { boards: true } },
+        },
+      },
+    },
+    orderBy: { workspace: { deletedAt: 'desc' } },
+  });
+
+  return memberships.map((m) => ({
+    id: m.workspace.id,
+    name: m.workspace.name,
+    slug: m.workspace.slug.replace(DELETED_SLUG_SUFFIX, ''),
+    description: m.workspace.description,
+    deletedAt: m.workspace.deletedAt,
+    deletedBy: m.workspace.deletedByUser,
+    purgeAt: m.workspace.purgeAt,
+    role: m.role,
+    boardCount: m.workspace._count.boards,
+  }));
+}
+
+export async function countTrash(userId: string): Promise<number> {
+  // Used by Profile dropdown badge. Filter in DB to avoid full membership fetch.
+  return prisma.workspaceMember.count({
+    where: {
+      userId,
+      workspace: { deletedAt: { not: null } },
+      OR: [
+        { role: 'OWNER' },
+        { workspace: { deletedBy: userId } },
+      ],
+    },
+  });
+}
+
+/**
+ * Background purge: hard-delete workspaces whose purgeAt has passed.
+ *
+ * Uses deleteMany for atomicity — safe under multi-instance deployments where
+ * two scheduler ticks could otherwise race on the same rows (see issue #157 review C-2).
+ */
+export async function purgeExpired(): Promise<{ purged: number; ids: string[] }> {
+  // Fetch IDs first for forensic logging, then deleteMany with the same filter.
+  // deleteMany itself is idempotent: a second call simply matches 0 rows.
+  const expired = await prisma.workspace.findMany({
+    where: { deletedAt: { not: null }, purgeAt: { lte: new Date() } },
+    select: { id: true },
+  });
+  if (expired.length === 0) return { purged: 0, ids: [] };
+
+  const result = await prisma.workspace.deleteMany({
+    where: { deletedAt: { not: null }, purgeAt: { lte: new Date() } },
+  });
+  return { purged: result.count, ids: expired.map(w => w.id) };
 }
 
 // ─── Members ─────────────────────────────────────────────────────────────────
