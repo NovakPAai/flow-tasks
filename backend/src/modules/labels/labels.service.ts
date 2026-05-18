@@ -5,8 +5,10 @@ import type { CreateLabelDto, UpdateLabelDto } from './labels.dto.js';
 async function getWorkspaceMember(workspaceId: string, userId: string) {
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: { select: { deletedAt: true } } },
   });
   if (!member) throw new AppError(403, 'Access denied');
+  if (member.workspace.deletedAt !== null) throw new AppError(404, 'Workspace not found');
   return member;
 }
 

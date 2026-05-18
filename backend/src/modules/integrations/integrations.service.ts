@@ -30,7 +30,7 @@ export async function deleteApiKey(userId: string, keyId: string) {
 
 export async function getWorkspacesForIntegration(userId: string) {
   const memberships = await prisma.workspaceMember.findMany({
-    where: { userId },
+    where: { userId, workspace: { deletedAt: null } },
     include: {
       workspace: {
         select: { id: true, name: true, slug: true },
@@ -46,7 +46,10 @@ const PULSAR_LABEL = { name: 'Pulsar', color: '#4F6EF7' } as const;
 export async function attachPulsarLabel(taskId: string, workspaceId: string, userId: string): Promise<void> {
   // Verify task belongs to workspaceId AND requesting user is a workspace member (IDOR guard)
   const [task, member] = await Promise.all([
-    prisma.task.findFirst({ where: { id: taskId, board: { workspaceId } }, select: { id: true } }),
+    prisma.task.findFirst({
+      where: { id: taskId, board: { workspaceId, workspace: { deletedAt: null } } },
+      select: { id: true },
+    }),
     prisma.workspaceMember.findUnique({ where: { workspaceId_userId: { workspaceId, userId } } }),
   ]);
   if (!task) throw new AppError(404, 'Task not found');
@@ -67,8 +70,10 @@ export async function attachPulsarLabel(taskId: string, workspaceId: string, use
 export async function getBoardsForIntegration(workspaceId: string, userId: string) {
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: { select: { deletedAt: true } } },
   });
   if (!member) throw new AppError(403, 'Access denied');
+  if (member.workspace.deletedAt !== null) throw new AppError(404, 'Workspace not found');
 
   return prisma.board.findMany({
     where: { workspaceId },

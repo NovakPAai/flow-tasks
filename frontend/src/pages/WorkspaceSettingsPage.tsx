@@ -354,11 +354,13 @@ export default function WorkspaceSettingsPage() {
   const handleDeleteWorkspace = () => {
     setConfirmModal({
       title: `Удалить "${workspace.name}"?`,
-      message: 'Это действие необратимо. Все доски, задачи и участники будут удалены.',
+      message: 'Workspace будет перемещён в Корзину и удалён навсегда через 10 рабочих дней. До этого его можно восстановить из профиля.',
       onConfirm: async () => {
         try {
           await workspacesApi.deleteWorkspace(workspace.id);
           await load();
+          // Refresh trash counter so badge in user-menu reflects the new state.
+          void useWorkspaceStore.getState().refreshTrashCount();
           navigate('/workspaces');
         } catch { message.error('Не удалось удалить workspace'); }
       },

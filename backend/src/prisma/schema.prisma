@@ -32,6 +32,7 @@ model User {
   apiKeys              ApiKey[]
   workspaceMemberships WorkspaceMember[]
   createdWorkspaces    Workspace[]       @relation("WorkspaceCreator")
+  deletedWorkspaces    Workspace[]       @relation("WorkspaceDeleter")
   createdTasks         Task[]            @relation("taskCreator")
   assignedTasks        Task[]            @relation("taskAssignee")
   comments             Comment[]
@@ -124,13 +125,20 @@ model Workspace {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  creator   User              @relation("WorkspaceCreator", fields: [creatorId], references: [id])
-  members   WorkspaceMember[]
-  workflows Workflow[]
-  boards    Board[]
-  labels    Label[]
-  events    WorkspaceEvent[]
+  // Soft-delete (Trash) — see issue #157
+  deletedAt DateTime?
+  deletedBy String?
+  purgeAt   DateTime?
 
+  creator     User              @relation("WorkspaceCreator", fields: [creatorId], references: [id])
+  deletedByUser User?           @relation("WorkspaceDeleter", fields: [deletedBy], references: [id])
+  members     WorkspaceMember[]
+  workflows   Workflow[]
+  boards      Board[]
+  labels      Label[]
+  events      WorkspaceEvent[]
+
+  @@index([deletedAt])
   @@map("workspaces")
 }
 

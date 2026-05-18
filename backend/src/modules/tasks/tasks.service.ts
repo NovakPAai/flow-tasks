@@ -10,7 +10,7 @@ async function getBoardWithAccess(boardId: string, userId: string) {
   const board = await prisma.board.findFirst({
     where: {
       id: boardId,
-      workspace: { members: { some: { userId } } },
+      workspace: { deletedAt: null, members: { some: { userId } } },
     },
     include: { workflow: { include: { statuses: { orderBy: { position: 'asc' } }, transitions: true } } },
   });
@@ -26,7 +26,7 @@ async function getTaskWithAccess(taskId: string, userId: string) {
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      board: { workspace: { members: { some: { userId } } } },
+      board: { workspace: { deletedAt: null, members: { some: { userId } } } },
     },
     include: { board: true },
   });
@@ -606,9 +606,9 @@ export async function bulkDeleteTasks(boardId: string, userId: string, ids: stri
 // ─── My Tasks (cross-workspace) ───────────────────────────────────────────────
 
 export async function listMyTasks(userId: string, filters: MyTasksFiltersDto) {
-  // All workspaces where user is a member
+  // All workspaces where user is a member (excluding soft-deleted)
   const memberships = await prisma.workspaceMember.findMany({
-    where: { userId },
+    where: { userId, workspace: { deletedAt: null } },
     select: { workspaceId: true },
   });
   const workspaceIds = memberships.map((m) => m.workspaceId);

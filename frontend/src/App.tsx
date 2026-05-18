@@ -16,6 +16,7 @@ import MyTasksPage from './pages/MyTasksPage';
 import WorkspaceSettingsPage from './pages/WorkspaceSettingsPage';
 import BoardSettingsPage from './pages/BoardSettingsPage';
 import ProfilePage from './pages/ProfilePage';
+import TrashPage from './pages/TrashPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import RoadmapsPage from './pages/RoadmapsPage';
@@ -170,6 +171,7 @@ export default function App() {
           <Route path="/w/:slug/settings" element={<PrivateRoute><WorkspaceSettingsPage /></PrivateRoute>} />
           <Route path="/my-tasks" element={<PrivateRoute><MyTasksPage /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+          <Route path="/trash" element={<PrivateRoute><TrashPage /></PrivateRoute>} />
           <Route path="/admin/users" element={<PrivateRoute><AdminUsersPage /></PrivateRoute>} />
           {/* Legacy — kept for now */}
           <Route path="/home" element={<PrivateRoute><HomePage /></PrivateRoute>} />

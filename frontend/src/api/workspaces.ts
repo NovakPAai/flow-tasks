@@ -78,3 +78,36 @@ export async function getWorkspaceHistory(
   );
   return data;
 }
+
+// ─── Trash (issue #157) ─────────────────────────────────────────────────────────
+
+export interface TrashedWorkspace {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  // Filtered server-side to non-null, but DB allows null — type defensively.
+  deletedAt: string | null;
+  deletedBy: { id: string; name: string; avatar?: string } | null;
+  purgeAt: string | null;
+  role: 'OWNER' | 'MEMBER' | 'VIEWER';
+  boardCount: number;
+}
+
+export async function listTrash(): Promise<TrashedWorkspace[]> {
+  const { data } = await api.get<TrashedWorkspace[]>('/workspaces/trash/list');
+  return data;
+}
+
+export async function countTrash(): Promise<number> {
+  const { data } = await api.get<{ count: number }>('/workspaces/trash/count');
+  return data.count;
+}
+
+export async function restoreWorkspace(workspaceId: string): Promise<void> {
+  await api.post(`/workspaces/${workspaceId}/restore`);
+}
+
+export async function purgeWorkspace(workspaceId: string): Promise<void> {
+  await api.delete(`/workspaces/${workspaceId}/purge`);
+}

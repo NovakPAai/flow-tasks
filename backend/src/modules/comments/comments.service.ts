@@ -6,8 +6,12 @@ import type { CreateCommentDto, UpdateCommentDto } from './comments.dto.js';
 const AUTHOR_SELECT = { id: true, name: true, avatar: true } as const;
 
 async function verifyTaskAccess(taskId: string, userId: string) {
-  const task = await prisma.task.findUnique({ where: { id: taskId }, include: { board: true } });
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { board: { include: { workspace: { select: { deletedAt: true } } } } },
+  });
   if (!task) throw new AppError(404, 'Task not found');
+  if (task.board.workspace.deletedAt !== null) throw new AppError(404, 'Task not found');
 
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: task.board.workspaceId, userId } },
@@ -23,8 +27,12 @@ export async function listComments(
   limit = 50,
   offset = 0,
 ) {
-  const task = await prisma.task.findUnique({ where: { id: taskId }, include: { board: true } });
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { board: { include: { workspace: { select: { deletedAt: true } } } } },
+  });
   if (!task) throw new AppError(404, 'Task not found');
+  if (task.board.workspace.deletedAt !== null) throw new AppError(404, 'Task not found');
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: task.board.workspaceId, userId } },
   });
@@ -112,9 +120,10 @@ export async function updateComment(commentId: string, userId: string, dto: Upda
 export async function deleteComment(commentId: string, userId: string) {
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
-    include: { task: { include: { board: true } } },
+    include: { task: { include: { board: { include: { workspace: { select: { deletedAt: true } } } } } } },
   });
   if (!comment) throw new AppError(404, 'Comment not found');
+  if (comment.task.board.workspace.deletedAt !== null) throw new AppError(404, 'Comment not found');
 
   // Author or workspace owner can delete
   if (comment.authorId !== userId) {

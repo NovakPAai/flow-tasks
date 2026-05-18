@@ -10,10 +10,11 @@ const MFA_AMR_VALUES = ['totp', 'otp', 'mfa', 'hwk', 'swk'];
 async function enforceMfa(workspaceId: string, req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { requireMfa: true },
+    select: { requireMfa: true, deletedAt: true },
   });
 
-  if (!workspace || !workspace.requireMfa) return next();
+  // Soft-deleted workspaces: skip MFA gate; downstream handler will 404.
+  if (!workspace || workspace.deletedAt !== null || !workspace.requireMfa) return next();
 
   const userId = req.user!.userId;
 

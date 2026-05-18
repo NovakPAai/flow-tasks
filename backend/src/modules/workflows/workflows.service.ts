@@ -67,8 +67,12 @@ async function generateTransitions(workflowId: string) {
 // ─── Workspace access check ───────────────────────────────────────────────────
 
 async function assertWorkspaceAccess(workflowId: string, userId: string) {
-  const workflow = await prisma.workflow.findUnique({ where: { id: workflowId } });
+  const workflow = await prisma.workflow.findUnique({
+    where: { id: workflowId },
+    include: { workspace: { select: { deletedAt: true } } },
+  });
   if (!workflow) throw new AppError(404, 'Workflow not found');
+  if (workflow.workspace.deletedAt !== null) throw new AppError(404, 'Workflow not found');
 
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId: workflow.workspaceId, userId } },
@@ -88,8 +92,10 @@ async function assertWorkspaceOwner(workflowId: string, userId: string) {
 export async function listWorkflows(workspaceId: string, userId: string) {
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: { select: { deletedAt: true } } },
   });
   if (!member) throw new AppError(403, 'Access denied');
+  if (member.workspace.deletedAt !== null) throw new AppError(404, 'Workspace not found');
 
   return prisma.workflow.findMany({
     where: { workspaceId },
@@ -104,8 +110,10 @@ export async function listWorkflows(workspaceId: string, userId: string) {
 export async function createWorkflow(workspaceId: string, userId: string, dto: CreateWorkflowDto) {
   const member = await prisma.workspaceMember.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
+    include: { workspace: { select: { deletedAt: true } } },
   });
   if (!member) throw new AppError(403, 'Access denied');
+  if (member.workspace.deletedAt !== null) throw new AppError(404, 'Workspace not found');
   if (member.role !== 'OWNER') throw new AppError(403, 'Only workspace owners can create workflows');
 
   const workflow = await prisma.workflow.create({
