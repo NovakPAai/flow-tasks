@@ -221,7 +221,9 @@ export default function BoardPage() {
   const addInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentUserId = useAuthStore(s => s.user?.id);
-  const isOwner = members.some(m => m.userId === currentUserId && m.role === 'OWNER');
+  const myRole = members.find(m => m.userId === currentUserId)?.role ?? null;
+  const isOwner = myRole === 'OWNER';
+  const canEdit = myRole === 'OWNER' || myRole === 'MEMBER';
   const statuses = board?.workflow.statuses ?? [];
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -793,6 +795,8 @@ export default function BoardPage() {
                                       onClick={() => setSelectedTaskId(task.id)}
                                       isSelected={selectedTaskIds.has(task.id)}
                                       onSelect={toggleSelect}
+                                      canEdit={canEdit}
+                                      onTaskUpdated={onTaskUpdated}
                                     />
                                   </div>
                                 )}
@@ -833,6 +837,7 @@ export default function BoardPage() {
             tasks={filteredTasks}
             onTaskClick={setSelectedTaskId}
             onTaskUpdated={onTaskUpdated}
+            canEdit={canEdit}
             quickAddStatusId={addingTo}
             quickAddTitle={addTitle}
             onQuickAddStart={sid => { setAddingTo(sid); setAddTitle(''); }}

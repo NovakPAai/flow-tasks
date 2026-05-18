@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { message } from 'antd';
 import { useThemeStore } from '../store/theme.store';
 import type { Task, WorkflowStatus } from '../types';
 import * as tasksApi from '../api/tasks';
+import type { UpdateTaskPayload } from '../api/tasks';
+import QuickDueDate from './QuickDueDate';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 type C = Record<string, string>;
@@ -77,13 +80,14 @@ interface Props {
   selectedTaskIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
   onSelectAll?: (ids: string[]) => void;
+  canEdit?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function BoardListView({
   statuses, tasks, onTaskClick, onTaskUpdated,
   quickAddStatusId, quickAddTitle, onQuickAddStart, onQuickAddChange, onQuickAddSubmit,
-  selectedTaskIds, onToggleSelect, onSelectAll,
+  selectedTaskIds, onToggleSelect, onSelectAll, canEdit = false,
 }: Props) {
   const mode = useThemeStore(s => s.mode);
   const isDark = mode === 'dark';
@@ -92,14 +96,17 @@ export default function BoardListView({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
-  const saveField = async (taskId: string, patch: Parameters<typeof tasksApi.updateTask>[1]) => {
+  const saveField = async (taskId: string, patch: UpdateTaskPayload) => {
     setSaving(taskId);
     try {
       const updated = await tasksApi.updateTask(taskId, patch);
       const existing = tasks.find(t => t.id === taskId);
       onTaskUpdated(existing ? { ...existing, ...updated } : updated);
-    } catch { /* ignore */ }
-    finally { setSaving(null); }
+    } catch {
+      message.error('Не удалось сохранить изменение');
+    } finally {
+      setSaving(null);
+    }
   };
 
   const toggleCollapse = (id: string) =>
@@ -211,8 +218,6 @@ export default function BoardListView({
                   const isActive = isInProgress;
                   const isDoneRow = isDoneGroup;
                   const childCount = task._count?.children ?? 0;
-                  const due = task.dueDate ? new Date(task.dueDate) : null;
-                  const isOverdue = due && due < new Date();
                   const labels = task.labels ?? [];
                   const prioKey = task.priority ?? null;
                   const prio = prioKey ? (PRIO[prioKey] ?? null) : null;
@@ -333,7 +338,7 @@ export default function BoardListView({
                             <select
                               value={task.priority ?? ''}
                               disabled={saving === task.id}
-                              onChange={e => saveField(task.id, { priority: (e.target.value as 'HIGH' | 'MEDIUM' | 'LOW') || null })}
+                              onChange={e => { void saveField(task.id, { priority: (e.target.value as 'HIGH' | 'MEDIUM' | 'LOW') || null }); }}
                               style={{
                                 position: 'absolute', inset: 0, opacity: 0,
                                 cursor: 'pointer', width: '100%', height: '100%',
@@ -354,7 +359,7 @@ export default function BoardListView({
                             <select
                               value=""
                               disabled={saving === task.id}
-                              onChange={e => saveField(task.id, { priority: (e.target.value as 'HIGH' | 'MEDIUM' | 'LOW') || null })}
+                              onChange={e => { void saveField(task.id, { priority: (e.target.value as 'HIGH' | 'MEDIUM' | 'LOW') || null }); }}
                               style={{
                                 position: 'absolute', inset: 0, opacity: 0,
                                 cursor: 'pointer', width: '100%', height: '100%',
@@ -399,20 +404,19 @@ export default function BoardListView({
                       </div>
 
                       {/* Due date */}
-                      <div style={{ width: W.due, flexShrink: 0 }}>
-                        {due ? (
-                          <span style={{
-                            display: 'flex', alignItems: 'center', gap: 4,
-                            fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12,
-                            color: isOverdue ? c.overdueText : c.metaText,
-                            fontWeight: (!isDark && isOverdue) ? 500 : 400,
-                          }}>
-                            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style={{ flexShrink: 0 }}>
-                              <rect x="0.5" y="1.5" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
-                              <path d="M3 0.5v2M8 0.5v2M0.5 4.5h10" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-                            </svg>
-                            {due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
-                          </span>
+                      <div
+                        style={{ width: W.due, flexShrink: 0, position: 'relative' }}
+                        onClick={e => { if (canEdit || task.dueDate) e.stopPropagation(); }}
+                      >
+                        {task.dueDate || canEdit ? (
+                          <QuickDueDate
+                            taskId={task.id}
+                            value={task.dueDate ?? null}
+                            canEdit={canEdit}
+                            variant="badge-or-add"
+                            size="md"
+                            onChange={next => onTaskUpdated({ ...task, dueDate: next ?? undefined })}
+                          />
                         ) : (
                           <span style={{ fontFamily: '"Inter",system-ui,sans-serif', fontSize: 12, color: c.metaText }}>—</span>
                         )}
