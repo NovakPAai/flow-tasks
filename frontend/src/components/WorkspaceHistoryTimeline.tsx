@@ -43,25 +43,37 @@ const ACTION_SVG: Record<string, string> = {
 
 function formatMessage(event: WorkspaceEvent): string {
   const meta = event.meta as Record<string, string> | undefined;
+  const m = meta ?? {};
+  const who = event.user.name;
   switch (event.action) {
-    case 'member_added':         return `${event.user.name} добавил участника ${meta?.name ?? ''} (${meta?.role ?? ''})`;
-    case 'member_removed':       return `${event.user.name} удалил участника ${meta?.name ?? ''}`;
-    case 'member_role_changed':  return `${event.user.name} изменил роль ${meta?.name ?? ''} на ${meta?.role ?? ''}`;
-    case 'workflow_created':     return `${event.user.name} создал workflow «${meta?.name ?? ''}»`;
-    case 'workflow_deleted':     return `${event.user.name} удалил workflow «${meta?.name ?? ''}»`;
-    case 'workspace_created':    return `${event.user.name} создал рабочее пространство «${meta?.name ?? ''}»`;
+    case 'member_added':         return `${who} добавил участника ${m.name ?? ''} (${m.role ?? ''})`;
+    case 'member_removed':       return `${who} удалил участника ${m.name ?? ''}`;
+    case 'member_role_changed':  return `${who} изменил роль ${m.name ?? ''} на ${m.role ?? ''}`;
+    case 'workflow_created':     return `${who} создал воркфлоу «${m.name ?? ''}»`;
+    case 'workflow_updated':     return `${who} обновил воркфлоу «${m.nameTo ?? m.name ?? m.workflowName ?? ''}»`;
+    case 'workflow_deleted':     return `${who} удалил воркфлоу «${m.name ?? ''}»`;
+    case 'workflow_status_added':
+      return `${who} добавил колонку «${m.statusName ?? ''}»${m.workflowName ? ` в воркфлоу «${m.workflowName}»` : ''}`;
+    case 'workflow_status_renamed':
+      return `${who} переименовал колонку «${m.nameFrom ?? ''}» → «${m.nameTo ?? ''}»`;
+    case 'workflow_status_deleted':
+      return `${who} удалил колонку «${m.statusName ?? ''}»${m.workflowName ? ` из воркфлоу «${m.workflowName}»` : ''}`;
+    case 'workspace_created':    return `${who} создал рабочее пространство «${m.name ?? ''}»`;
+    case 'workspace_soft_deleted': return `${who} удалил пространство «${m.name ?? ''}»`;
+    case 'workspace_restored':   return `${who} восстановил пространство «${m.name ?? ''}»`;
     case 'workspace_updated': {
       const changes: string[] = [];
-      if (meta?.name)        changes.push(`название → «${meta.name}»`);
-      if (meta?.description !== undefined) changes.push(`описание обновлено`);
-      if (meta?.isPrivate !== undefined)   changes.push(meta.isPrivate === 'true' ? 'сделал приватным' : 'сделал публичным');
+      if (m.name)              changes.push(`название → «${m.name}»`);
+      if (m.description !== undefined) changes.push('описание обновлено');
+      if (m.isPrivate !== undefined)   changes.push(m.isPrivate === 'true' ? 'сделал приватным' : 'сделал публичным');
       return changes.length > 0
-        ? `${event.user.name} изменил настройки: ${changes.join(', ')}`
-        : `${event.user.name} обновил настройки пространства`;
+        ? `${who} изменил настройки: ${changes.join(', ')}`
+        : `${who} обновил настройки пространства`;
     }
-    case 'board_created':        return `${event.user.name} создал доску «${meta?.name ?? ''}»`;
-    case 'board_deleted':        return `${event.user.name} удалил доску «${meta?.name ?? ''}»`;
-    default: return `${event.user.name}: ${event.action}`;
+    case 'board_created':        return `${who} создал доску «${m.name ?? ''}»`;
+    case 'board_updated':        return `${who} обновил доску «${m.boardName ?? m.name ?? ''}»`;
+    case 'board_deleted':        return `${who} удалил доску «${m.name ?? ''}»`;
+    default: return `${who} выполнил действие`;
   }
 }
 

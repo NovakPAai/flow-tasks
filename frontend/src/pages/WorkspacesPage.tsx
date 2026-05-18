@@ -9,6 +9,61 @@ import { useResponsiveValue } from '../utils/useBreakpoint';
 import type { Workspace, WorkspaceEvent } from '../types';
 import * as workspacesApi from '../api/workspaces';
 
+// ─── Human-readable labels for workspace activity events ─────────────────────
+type ActionRender = { label: string; title?: string };
+
+function renderActionText(
+  action: string,
+  meta: Record<string, string | undefined>,
+  isFem: boolean,
+  workspaceName?: string,
+): ActionRender {
+  const v = (m: string, f: string): string => (isFem ? f : m);
+  switch (action) {
+    case 'workspace_created':
+      return { label: v('создал пространство', 'создала пространство'), title: meta.name ?? workspaceName };
+    case 'workspace_updated':
+      return { label: v('обновил настройки пространства', 'обновила настройки пространства'), title: workspaceName };
+    case 'workspace_soft_deleted':
+      return { label: v('удалил пространство', 'удалила пространство'), title: meta.name ?? workspaceName };
+    case 'workspace_restored':
+      return { label: v('восстановил пространство', 'восстановила пространство'), title: meta.name ?? workspaceName };
+    case 'member_added':
+      return { label: v('добавил участника', 'добавила участника'), title: meta.name };
+    case 'member_removed':
+      return { label: v('удалил участника', 'удалила участника'), title: meta.name };
+    case 'member_role_changed':
+      return { label: v('изменил роль участника', 'изменила роль участника'), title: meta.name };
+    case 'board_created':
+      return { label: v('создал доску', 'создала доску'), title: meta.name };
+    case 'board_updated':
+      return { label: v('обновил доску', 'обновила доску'), title: meta.boardName ?? meta.name };
+    case 'board_deleted':
+      return { label: v('удалил доску', 'удалила доску'), title: meta.name };
+    case 'workflow_created':
+      return { label: v('создал воркфлоу', 'создала воркфлоу'), title: meta.name };
+    case 'workflow_updated':
+      return { label: v('обновил воркфлоу', 'обновила воркфлоу'), title: meta.nameTo ?? meta.name ?? meta.workflowName };
+    case 'workflow_deleted':
+      return { label: v('удалил воркфлоу', 'удалила воркфлоу'), title: meta.name };
+    case 'workflow_status_added': {
+      const wf = meta.workflowName ? ` в воркфлоу «${meta.workflowName}»` : '';
+      return { label: v('добавил колонку', 'добавила колонку') + wf, title: meta.statusName };
+    }
+    case 'workflow_status_renamed':
+      return {
+        label: v('переименовал колонку', 'переименовала колонку'),
+        title: meta.nameFrom && meta.nameTo ? `${meta.nameFrom} → ${meta.nameTo}` : meta.statusName,
+      };
+    case 'workflow_status_deleted': {
+      const wf = meta.workflowName ? ` из воркфлоу «${meta.workflowName}»` : '';
+      return { label: v('удалил колонку', 'удалила колонку') + wf, title: meta.statusName };
+    }
+    default:
+      return { label: v('выполнил действие', 'выполнила действие'), title: workspaceName };
+  }
+}
+
 // ─── Design tokens (Paper: 135-0 dark, 16D-0 light) ──────────────────────────
 type Theme = Record<string, string>;
 const DARK_C: Theme = {
@@ -466,24 +521,16 @@ export default function WorkspacesPage() {
               const name = ev.user?.name ?? 'Кто-то';
               const nameParts = name.trim().split(/\s+/);
               const isFem = /[аяАЯ]$/u.test(nameParts[nameParts.length - 1] ?? name);
-              const ACTION_LABELS: Record<string, string> = {
-                workspace_created: isFem ? 'создала пространство' : 'создал пространство',
-                workspace_updated: isFem ? 'обновила настройки' : 'обновил настройки',
-                member_added:      isFem ? 'добавила участника' : 'добавил участника',
-                member_removed:    isFem ? 'удалила участника' : 'удалил участника',
-                board_created:     isFem ? 'создала доску' : 'создал доску',
-                board_deleted:     isFem ? 'удалила доску' : 'удалил доску',
-                member_role_changed: isFem ? 'изменила роль участника' : 'изменил роль участника',
-              };
-              const label = ACTION_LABELS[ev.action] ?? ev.action;
               const ws = workspaces.find(w => w.id === ev.workspaceId);
+              const meta = (ev.meta ?? {}) as Record<string, string | undefined>;
+              const { label, title } = renderActionText(ev.action, meta, isFem, ws?.name);
               const time = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
               return (
                 <div key={ev.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', flexShrink: 0, marginTop: 5 }} />
                   <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 13, color: C.actText, flex: 1, overflow: 'hidden' }}>
                     <span style={{ fontWeight: 600 }}>{name}</span>
-                    {' '}{label}{ws ? ` «${ws.name}»` : ''}
+                    {' '}{label}{title ? ` «${title}»` : ''}
                   </span>
                   <span style={{ fontFamily: '"Inter", system-ui, sans-serif', fontSize: 11, color: C.actTime, flexShrink: 0, whiteSpace: 'nowrap' }}>{time}</span>
                 </div>
