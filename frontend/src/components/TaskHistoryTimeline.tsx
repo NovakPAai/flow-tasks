@@ -25,7 +25,14 @@ const FIELD_LABELS: Record<string, string> = {
   assigneeId:  'исполнитель',
   dueDate:     'срок',
   startDate:   'дата начала',
+  boardId:     'доску',
+  parentId:    'родительскую задачу',
+  archived:    'архивный флаг',
 };
+
+function fieldLabelFor(field: string): string {
+  return FIELD_LABELS[field] ?? 'поле задачи';
+}
 
 const PRIORITY_LABELS: Record<string, string> = {
   HIGH: 'Высокий', MEDIUM: 'Средний', LOW: 'Низкий',
@@ -91,7 +98,7 @@ export default function TaskHistoryTimeline({ taskId, statuses }: Props) {
       {history.map((entry, i) => {
         const dotColor = avatarColor(entry.user.name);
         const isLast = i === history.length - 1;
-        const fieldLabel = FIELD_LABELS[entry.field] ?? entry.field;
+        const fieldLabel = fieldLabelFor(entry.field);
         const verb = verbForm(entry.user.name);
 
         return (
