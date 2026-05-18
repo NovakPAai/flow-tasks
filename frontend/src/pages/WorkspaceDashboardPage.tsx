@@ -521,6 +521,8 @@ export default function WorkspaceDashboardPage() {
                 const ACTION_LABELS: Record<string, string> = {
                   workspace_created:       isFem ? 'создала пространство' : 'создал пространство',
                   workspace_updated:       isFem ? 'обновила настройки пространства' : 'обновил настройки пространства',
+                  workspace_soft_deleted:  isFem ? `удалила пространство «${m.name ?? ''}»` : `удалил пространство «${m.name ?? ''}»`,
+                  workspace_restored:      isFem ? `восстановила пространство «${m.name ?? ''}»` : `восстановил пространство «${m.name ?? ''}»`,
                   member_added:            isFem ? `добавила участника ${m.name ?? ''}` : `добавил участника ${m.name ?? ''}`,
                   member_removed:          isFem ? `удалила участника ${m.name ?? ''}` : `удалил участника ${m.name ?? ''}`,
                   member_role_changed:     isFem ? `изменила роль ${m.name ?? ''}` : `изменил роль ${m.name ?? ''}`,
@@ -538,7 +540,7 @@ export default function WorkspaceDashboardPage() {
                   workflow_status_renamed: isFem ? `переименовала колонку «${m.nameFrom ?? ''}» → «${m.nameTo ?? ''}»` : `переименовал колонку «${m.nameFrom ?? ''}» → «${m.nameTo ?? ''}»`,
                   workflow_status_deleted: isFem ? `удалила колонку «${m.statusName ?? ''}» из воркфлоу «${m.workflowName ?? ''}»` : `удалил колонку «${m.statusName ?? ''}» из воркфлоу «${m.workflowName ?? ''}»`,
                 };
-                const label = ACTION_LABELS[ev.action] ?? ev.action;
+                const label = ACTION_LABELS[ev.action] ?? (isFem ? 'выполнила действие' : 'выполнил действие');
                 const time  = new Date(ev.createdAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
                 const AVATAR_COLORS = ['#4F6EF7','#8B5CF6','#F59E0B','#34D399','#F87171','#38BDF8'];
                 const avColor = AVATAR_COLORS[(name.charCodeAt(0) ?? 0) % AVATAR_COLORS.length];
